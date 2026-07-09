@@ -5,9 +5,14 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
 /**
- * Creates a Supabase server client for use in Next.js middleware.
- * Returns both the client (for auth calls) and the response (with refreshed cookies).
- * The caller MUST return `supabaseResponse` from middleware — not a new NextResponse.
+ * Supabase middleware client — matches the official @supabase/ssr pattern.
+ *
+ * IMPORTANT: Returns both `supabase` (for auth calls in src/middleware.ts)
+ * and `supabaseResponse` (must be returned from middleware to forward cookies).
+ *
+ * The `supabase` client is needed so root middleware can call getUser()
+ * to protect routes. If you only need session refresh (no route protection),
+ * you can return just `supabaseResponse` like the Supabase template does.
  */
 export const createClient = (request: NextRequest) => {
   // Create an unmodified response
@@ -38,6 +43,8 @@ export const createClient = (request: NextRequest) => {
     },
   );
 
-  // Return BOTH so middleware can call supabase.auth.getUser() and forward the response
+  // Return BOTH:
+  //   supabase         → call supabase.auth.getUser() in src/middleware.ts
+  //   supabaseResponse → MUST be returned from middleware (contains refreshed cookies)
   return { supabase, supabaseResponse };
 };
