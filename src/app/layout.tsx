@@ -6,6 +6,8 @@
 
 import type { Metadata } from "next";
 import { Inter, Space_Grotesk } from "next/font/google";
+import { Navbar } from "@/components/Navbar";
+import { AuthHandler } from "@/components/AuthHandler";
 import "./globals.css";
 
 const inter = Inter({
@@ -50,8 +52,12 @@ export default function RootLayout({
       className={`${inter.variable} ${spaceGrotesk.variable} dark`}
       suppressHydrationWarning
     >
-      <body className="min-h-dvh bg-surface text-ink-primary font-body antialiased">
-        {children}
+      <body className="min-h-dvh bg-surface text-ink-primary font-body antialiased flex flex-col">
+        <Navbar />
+        <div className="flex-1 w-full">
+          {children}
+        </div>
+        <AuthHandler />
       </body>
     </html>
   );

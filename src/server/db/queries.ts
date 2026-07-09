@@ -133,6 +133,21 @@ export async function getCheckin(userId: string, matchId: string): Promise<Witne
   };
 }
 
+export async function getUserCheckins(userId: string): Promise<Witness[]> {
+  const db = getServiceClient();
+  const { data, error } = await db
+    .from("checkins")
+    .select("user_id, match_id, at_utc")
+    .eq("user_id", userId);
+
+  if (error) throw new Error(`getUserCheckins failed: ${error.message}`);
+  return (data ?? []).map(row => ({
+    userId:  row.user_id as string,
+    matchId: row.match_id as string,
+    atUtc:   row.at_utc as string,
+  }));
+}
+
 export async function getWitnessesForMatch(matchId: string): Promise<Witness[]> {
   const db = getServiceClient();
   const { data, error } = await db
