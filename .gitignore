@@ -1,6 +1,7 @@
 # ── Docs (source of truth files, not committed to repo) ───────────────────────
 Momento-PRD.md
 Momento-Implementation-Guide.md
+docs/PARTNER-GUIDE.md
 
 # ── Editor / IDE ──────────────────────────────────────────────────────────────
 .cursor
