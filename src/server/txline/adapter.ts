@@ -106,13 +106,12 @@ function decimalOddsToImpliedProbs(
 
 const RawMatchSchema = z.object({
   FixtureId: z.number(),
-  StartTime: z.string(),
+  StartTime: z.number(), // Unix timestamp in ms
   Participant1: z.string(),
   Participant2: z.string(),
   Participant1IsHome: z.boolean(),
-  FixtureGroup: z.string().optional().nullable(),
-  Country: z.string().optional().nullable(),
-  Status: z.string().optional().nullable(),
+  Competition: z.string().optional().nullable(),
+  GameState: z.number().optional().nullable(),
   Score: z
     .object({
       home: z.number(),
@@ -130,15 +129,13 @@ function normaliseMatch(raw: z.infer<typeof RawMatchSchema>): NormalisedMatch {
 
   // GamePhase ID mappings from notes section 8
   let status: NormalisedMatch["status"] = "scheduled";
-  if (raw.Status) {
-    const s = raw.Status.toUpperCase();
-    if (["NS"].includes(s)) {
+  if (raw.GameState !== undefined && raw.GameState !== null) {
+    const gs = raw.GameState;
+    if (gs === 1) {
       status = "scheduled";
-    } else if (
-      ["H1", "HT", "H2", "WET", "ET1", "HTET", "ET2", "WPE", "PE"].includes(s)
-    ) {
+    } else if ([2, 3, 4, 6, 7, 8, 9, 11, 12].includes(gs)) {
       status = "live";
-    } else if (["F", "FET", "FPE"].includes(s)) {
+    } else if ([5, 10, 13].includes(gs)) {
       status = "finished";
     }
   }
@@ -147,7 +144,7 @@ function normaliseMatch(raw: z.infer<typeof RawMatchSchema>): NormalisedMatch {
     id: String(raw.FixtureId),
     home,
     away,
-    kickoffUtc: raw.StartTime,
+    kickoffUtc: new Date(raw.StartTime).toISOString(),
     status,
     minute: null,
     score: raw.Score ?? { home: 0, away: 0 },
@@ -181,17 +178,17 @@ export async function listWorldCupMatches(): Promise<NormalisedMatch[]> {
       "[txline/adapter] listWorldCupMatches parse error:",
       list.error.flatten()
     );
+    console.log("[txline/adapter] Raw response received:", JSON.stringify(raw, null, 2));
     return [];
   }
 
-  // Filter for World Cup matches: must belong to World Cup fixture groups or be International country
+  // Filter for World Cup & Friendlies matches
   return list.data
     .filter((fixture) => {
-      const group = (fixture.FixtureGroup || "").toLowerCase();
-      const country = (fixture.Country || "").toLowerCase();
+      const comp = (fixture.Competition || "").toLowerCase();
       return (
-        group.includes("world cup") ||
-        country.includes("international")
+        comp.includes("world cup") ||
+        comp.includes("friendlies")
       );
     })
     .map(normaliseMatch);
