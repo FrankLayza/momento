@@ -12,6 +12,14 @@
  *   4. Seal Moments 24 hours after full-time (FR-5.2).
  */
 
+import { config as loadEnv } from "dotenv";
+import path from "node:path";
+
+// Load environment variables before any other imports execute
+loadEnv({ path: path.resolve(process.cwd(), ".env.local") });
+loadEnv({ path: path.resolve(process.cwd(), ".env") });
+
+
 import { listWorldCupMatches } from "@/server/txline/adapter";
 import { trackMatch, untrackMatch } from "@/server/engine/momentEngine";
 import { mintEdition } from "@/server/chain/mintEdition";
