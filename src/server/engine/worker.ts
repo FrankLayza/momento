@@ -19,6 +19,10 @@ import path from "node:path";
 loadEnv({ path: path.resolve(process.cwd(), ".env.local") });
 loadEnv({ path: path.resolve(process.cwd(), ".env") });
 
+import dns from "node:dns";
+// Force IPv4 first to prevent Node 17+ undici connection timeouts
+dns.setDefaultResultOrder("ipv4first");
+
 
 import { listWorldCupMatches } from "@/server/txline/adapter";
 import { trackMatch, untrackMatch } from "@/server/engine/momentEngine";
