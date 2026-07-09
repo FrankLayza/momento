@@ -21,14 +21,16 @@ import type {
   UnsubscribeFn,
 } from "./types";
 
-// ── Environment ───────────────────────────────────────────────────────────────
+function getBaseUrl(): string {
+  const val = process.env.TXLINE_BASE_URL;
+  if (!val) throw new Error("Missing env var: TXLINE_BASE_URL");
+  return val;
+}
 
-const BASE_URL   = process.env.TXLINE_BASE_URL;
-const API_KEY    = process.env.TXLINE_API_KEY;
-
-function requireEnv(name: string, value: string | undefined): string {
-  if (!value) throw new Error(`Missing env var: ${name}`);
-  return value;
+function getApiKey(): string {
+  const val = process.env.TXLINE_API_KEY;
+  if (!val) throw new Error("Missing env var: TXLINE_API_KEY");
+  return val;
 }
 
 // ── Odds → implied probability conversion (Implementation Guide §5) ───────────
@@ -153,8 +155,8 @@ function normaliseEvent(raw: z.infer<typeof RawEventSchema>): NormalisedEvent | 
  * Implements FR-1.1 (PRD).
  */
 export async function listWorldCupMatches(): Promise<NormalisedMatch[]> {
-  const baseUrl = requireEnv("TXLINE_BASE_URL", BASE_URL);
-  const apiKey  = requireEnv("TXLINE_API_KEY",  API_KEY);
+  const baseUrl = getBaseUrl();
+  const apiKey  = getApiKey();
 
   // [NEEDS-HUMAN-INPUT: replace the path below with the real TxLINE fixtures endpoint]
   const url = `${baseUrl}/matches?tournament=world_cup`;
@@ -191,8 +193,8 @@ export async function listWorldCupMatches(): Promise<NormalisedMatch[]> {
 export async function getPrematchProbabilities(
   matchId: string
 ): Promise<{ pHome: number; pDraw: number; pAway: number } | null> {
-  const baseUrl = requireEnv("TXLINE_BASE_URL", BASE_URL);
-  const apiKey  = requireEnv("TXLINE_API_KEY",  API_KEY);
+  const baseUrl = getBaseUrl();
+  const apiKey  = getApiKey();
 
   // [NEEDS-HUMAN-INPUT: replace with real pre-match odds endpoint]
   const url = `${baseUrl}/matches/${matchId}/prematch-odds`;
@@ -240,8 +242,8 @@ export function subscribeMatch(
   onTick:  OddsTickCallback,
   onEvent: MatchEventCallback
 ): UnsubscribeFn {
-  const baseUrl = requireEnv("TXLINE_BASE_URL", BASE_URL);
-  const apiKey  = requireEnv("TXLINE_API_KEY",  API_KEY);
+  const baseUrl = getBaseUrl();
+  const apiKey  = getApiKey();
 
   // [NEEDS-HUMAN-INPUT: TxLINE may use WebSocket, SSE, or polling.
   //  Implement the appropriate connection here.
