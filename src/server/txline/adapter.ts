@@ -240,6 +240,38 @@ export async function getPrematchProbabilities(
 }
 
 /**
+ * Returns the live score, minute, and status for a given match from TxLINE.
+ */
+export async function getLiveMatchState(
+  matchId: string
+): Promise<{ score: { home: number; away: number }; minute: number | null; status: string } | null> {
+  const baseUrl = getBaseUrl();
+  const url = `${baseUrl}/api/scores/snapshot/${matchId}`;
+
+  const headers = await getRequestHeaders();
+  const res = await fetch(url, { headers });
+
+  if (!res.ok) {
+    console.warn(
+      `[txline/adapter] getLiveMatchState failed for ${matchId}: ${res.status}`
+    );
+    return null;
+  }
+
+  const raw = (await res.json()) as {
+    Status?: string;
+    Score?: { home: number; away: number };
+    Minute?: number;
+  };
+
+  return {
+    score: raw.Score ?? { home: 0, away: 0 },
+    minute: raw.Minute ?? null,
+    status: (raw.Status || "").toLowerCase(),
+  };
+}
+
+/**
  * Subscribes to live odds + event updates for a match.
  * Implements FR-3.1 (PRD) — poll/subscribe every 60s or faster.
  *

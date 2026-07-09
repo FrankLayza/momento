@@ -8,72 +8,77 @@
  */
 
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
+import { createClient } from "@/utils/supabase/server";
+import { getUserById } from "@/server/db/queries";
+import { ExportWalletSection } from "./ExportWalletSection";
 
-export const metadata: Metadata = { title: "Advanced — Momento" };
+export const metadata: Metadata = {
+  title: "Advanced Settings | Momento",
+};
 
-export default function AdvancedPage() {
+export const revalidate = 0; // Dynamic/SSR only to check active user wallet
+
+export default async function AdvancedPage() {
+  // 1. Get current auth user session
+  const cookieStore = cookies();
+  const supabase = createClient(cookieStore);
+  const { data: { user } } = await supabase.auth.getUser();
+
+  let pubkey: string | null = null;
+  if (user) {
+    try {
+      const appUser = await getUserById(user.id);
+      pubkey = appUser?.pubkey ?? null;
+    } catch (err) {
+      console.error("[AdvancedPage] Failed to load user pubkey:", err);
+    }
+  }
+
   return (
-    <main className="mx-auto max-w-xl px-4 py-12">
-      <h1 className="font-display text-2xl font-bold mb-2">Advanced</h1>
-      <p className="text-sm text-ink-secondary mb-8">
-        For collectors who want direct Solana wallet access.
-      </p>
+    <main className="mx-auto max-w-xl px-6 py-10">
+      <div className="mb-8">
+        <h1 className="font-display text-2xl font-extrabold tracking-tight text-ink-primary">
+          Advanced Settings
+        </h1>
+        <p className="text-sm text-ink-secondary mt-1">
+          For collectors who want direct, non-custodial access to their Solana wallet.
+        </p>
+      </div>
 
       {/* Wallet info */}
       <section className="rounded-2xl border border-surface-border bg-surface-raised p-6 mb-6">
-        <h2 className="text-xs font-semibold uppercase tracking-widest text-ink-muted mb-4">
-          Your embedded wallet
+        <h2 className="text-xs font-semibold uppercase tracking-widest text-ink-secondary mb-5 border-b border-surface-border/40 pb-2">
+          Your Embedded Wallet
         </h2>
-
-        {/* Public key display */}
-        <div className="mb-4">
-          <label className="block text-xs text-ink-muted mb-1">Public key</label>
-          <div className="font-display text-xs break-all text-ink-secondary bg-surface border border-surface-border rounded-lg p-3">
-            {/* TODO: fetch from session in Days 7-9 */}
-            <span className="text-ink-muted">Sign in to view your public key</span>
-          </div>
-        </div>
-
-        {/* Export secret key */}
-        <div>
-          <label className="block text-xs text-ink-muted mb-1">Export private key</label>
-          <p className="text-xs text-ink-muted mb-3">
-            Your private key lets you import this wallet into Phantom or any Solana wallet.
-            Never share it. Momento stores it encrypted; this page decrypts it temporarily.
-          </p>
-          <button
-            id="export-secret-key-button"
-            disabled
-            className="w-full rounded-xl border border-surface-border bg-surface px-4 py-2.5 text-sm text-ink-secondary hover:border-tier-shock/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Reveal private key (sign in required)
-          </button>
-        </div>
+        <ExportWalletSection pubkey={pubkey} />
       </section>
 
-      {/* Solscan links */}
+      {/* On-chain records */}
       <section className="rounded-2xl border border-surface-border bg-surface-raised p-6">
-        <h2 className="text-xs font-semibold uppercase tracking-widest text-ink-muted mb-4">
-          On-chain records
+        <h2 className="text-xs font-semibold uppercase tracking-widest text-ink-secondary mb-4 border-b border-surface-border/40 pb-2">
+          On-Chain Records
         </h2>
-        <p className="text-sm text-ink-secondary">
-          Every claimed Moment is recorded as a compressed NFT on the Solana devnet.
-          Solscan links are available in each Moment&apos;s detail view.
+        <p className="text-xs text-ink-secondary leading-relaxed">
+          Every claimed Moment is minted as a compressed NFT (cNFT) on the Solana devnet. 
+          Solscan transaction signatures and asset links are viewable directly on the Moment detail pages.
         </p>
-        <a
-          href="https://solscan.io/?cluster=devnet"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="mt-3 inline-flex items-center gap-1.5 text-xs text-tier-notable hover:underline"
-        >
-          Open Solscan (devnet) →
-        </a>
+        <div className="mt-4">
+          <a
+            href="https://solscan.io/?cluster=devnet"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 text-xs font-bold text-tier-notable hover:underline uppercase tracking-wider"
+          >
+            Explore Solscan Devnet →
+          </a>
+        </div>
       </section>
 
       {/* v1 trade-off notice */}
-      <p className="mt-8 text-xs text-ink-muted text-center">
-        v1 uses server-side key custody for simplicity.
-        Production path: migrate to Privy or Web3Auth for non-custodial embedded wallets.
+      <p className="mt-8 text-[10px] text-ink-muted text-center leading-relaxed">
+        v1 utilizes secure server-side key custody derived from service credentials for zero-friction sign-ups. 
+        Production migration path: transition key derivation to non-custodial systems like Privy or Web3Auth.
       </p>
     </main>
   );

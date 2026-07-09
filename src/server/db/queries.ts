@@ -278,6 +278,24 @@ export async function getUserEditions(userId: string): Promise<Edition[]> {
   return (data ?? []).map(dbRowToEdition);
 }
 
+export async function getUserMoments(userId: string): Promise<
+  Array<{ edition: Edition; moment: Moment }>
+> {
+  const db = getServiceClient();
+  const { data, error } = await db
+    .from("editions")
+    .select("*, moment:moments(*)")
+    .eq("user_id", userId)
+    .order("claimed_at", { ascending: false });
+
+  if (error) throw new Error(`getUserMoments failed: ${error.message}`);
+
+  return (data ?? []).map(row => ({
+    edition: dbRowToEdition(row),
+    moment: dbRowToMoment(row.moment as Record<string, unknown>),
+  }));
+}
+
 export async function getPendingChainEditions(): Promise<Edition[]> {
   const db = getServiceClient();
   const { data, error } = await db

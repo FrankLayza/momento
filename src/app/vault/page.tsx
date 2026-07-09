@@ -1,91 +1,140 @@
 /**
  * src/app/vault/page.tsx
- * User's Vault — their claimed Moments as a card grid.
+ * User's Vault — displays their claimed Moments as a premium card grid.
  * Implements FR-5.4 (PRD).
  */
 
 import type { Metadata } from "next";
+import Link from "next/link";
+import { cookies } from "next/headers";
 import { copy } from "@/lib/copy";
-import type { Edition, Moment } from "@/lib/types";
+import { getUserMoments } from "@/server/db/queries";
+import { createClient } from "@/utils/supabase/server";
+import { MomentCard } from "@/components/MomentCard";
+import type { Moment } from "@/lib/types";
 
 export const metadata: Metadata = {
-  title: copy.vault.title,
+  title: `${copy.vault.title} | Momento`,
 };
 
-// NOTE: auth integration done in Days 7-9.
-// For now this is a structural stub.
+export const revalidate = 0; // Dynamic/SSR only to always reflect latest claims
 
-export default async function VaultPage() {
-  // TODO: get userId from Supabase session cookie
-  // const { userId } = await getServerSession();
-  // const editions = await getUserEditions(userId);
+export default async function VaultPage({
+  searchParams,
+}: {
+  searchParams: { sort?: string };
+}) {
+  // 1. Get current auth user session
+  const cookieStore = cookies();
+  const supabase = createClient(cookieStore);
+  const { data: { user } } = await supabase.auth.getUser();
 
-  const editions: Edition[]  = [];
-  const moments:  Moment[]   = [];  // TODO: fetch via edition → moment join
+  if (!user) {
+    return (
+      <main className="mx-auto max-w-3xl px-6 py-10">
+        <p className="text-ink-muted text-sm">{copy.errors.signIn}</p>
+      </main>
+    );
+  }
 
-  const totalMoments      = moments.length;
-  const rarestTier        = getRarestTier(moments);
-  const matchesWitnessed  = 0; // TODO: count distinct matchIds in editions
+  // 2. Fetch claimed moments for the user
+  let userMoments: Array<{ edition: any; moment: Moment }> = [];
+  try {
+    userMoments = await getUserMoments(user.id);
+  } catch (err) {
+    console.error("[VaultPage] Failed to fetch user moments:", err);
+  }
+
+  const totalMoments = userMoments.length;
+
+  // Calculate unique matches witnessed
+  const uniqueMatchIds = new Set(userMoments.map(um => um.moment.matchId));
+  const matchesWitnessed = uniqueMatchIds.size;
+
+  // Find rarest tier claimed
+  const moments = userMoments.map(um => um.moment);
+  const rarestTier = getRarestTier(moments);
+
+  // 3. Sort moments based on query param
+  const sortBy = searchParams.sort === "score" ? "score" : "date";
+  const sortedMoments = [...moments].sort((a, b) => {
+    if (sortBy === "score") {
+      return b.shockScore - a.shockScore;
+    } else {
+      return new Date(b.eventUtc).getTime() - new Date(a.eventUtc).getTime();
+    }
+  });
 
   return (
-    <main className="mx-auto max-w-3xl px-4 py-8">
+    <main className="mx-auto max-w-3xl px-6 py-10">
       {/* Header */}
-      <h1 className="font-display text-3xl font-bold mb-2">{copy.vault.title}</h1>
+      <div className="mb-8">
+        <h1 className="font-display text-3xl font-extrabold tracking-tight text-ink-primary">
+          {copy.vault.title}
+        </h1>
+        
+        {/* Stats bar */}
+        {totalMoments > 0 && (
+          <div className="mt-3 flex flex-wrap gap-x-6 gap-y-2 text-xs font-semibold text-ink-secondary uppercase tracking-wider">
+            <span className="flex items-center gap-1.5">
+              <span className="h-1 w-1 rounded-full bg-tier-notable" />
+              {copy.vault.totalMoments(totalMoments)}
+            </span>
+            {rarestTier && (
+              <span className="flex items-center gap-1.5">
+                <span className="h-1 w-1 rounded-full bg-tier-shock" />
+                {copy.vault.rarestTier(rarestTier)}
+              </span>
+            )}
+            <span className="flex items-center gap-1.5">
+              <span className="h-1 w-1 rounded-full bg-tier-seismic" />
+              {copy.vault.matchesWitnessed(matchesWitnessed)}
+            </span>
+          </div>
+        )}
+      </div>
 
-      {/* Stats bar */}
+      {/* Sort controls */}
       {totalMoments > 0 && (
-        <div className="flex gap-6 text-sm text-ink-secondary mb-8">
-          <span>{copy.vault.totalMoments(totalMoments)}</span>
-          {rarestTier && <span>{copy.vault.rarestTier(rarestTier)}</span>}
-          <span>{copy.vault.matchesWitnessed(matchesWitnessed)}</span>
-        </div>
-      )}
-
-      {/* Empty state */}
-      {totalMoments === 0 && (
-        <div className="text-center py-24">
-          <p className="text-ink-muted text-sm">{copy.vault.empty}</p>
-        </div>
-      )}
-
-      {/* Sort controls — placeholder */}
-      {totalMoments > 0 && (
-        <div className="flex gap-2 mb-6">
-          <SortButton label={copy.vault.sortByScore} active />
-          <SortButton label={copy.vault.sortByDate} />
+        <div className="mb-6 flex gap-2 border-b border-surface-border/40 pb-3">
+          <Link
+            href="/vault?sort=date"
+            className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
+              sortBy === "date"
+                ? "bg-surface-raised border border-surface-border text-ink-primary"
+                : "text-ink-muted hover:text-ink-secondary"
+            }`}
+          >
+            {copy.vault.sortByDate}
+          </Link>
+          <Link
+            href="/vault?sort=score"
+            className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
+              sortBy === "score"
+                ? "bg-surface-raised border border-surface-border text-ink-primary"
+                : "text-ink-muted hover:text-ink-secondary"
+            }`}
+          >
+            {copy.vault.sortByScore}
+          </Link>
         </div>
       )}
 
       {/* Card grid */}
-      {totalMoments > 0 && (
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-          {moments.map(moment => (
-            <div key={moment.id} className="aspect-card">
-              {/* MomentCard imported lazily to avoid circular deps at scaffold time */}
-              <div className="w-full h-full rounded-2xl bg-surface-raised border border-surface-border flex items-center justify-center">
-                <span className="font-display text-xs text-ink-muted">
-                  {moment.tier}
-                </span>
-              </div>
-            </div>
+      {totalMoments > 0 ? (
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-6">
+          {sortedMoments.map(moment => (
+            <MomentCard key={moment.id} moment={moment} />
           ))}
+        </div>
+      ) : (
+        <div className="text-center py-24 border border-surface-border/40 border-dashed rounded-2xl bg-surface-raised/10">
+          <p className="text-sm text-ink-muted leading-relaxed max-w-sm mx-auto">
+            {copy.vault.empty}
+          </p>
         </div>
       )}
     </main>
-  );
-}
-
-function SortButton({ label, active = false }: { label: string; active?: boolean }) {
-  return (
-    <button
-      className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
-        active
-          ? "bg-surface-overlay text-ink-primary"
-          : "text-ink-muted hover:text-ink-secondary"
-      }`}
-    >
-      {label}
-    </button>
   );
 }
 
