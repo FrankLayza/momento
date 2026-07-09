@@ -9,6 +9,7 @@ import { copy } from "@/lib/copy";
 import { getMomentsForMatch, listMatches } from "@/server/db/queries";
 import { ProbabilityBar } from "@/components/ProbabilityBar";
 import { MomentCard } from "@/components/MomentCard";
+import { CheckinButton } from "@/components/CheckinButton";
 import type { Match, Moment } from "@/lib/types";
 
 interface Props {
@@ -82,16 +83,10 @@ export default async function MatchPage({ params }: Props) {
         </div>
       )}
 
-      {/* Check-in button — FR-2.1 (client action placeholder) */}
+      {/* Check-in button — FR-2.1 */}
       {match.status !== "finished" && (
         <div className="mb-8">
-          {/* TODO: wire to /api/checkin with auth — implemented in Days 7-9 */}
-          <button
-            id="checkin-button"
-            className="w-full rounded-xl bg-ink-primary text-surface font-semibold py-3 text-sm hover:bg-white transition-colors"
-          >
-            {copy.checkin.action}
-          </button>
+          <CheckinButton matchId={match.id} />
         </div>
       )}
 
