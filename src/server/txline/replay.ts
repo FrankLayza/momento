@@ -17,6 +17,7 @@
 import * as fs   from "node:fs";
 import * as path from "node:path";
 import * as readline from "node:readline";
+import { setTimeout as sleep } from "node:timers/promises";
 import { z } from "zod";
 import type {
   NormalisedMatch,
@@ -230,8 +231,4 @@ function extractTimestamp(parsed: unknown): string | null {
     }
   }
   return null;
-}
-
-function sleep(ms: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms));
 }

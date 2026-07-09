@@ -10,7 +10,6 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "scan-copy": "tsx scripts/scan-copy.ts",
-    "gen:treasury": "tsx scripts/gen-treasury.ts",
     "activate:txline": "tsx scripts/activate-txline.ts",
     "create:tree": "tsx scripts/create-tree.ts",
     "record:match": "tsx scripts/record-match.ts",
