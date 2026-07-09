@@ -31,6 +31,7 @@ import {
   getMomentById,
   updateEditionChainStatus,
   getUserById,
+  upsertMatch,
 } from "@/server/db/queries";
 
 // ── Config ────────────────────────────────────────────────────────────────────
@@ -50,6 +51,12 @@ async function syncFixtures(): Promise<void> {
     const fixtures = await listWorldCupMatches();
 
     for (const match of fixtures) {
+      // Persist the match to the database so it appears on the web UI
+      await upsertMatch({
+        ...match,
+        pPreMatch: null,
+      });
+
       if (match.status === "finished") {
         if (activeMatches.has(match.id)) {
           untrackMatch(match.id);
