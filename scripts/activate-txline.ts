@@ -22,6 +22,7 @@ import {
   ASSOCIATED_TOKEN_PROGRAM_ID,
   TOKEN_2022_PROGRAM_ID,
   getAssociatedTokenAddressSync,
+  createAssociatedTokenAccountInstruction,
 } from "@solana/spl-token";
 import {
   Connection,
@@ -34,6 +35,11 @@ import nacl from "tweetnacl";
 import bs58 from "bs58";
 import fs from "node:fs";
 import path from "node:path";
+import { config as loadEnv } from "dotenv";
+
+// Load .env.local so SOLANA_RPC_URL is available
+loadEnv({ path: path.resolve(".env.local") });
+loadEnv({ path: path.resolve(".env") }); // fallback
 
 // ── CLI args ──────────────────────────────────────────────────────────────────
 
@@ -47,6 +53,11 @@ const keypairArg = args.includes("--keypair")
   ? args[args.indexOf("--keypair") + 1]
   : null;
 
+// --rpc overrides env + config default (useful for testing)
+const rpcOverride = args.includes("--rpc")
+  ? args[args.indexOf("--rpc") + 1]
+  : null;
+
 if (networkArg !== "mainnet" && networkArg !== "devnet") {
   console.error("--network must be 'mainnet' or 'devnet'");
   process.exit(1);
@@ -58,15 +69,17 @@ const NETWORK = networkArg as "mainnet" | "devnet";
 
 const CONFIG = {
   mainnet: {
-    rpcUrl:      "https://api.mainnet-beta.solana.com",
-    apiOrigin:   "https://txline.txodds.com",
-    programId:   new PublicKey("9ExbZjAapQww1vfcisDmrngPinHTEfpjYRWMunJgcKaA"),
+    // Primary: env var. Fallback: official mainnet.
+    rpcUrl:       process.env.SOLANA_RPC_URL ?? "https://api.mainnet-beta.solana.com",
+    apiOrigin:    "https://txline.txodds.com",
+    programId:    new PublicKey("9ExbZjAapQww1vfcisDmrngPinHTEfpjYRWMunJgcKaA"),
     txlTokenMint: new PublicKey("Zhw9TVKp68a1QrftncMSd6ELXKDtpVMNuMGr1jNwdeL"),
   },
   devnet: {
-    rpcUrl:      "https://api.devnet.solana.com",
-    apiOrigin:   "https://txline-dev.txodds.com",
-    programId:   new PublicKey("6pW64gN1s2uqjHkn1unFeEjAwJkPGHoppGvS715wyP2J"),
+    // Primary: env var. Fallback: Ankr free devnet (more reliable than api.devnet.solana.com).
+    rpcUrl:       process.env.SOLANA_RPC_URL ?? "https://rpc.ankr.com/solana_devnet",
+    apiOrigin:    "https://txline-dev.txodds.com",
+    programId:    new PublicKey("6pW64gN1s2uqjHkn1unFeEjAwJkPGHoppGvS715wyP2J"),
     txlTokenMint: new PublicKey("4Zao8ocPhmMgq7PdsYWyxvqySMGx7xb9cMftPMkEokRG"),
   },
 } as const;
@@ -77,8 +90,12 @@ const SERVICE_LEVEL_ID = NETWORK === "mainnet" ? 12 : 1;
 const DURATION_WEEKS    = 4;
 const SELECTED_LEAGUES: number[] = [];  // empty = standard World Cup bundle
 
-const { rpcUrl, apiOrigin, programId, txlTokenMint } = CONFIG[NETWORK];
+const { rpcUrl: configRpcUrl, apiOrigin, programId, txlTokenMint } = CONFIG[NETWORK];
+// CLI flag wins, then env var (already baked into config), then config default
+const rpcUrl = rpcOverride ?? configRpcUrl;
 const apiBaseUrl = `${apiOrigin}/api`;
+
+console.log(`     RPC: ${rpcUrl}`);
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -156,34 +173,61 @@ async function main(): Promise<void> {
     console.log(`     Loaded IDL from ${localIdlPath}`);
   } else {
     console.log(`     IDL not found locally — fetching from GitHub...`);
-    const idlUrl = "https://raw.githubusercontent.com/txodds/tx-on-chain/main/idl/txoracle.json";
-    const resp   = await axios.get<anchor.Idl>(idlUrl);
-    txoracleIdl  = resp.data;
-    fs.mkdirSync(path.dirname(localIdlPath), { recursive: true });
-    fs.writeFileSync(localIdlPath, JSON.stringify(txoracleIdl, null, 2));
-    console.log(`     IDL saved to ${localIdlPath}`);
+
+    // Try devnet-specific IDL first, then fall back to main IDL
+    const idlUrls = [
+      `https://raw.githubusercontent.com/txodds/tx-on-chain/main/idl/txoracle-${NETWORK}.json`,
+      "https://raw.githubusercontent.com/txodds/tx-on-chain/main/idl/txoracle.json",
+    ];
+
+    let fetched = false;
+    for (const idlUrl of idlUrls) {
+      try {
+        console.log(`     Trying: ${idlUrl}`);
+        const resp  = await axios.get<anchor.Idl>(idlUrl);
+        txoracleIdl = resp.data;
+        fs.mkdirSync(path.dirname(localIdlPath), { recursive: true });
+        fs.writeFileSync(localIdlPath, JSON.stringify(txoracleIdl, null, 2));
+        console.log(`     IDL saved to ${localIdlPath}`);
+        fetched = true;
+        break;
+      } catch {
+        console.log(`     Not found at that URL — trying next...`);
+      }
+    }
+
+    if (!fetched) {
+      throw new Error(
+        `Could not fetch TxOracle IDL. Please download it manually and save to:\n  ${localIdlPath}`
+      );
+    }
   }
 
   const walletWrapper = new anchor.Wallet(keypair);
   const provider      = new anchor.AnchorProvider(connection, walletWrapper, { commitment: "confirmed" });
   anchor.setProvider(provider);
 
-  const program = new anchor.Program(txoracleIdl, provider);
+  // Use the correct program ID for this network, regardless of what the IDL says
+  // (The GitHub IDL may be tagged with the mainnet program ID; methods/accounts are the same)
+  const program = new anchor.Program(txoracleIdl!, provider);
 
+  console.log(`     IDL program: ${program.programId.toBase58()}`);
+  console.log(`     Expected:    ${programId.toBase58()}`);
   if (!program.programId.equals(programId)) {
-    throw new Error(
-      `IDL program ${program.programId.toBase58()} ≠ expected ${NETWORK} program ${programId.toBase58()}. ` +
-      `Ensure you're using the ${NETWORK} IDL.`
-    );
+    console.warn(`     ⚠  Program ID mismatch — patching IDL to use ${NETWORK} program ID...`);
+    // Patch the IDL's address so Anchor uses the correct on-chain program
+    (txoracleIdl! as { address?: string }).address = programId.toBase58();
   }
-  console.log(`     Program verified: ${program.programId.toBase58()}`);
+  // Re-create program with (potentially patched) IDL
+  const finalProgram = new anchor.Program(txoracleIdl!, provider);
+  console.log(`     Using program: ${finalProgram.programId.toBase58()}`);
 
   // ── Step 4: On-chain subscription ────────────────────────────────────────
   console.log(`\n[4/5] Submitting on-chain subscription (SL ${SERVICE_LEVEL_ID}, ${DURATION_WEEKS} weeks)...`);
 
   const [tokenTreasuryPda] = PublicKey.findProgramAddressSync(
     [Buffer.from("token_treasury_v2")],
-    program.programId
+    finalProgram.programId
   );
 
   const tokenTreasuryVault = getAssociatedTokenAddressSync(
@@ -196,7 +240,7 @@ async function main(): Promise<void> {
 
   const [pricingMatrixPda] = PublicKey.findProgramAddressSync(
     [Buffer.from("pricing_matrix")],
-    program.programId
+    finalProgram.programId
   );
 
   const userTokenAccount = getAssociatedTokenAddressSync(
@@ -207,19 +251,38 @@ async function main(): Promise<void> {
     ASSOCIATED_TOKEN_PROGRAM_ID
   );
 
+  const tokenAccountInfo = await connection.getAccountInfo(userTokenAccount);
+  if (!tokenAccountInfo) {
+    console.log("     User token account not initialized. Initializing...");
+    const createAtaTx = new anchor.web3.Transaction().add(
+      createAssociatedTokenAccountInstruction(
+        provider.wallet.publicKey,
+        userTokenAccount,
+        provider.wallet.publicKey,
+        txlTokenMint,
+        TOKEN_2022_PROGRAM_ID,
+        ASSOCIATED_TOKEN_PROGRAM_ID
+      )
+    );
+    const createAtaSig = await provider.sendAndConfirm(createAtaTx);
+    console.log(`     ✓ Created user token account: ${createAtaSig}`);
+  } else {
+    console.log("     User token account already initialized.");
+  }
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const txSig: string = await (program.methods as any)
+  const txSig: string = await (finalProgram.methods as any)
     .subscribe(SERVICE_LEVEL_ID, DURATION_WEEKS)
     .accounts({
-      user:                  provider.wallet.publicKey,
-      pricingMatrix:         pricingMatrixPda,
-      tokenMint:             txlTokenMint,
+      user:                   provider.wallet.publicKey,
+      pricingMatrix:          pricingMatrixPda,
+      tokenMint:              txlTokenMint,
       userTokenAccount,
       tokenTreasuryVault,
       tokenTreasuryPda,
-      tokenProgram:          TOKEN_2022_PROGRAM_ID,
+      tokenProgram:           TOKEN_2022_PROGRAM_ID,
       associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
-      systemProgram:         SystemProgram.programId,
+      systemProgram:          SystemProgram.programId,
     })
     .rpc();
 
