@@ -63,23 +63,23 @@ export function Navbar() {
       <div className="mx-auto flex max-w-5xl items-center justify-between px-6 h-14">
         {/* Brand Logo */}
         <Link href="/" className="flex items-center gap-2 group">
-          <span className="h-4 w-4 rounded bg-tier-notable transition-transform group-hover:rotate-12 duration-200" />
-          <span className="font-display text-base font-bold tracking-tight text-ink-primary">
+          <span className="h-3.5 w-3.5 rounded bg-ink-primary transition-transform group-hover:rotate-12 duration-200" />
+          <span className="font-display text-sm font-extrabold tracking-tight text-ink-primary">
             {copy.appName}
           </span>
         </Link>
 
         {/* Navigation Links */}
-        <nav className="hidden sm:flex items-center gap-6">
+        <nav className="hidden sm:flex items-center gap-5">
           {navLinks.map((link) => {
             const isActive = pathname === link.href || (link.href !== "/" && pathname.startsWith(link.href));
             return (
               <Link
                 key={link.href}
                 href={link.href}
-                className={`text-xs font-medium transition-colors ${
+                className={`text-[11px] font-medium tracking-wider uppercase transition-colors ${
                   isActive
-                    ? "text-tier-notable font-semibold"
+                    ? "text-ink-primary font-bold"
                     : "text-ink-secondary hover:text-ink-primary"
                 }`}
               >
@@ -117,16 +117,16 @@ export function Navbar() {
       </div>
 
       {/* Mobile nav indicator bar */}
-      <nav className="sm:hidden flex items-center justify-around border-t border-surface-border/50 py-2.5 bg-surface-raised/40">
+      <nav className="sm:hidden flex items-center justify-around border-t border-surface-border/40 py-2 bg-surface-raised/60">
         {navLinks.map((link) => {
           const isActive = pathname === link.href || (link.href !== "/" && pathname.startsWith(link.href));
           return (
             <Link
               key={link.href}
               href={link.href}
-              className={`text-[10px] font-semibold uppercase tracking-widest transition-colors ${
+              className={`text-[9px] font-semibold uppercase tracking-widest transition-colors ${
                 isActive
-                  ? "text-tier-notable"
+                  ? "text-ink-primary font-bold"
                   : "text-ink-secondary hover:text-ink-primary"
               }`}
             >
