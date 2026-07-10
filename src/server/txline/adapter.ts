@@ -271,6 +271,68 @@ export async function getLiveMatchState(
   };
 }
 
+const scoreCache = new Map<string, { home: number; away: number }>();
+
+/**
+ * Returns the final score of a completed match by parsing historical data.
+ */
+export async function getFinishedMatchScore(
+  matchId: string
+): Promise<{ home: number; away: number }> {
+  const cached = scoreCache.get(matchId);
+  if (cached) return cached;
+
+  try {
+    const baseUrl = getBaseUrl();
+    const url = `${baseUrl}/api/scores/historical/${matchId}`;
+    const headers = await getRequestHeaders();
+
+    const res = await fetch(url, { headers });
+    if (!res.ok) {
+      return { home: 0, away: 0 };
+    }
+
+    const text = await res.text();
+    const lines = text.split("\n");
+
+    let lastDataStr = "";
+    for (let i = lines.length - 1; i >= 0; i--) {
+      const line = lines[i].trim();
+      if (line.startsWith("data: ")) {
+        lastDataStr = line.slice(6);
+        break;
+      }
+    }
+
+    if (lastDataStr) {
+      const parsed = JSON.parse(lastDataStr) as {
+        Participant1IsHome?: boolean;
+        Stats?: Record<string, number>;
+      };
+
+      const isHome = parsed.Participant1IsHome ?? true;
+      const stats = parsed.Stats ?? {};
+      const val1 = stats["1"] ?? 0;
+      const val2 = stats["2"] ?? 0;
+
+      const score = {
+        home: isHome ? val1 : val2,
+        away: isHome ? val2 : val1,
+      };
+
+      scoreCache.set(matchId, score);
+      return score;
+    }
+  } catch (err) {
+    console.error(
+      `[txline/adapter] getFinishedMatchScore error for ${matchId}:`,
+      err
+    );
+  }
+
+  return { home: 0, away: 0 };
+}
+
 /**
  * Subscribes to live odds + event updates for a match.
  * Implements FR-3.1 (PRD) — poll/subscribe every 60s or faster.

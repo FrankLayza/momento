@@ -57,23 +57,27 @@ export function CheckinButton({ matchId }: Props) {
 
   if (checkedIn) {
     return (
-      <button
-        disabled
-        className="w-full rounded-xl bg-surface-raised border border-tier-notable/40 text-tier-notable font-semibold py-3 text-sm cursor-default"
-      >
-        ✓ {copy.checkin.checkedIn}
-      </button>
+      <div className="flex justify-center">
+        <button
+          disabled
+          className="px-6 py-2 rounded-lg bg-surface-raised border border-tier-notable/20 text-tier-notable text-xs font-bold tracking-wider uppercase cursor-default shadow-sm"
+        >
+          ✓ {copy.checkin.checkedIn}
+        </button>
+      </div>
     );
   }
 
   return (
-    <button
-      id="checkin-button"
-      onClick={() => { void handleCheckin(); }}
-      disabled={loading}
-      className="w-full rounded-xl bg-ink-primary text-surface font-semibold py-3 text-sm hover:bg-white transition-colors disabled:opacity-50"
-    >
-      {loading ? "Checking in..." : copy.checkin.action}
-    </button>
+    <div className="flex justify-center">
+      <button
+        id="checkin-button"
+        onClick={() => { void handleCheckin(); }}
+        disabled={loading}
+        className="px-8 py-2 rounded-lg bg-ink-primary text-surface hover:bg-white text-xs font-bold tracking-wider uppercase transition-colors duration-150 disabled:opacity-50 shadow-sm"
+      >
+        {loading ? "Checking in..." : copy.checkin.action}
+      </button>
+    </div>
   );
 }

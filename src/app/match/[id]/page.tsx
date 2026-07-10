@@ -7,7 +7,7 @@
 import type { Metadata } from "next";
 import { copy } from "@/lib/copy";
 import { getMomentsForMatch, listMatches } from "@/server/db/queries";
-import { getLiveMatchState, getPrematchProbabilities } from "@/server/txline/adapter";
+import { getLiveMatchState, getPrematchProbabilities, getFinishedMatchScore } from "@/server/txline/adapter";
 import { ProbabilityBar } from "@/components/ProbabilityBar";
 import { MomentCard } from "@/components/MomentCard";
 import { CheckinButton } from "@/components/CheckinButton";
@@ -39,23 +39,48 @@ export default async function MatchPage({ params }: Props) {
     );
   }
 
+  const kickoffTime = new Date(match.kickoffUtc).toLocaleTimeString("en-GB", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
+
+  const kickoffDate = new Date(match.kickoffUtc).toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "short",
+  });
+
   // 1. Fetch live data from TxLINE if the match is live or finished
   let liveScore = match.score;
   let liveMinute = match.minute;
   let currentStatus = match.status;
 
-  if (match.status === "live" || match.status === "finished") {
+  if (match.status === "live") {
     try {
       const liveState = await getLiveMatchState(match.id);
-      if (liveState) {
+      if (liveState && liveState.status) {
         liveScore = liveState.score;
         liveMinute = liveState.minute;
         if (liveState.status.includes("finished") || liveState.status === "f") {
           currentStatus = "finished";
+          liveScore = await getFinishedMatchScore(match.id).catch(() => liveScore);
+          liveMinute = null;
         }
+      } else {
+        // If liveState is null or status is empty, it means the match is finished (missing from active snapshot)
+        currentStatus = "finished";
+        liveScore = await getFinishedMatchScore(match.id).catch(() => liveScore);
+        liveMinute = null;
       }
     } catch (err) {
       console.error("[MatchPage] Failed to fetch live match state:", err);
+    }
+  } else if (match.status === "finished") {
+    try {
+      liveScore = await getFinishedMatchScore(match.id).catch(() => liveScore);
+      liveMinute = null;
+    } catch (err) {
+      console.error("[MatchPage] Failed to fetch historical score:", err);
     }
   }
 
@@ -127,8 +152,13 @@ export default async function MatchPage({ params }: Props) {
                 )}
               </>
             ) : (
-              <div className="font-display text-2xl font-bold text-ink-muted">
-                vs
+              <div className="flex flex-col items-center">
+                <span className="font-display text-base font-bold text-ink-primary">
+                  {kickoffTime}
+                </span>
+                <span className="text-[9px] text-ink-secondary mt-0.5 tracking-wider uppercase">
+                  {kickoffDate}
+                </span>
               </div>
             )}
           </div>
