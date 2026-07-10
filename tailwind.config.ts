@@ -13,7 +13,7 @@ const config: Config = {
       colors: {
         // Dark-theme base
         surface: {
-          DEFAULT: "#0B0E14",
+          DEFAULT: "#121212",
           raised: "#13171F",
           overlay: "#1A1F2A",
           border: "#252B38",
@@ -48,11 +48,12 @@ const config: Config = {
 
       // ── Typography ────────────────────────────────────────────────────────
       fontFamily: {
-        // Display face for scores/numbers (Implementation Guide §12)
-        display: ["Space Grotesk", ...fontFamily.sans],
+        // Header/display face — Sora (free substitute for Spotify's
+        // proprietary "CircularSp-Deva"; see layout.tsx)
+        display: ["var(--font-sora)", ...fontFamily.sans],
         // Body text
-        body: ["Inter", ...fontFamily.sans],
-        sans: ["Inter", ...fontFamily.sans],
+        body: ["var(--font-inter)", ...fontFamily.sans],
+        sans: ["var(--font-inter)", ...fontFamily.sans],
       },
 
       // ── Card aspect ratio (2.5:3.5 trading-card ratio) ───────────────────

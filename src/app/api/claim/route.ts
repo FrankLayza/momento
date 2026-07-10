@@ -15,7 +15,9 @@
  */
 
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { z } from "zod";
+import { createClient } from "@/utils/supabase/server";
 import {
   getMomentById,
   getCheckin,
@@ -36,9 +38,10 @@ const ClaimRequestSchema = z.object({
 // ── Handler ───────────────────────────────────────────────────────────────────
 
 export async function POST(req: Request) {
-  // TODO: extract userId from Supabase session cookie — implemented in Days 7-9
-  // const { userId } = await getServerSession(req);
-  const userId: string | null = null; // stub
+  const cookieStore = cookies();
+  const supabase = createClient(cookieStore);
+  const { data: { user } } = await supabase.auth.getUser();
+  const userId = user?.id ?? null;
 
   if (!userId) {
     return NextResponse.json({ error: "Sign in required." }, { status: 401 });
@@ -95,13 +98,13 @@ export async function POST(req: Request) {
   const edition = await insertEdition(momentId, userId);
 
   // Attempt mint immediately; worker will retry if this fails
-  const user    = await getUserById(userId).catch(() => null);
+  const appUser = await getUserById(userId).catch(() => null);
   const matches = await listMatches().catch(() => []);
   const match   = matches.find(m => m.id === moment.matchId);
 
-  if (user && match) {
+  if (appUser && match) {
     try {
-      const result = await mintEdition(moment, user.pubkey, match.home, match.away);
+      const result = await mintEdition(moment, appUser.pubkey, match.home, match.away);
       await updateEditionChainStatus(edition.id, {
         chainStatus: "confirmed",
         assetId:     result.assetId,

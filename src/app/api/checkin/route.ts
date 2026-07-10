@@ -8,7 +8,9 @@
  */
 
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { z } from "zod";
+import { createClient } from "@/utils/supabase/server";
 import { recordCheckin, listMatches } from "@/server/db/queries";
 
 // ── Request schema ────────────────────────────────────────────────────────────
@@ -20,9 +22,10 @@ const CheckinRequestSchema = z.object({
 // ── Handler ───────────────────────────────────────────────────────────────────
 
 export async function POST(req: Request) {
-  // TODO: extract userId from Supabase session cookie — implemented in Days 7-9
-  // const { userId } = await getServerSession(req);
-  const userId: string | null = null; // stub
+  const cookieStore = cookies();
+  const supabase = createClient(cookieStore);
+  const { data: { user } } = await supabase.auth.getUser();
+  const userId = user?.id ?? null;
 
   if (!userId) {
     return NextResponse.json({ error: "Sign in required." }, { status: 401 });

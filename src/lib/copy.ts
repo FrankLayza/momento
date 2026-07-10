@@ -18,6 +18,7 @@ export const copy = {
   // ── Auth (FR-2.3) ────────────────────────────────────────────────────────
   auth: {
     signIn:         "Sign in",
+    continue:       "Continue",
     signInWithEmail:"Continue with email",
     signInWithGoogle: "Continue with Google",
     signOut:        "Sign out",

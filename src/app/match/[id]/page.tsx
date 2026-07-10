@@ -5,12 +5,15 @@
  */
 
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import { copy } from "@/lib/copy";
-import { getMomentsForMatch, listMatches } from "@/server/db/queries";
+import { getMomentsForMatch, listMatches, getCheckin } from "@/server/db/queries";
 import { getLiveMatchState, getPrematchProbabilities, getFinishedMatchScore } from "@/server/txline/adapter";
+import { createClient } from "@/utils/supabase/server";
 import { ProbabilityBar } from "@/components/ProbabilityBar";
 import { MomentCard } from "@/components/MomentCard";
 import { CheckinButton } from "@/components/CheckinButton";
+import { WitnessNotifications } from "@/components/WitnessNotifications";
 import type { Match, Moment } from "@/lib/types";
 
 interface Props {
@@ -30,6 +33,13 @@ export default async function MatchPage({ params }: Props) {
   const matches = await listMatches().catch(() => [] as Match[]);
   const match   = matches.find(m => m.id === params.id);
   const moments = await getMomentsForMatch(params.id).catch(() => [] as Moment[]);
+
+  const cookieStore = cookies();
+  const supabase = createClient(cookieStore);
+  const { data: { user } } = await supabase.auth.getUser();
+  const isWitness = user
+    ? Boolean(await getCheckin(user.id, params.id).catch(() => null))
+    : false;
 
   if (!match) {
     return (
@@ -188,9 +198,12 @@ export default async function MatchPage({ params }: Props) {
       {/* Check-in button — FR-2.1 */}
       {!isFinished && (
         <div className="mb-10">
-          <CheckinButton matchId={match.id} />
+          <CheckinButton matchId={match.id} initialCheckedIn={isWitness} />
         </div>
       )}
+
+      {/* Live Moment notifications — FR-5.1 */}
+      <WitnessNotifications matchId={match.id} isWitness={isWitness} />
 
       {/* Moments for this match */}
       <section className="mt-10">

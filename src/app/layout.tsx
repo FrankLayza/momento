@@ -1,11 +1,15 @@
 /**
  * src/app/layout.tsx
  * Root layout for Momento.
- * Dark theme, Inter + Space Grotesk fonts.
+ * Dark theme, Inter (body) + Sora (headers/display).
+ *
+ * Sora is the header font — a free, geometric-grotesk substitute for
+ * Spotify's proprietary "CircularSp-Deva" (not licensable for use here;
+ * Sora is the closest available match in Google Fonts).
  */
 
 import type { Metadata } from "next";
-import { Inter, Space_Grotesk } from "next/font/google";
+import { Inter, Sora } from "next/font/google";
 import { Navbar } from "@/components/Navbar";
 import { AuthHandler } from "@/components/AuthHandler";
 import "./globals.css";
@@ -16,9 +20,9 @@ const inter = Inter({
   display: "swap",
 });
 
-const spaceGrotesk = Space_Grotesk({
+const sora = Sora({
   subsets: ["latin"],
-  variable: "--font-space-grotesk",
+  variable: "--font-sora",
   display: "swap",
 });
 
@@ -49,7 +53,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${inter.variable} ${spaceGrotesk.variable} dark`}
+      className={`${inter.variable} ${sora.variable} dark`}
       suppressHydrationWarning
     >
       <body className="min-h-dvh bg-surface text-ink-primary font-body antialiased flex flex-col">

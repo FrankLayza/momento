@@ -17,7 +17,7 @@
 
 import { Keypair } from "@solana/web3.js";
 import * as crypto from "node:crypto";
-import { upsertUser, getEncryptedSecret } from "@/server/db/queries";
+import { upsertUser, getEncryptedSecret, getUserById } from "@/server/db/queries";
 
 // ── Encryption helpers ────────────────────────────────────────────────────────
 
@@ -120,4 +120,28 @@ export async function getBase58Secret(userId: string): Promise<string> {
   // Convert Uint8Array secret key to base58
   const bs58 = await import("bs58");
   return bs58.default.encode(keypair.secretKey);
+}
+
+/**
+ * Ensures a Momento user row + embedded wallet exists for a freshly
+ * authenticated Supabase user. Idempotent — safe to call on every sign-in.
+ * Implements FR-2.3 (PRD) — wallet creation is invisible to the fan.
+ */
+export async function ensureWalletForUser(user: {
+  id: string;
+  email?: string | null;
+  user_metadata?: Record<string, unknown> | null;
+}): Promise<void> {
+  const existing = await getUserById(user.id);
+  if (existing) return; // already provisioned
+
+  const meta = user.user_metadata ?? {};
+  const displayName =
+    (typeof meta["display_name"] === "string" && meta["display_name"]) ||
+    (typeof meta["full_name"] === "string" && meta["full_name"]) ||
+    (typeof meta["name"] === "string" && meta["name"]) ||
+    user.email?.split("@")[0] ||
+    "Fan";
+
+  await createFor(user.id, displayName);
 }

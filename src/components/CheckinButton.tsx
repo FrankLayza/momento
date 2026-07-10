@@ -3,34 +3,34 @@
  * Interactive check-in button for matches.
  * Implements FR-2.1 (PRD).
  *
- * Calls POST /api/checkin.
- * Falls back to localStorage during development if no auth session is active,
- * allowing full testing of the check-in flow and Witness states.
+ * Calls POST /api/checkin. Server response is authoritative — a failure
+ * (including "not signed in") is shown as a real error, never faked.
  */
 
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { copy } from "@/lib/copy";
 
 interface Props {
   matchId: string;
+  initialCheckedIn?: boolean;
 }
 
-export function CheckinButton({ matchId }: Props) {
-  const [checkedIn, setCheckedIn] = useState(false);
+export function CheckinButton({ matchId, initialCheckedIn = false }: Props) {
+  const router = useRouter();
+  const [checkedIn, setCheckedIn] = useState(initialCheckedIn);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Check localStorage during development/v1 testing
-    const val = localStorage.getItem(`witness:${matchId}`);
-    if (val === "true") {
-      setCheckedIn(true);
-    }
-  }, [matchId]);
+    setCheckedIn(initialCheckedIn);
+  }, [initialCheckedIn]);
 
   const handleCheckin = async () => {
     setLoading(true);
+    setError(null);
     try {
       const res = await fetch("/api/checkin", {
         method: "POST",
@@ -40,16 +40,20 @@ export function CheckinButton({ matchId }: Props) {
 
       if (res.ok) {
         setCheckedIn(true);
-        localStorage.setItem(`witness:${matchId}`, "true");
-      } else {
-        // Fallback: If 401 Unauthorized (Auth is wired in Days 7-9),
-        // simulate success on client side so developer can test full Witness flow.
-        console.warn("[CheckinButton] Auth not fully configured yet. Simulating success on client.");
-        setCheckedIn(true);
-        localStorage.setItem(`witness:${matchId}`, "true");
+        router.refresh();
+        return;
       }
+
+      if (res.status === 401) {
+        router.push("/?signin=1");
+        return;
+      }
+
+      const body = await res.json().catch(() => null);
+      setError(body?.error ?? copy.errors.generic);
     } catch (err) {
       console.error("[CheckinButton] Failed:", err);
+      setError(copy.errors.generic);
     } finally {
       setLoading(false);
     }
@@ -69,7 +73,7 @@ export function CheckinButton({ matchId }: Props) {
   }
 
   return (
-    <div className="flex justify-center">
+    <div className="flex flex-col items-center gap-2">
       <button
         id="checkin-button"
         onClick={() => { void handleCheckin(); }}
@@ -78,6 +82,9 @@ export function CheckinButton({ matchId }: Props) {
       >
         {loading ? "Checking in..." : copy.checkin.action}
       </button>
+      {error && (
+        <p className="text-[11px] text-tier-seismic text-center">{error}</p>
+      )}
     </div>
   );
 }

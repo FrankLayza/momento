@@ -400,10 +400,12 @@ export async function listWorldCupMatches(): Promise<NormalisedMatch[]> {
     return [];
   }
 
-  // Filter for World Cup & Friendlies matches
+  // Filter for World Cup matches only (NG-5, PRD) — the free tier subscription
+  // bundles International Friendlies too, but the product must only surface
+  // the 2026 World Cup's 104 matches.
   const worldCupFixtures = list.data.filter((fixture) => {
     const comp = (fixture.Competition || "").toLowerCase();
-    return comp.includes("world cup") || comp.includes("friendlies");
+    return comp.includes("world cup");
   });
 
   // For fixtures that may have kicked off, fetch scores to get real status
@@ -537,7 +539,15 @@ export async function getLiveMatchState(
 const scoreCache = new Map<string, { home: number; away: number }>();
 
 /**
- * Returns the final score of a completed match by parsing historical data.
+ * Returns the final score of a completed match.
+ *
+ * /api/scores/historical/{id} is the authoritative, complete record for any
+ * match old enough to have one (docs: available from ~6h to 2 weeks post-
+ * kickoff) — /api/scores/snapshot/{id} appears to hold only a rolling/recent
+ * window of events and can be missing goals for older matches (confirmed:
+ * it under-reported a finished match's score by one goal). So historical is
+ * tried first; the live snapshot is only a fallback for matches finished too
+ * recently (<6h) for historical data to exist yet.
  */
 export async function getFinishedMatchScore(
   matchId: string
@@ -549,7 +559,43 @@ export async function getFinishedMatchScore(
     const baseUrl = getBaseUrl();
     const headers = await getRequestHeaders();
 
-    // Try the scores snapshot first (works for recently finished matches)
+    // Try the historical endpoint first — the complete, authoritative record.
+    const histRes = await fetch(`${baseUrl}/api/scores/historical/${matchId}`, { headers });
+    if (histRes.ok) {
+      const text = await histRes.text();
+      const lines = text.split("\n");
+
+      // Scan backward for the last record that actually carries Stats.
+      for (let i = lines.length - 1; i >= 0; i--) {
+        const line = lines[i]!.trim();
+        if (!line.startsWith("data: ")) continue;
+
+        try {
+          const parsed = JSON.parse(line.slice(6)) as {
+            Participant1IsHome?: boolean;
+            Stats?: Record<string, number>;
+          };
+          const stats = parsed.Stats;
+          if (!stats || (stats["1"] === undefined && stats["2"] === undefined)) continue;
+
+          const isHome = parsed.Participant1IsHome ?? true;
+          const val1 = stats["1"] ?? 0;
+          const val2 = stats["2"] ?? 0;
+          const score = {
+            home: isHome ? val1 : val2,
+            away: isHome ? val2 : val1,
+          };
+
+          scoreCache.set(matchId, score);
+          return score;
+        } catch {
+          continue; // malformed line — keep scanning backward
+        }
+      }
+    }
+
+    // Fallback: live scores snapshot (historical not populated yet — match
+    // finished less than ~6h ago per TxLINE docs).
     const snapshotRes = await fetch(`${baseUrl}/api/scores/snapshot/${matchId}`, { headers });
     if (snapshotRes.ok) {
       const raw: unknown = await snapshotRes.json();
@@ -564,45 +610,6 @@ export async function getFinishedMatchScore(
           return state.score;
         }
       }
-    }
-
-    // Fallback: historical SSE endpoint for older matches
-    const url = `${baseUrl}/api/scores/historical/${matchId}`;
-    const res = await fetch(url, { headers });
-    if (!res.ok) {
-      return { home: 0, away: 0 };
-    }
-
-    const text = await res.text();
-    const lines = text.split("\n");
-
-    let lastDataStr = "";
-    for (let i = lines.length - 1; i >= 0; i--) {
-      const line = lines[i]!.trim();
-      if (line.startsWith("data: ")) {
-        lastDataStr = line.slice(6);
-        break;
-      }
-    }
-
-    if (lastDataStr) {
-      const parsed = JSON.parse(lastDataStr) as {
-        Participant1IsHome?: boolean;
-        Stats?: Record<string, number>;
-      };
-
-      const isHome = parsed.Participant1IsHome ?? true;
-      const stats = parsed.Stats ?? {};
-      const val1 = stats["1"] ?? 0;
-      const val2 = stats["2"] ?? 0;
-
-      const score = {
-        home: isHome ? val1 : val2,
-        away: isHome ? val2 : val1,
-      };
-
-      scoreCache.set(matchId, score);
-      return score;
     }
   } catch (err) {
     console.error(

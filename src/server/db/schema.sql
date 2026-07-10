@@ -102,3 +102,9 @@ create policy "moments: public read" on moments  for select using (true);
 -- Users can see their own checkins and editions
 create policy "checkins: select own" on checkins for select using (auth.uid() = user_id);
 create policy "editions: select own" on editions for select using (auth.uid() = user_id);
+
+-- ── Realtime ──────────────────────────────────────────────────────────────────
+-- Required for FR-5.1: WitnessNotifications.tsx subscribes to moment INSERTs.
+-- Run once per project (Supabase SQL editor or migration).
+
+alter publication supabase_realtime add table moments;
