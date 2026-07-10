@@ -28,7 +28,6 @@ import { listWorldCupMatches } from "@/server/txline/adapter";
 import { trackMatch, untrackMatch } from "@/server/engine/momentEngine";
 import { mintEdition } from "@/server/chain/mintEdition";
 import { getPrematchProbabilities } from "@/server/txline/adapter";
-import type { Match } from "@/lib/types";
 import {
   listMatches,
   getWitnessesForMatch,
@@ -54,6 +53,7 @@ const activeMatches = new Set<string>();
 async function syncFixtures(): Promise<void> {
   try {
     const fixtures = await listWorldCupMatches();
+    console.log(`[worker] syncFixtures: ${fixtures.length} fixtures (${fixtures.filter(f => f.status === "live").length} live, ${fixtures.filter(f => f.status === "finished").length} finished, ${fixtures.filter(f => f.status === "scheduled").length} scheduled)`);
 
     for (const match of fixtures) {
       // Persist the match to the database so it appears on the web UI
@@ -64,6 +64,7 @@ async function syncFixtures(): Promise<void> {
 
       if (match.status === "finished") {
         if (activeMatches.has(match.id)) {
+          console.log(`[worker] Match finished: ${match.home} v ${match.away} (${match.id}) — untracking`);
           untrackMatch(match.id);
           activeMatches.delete(match.id);
         }
@@ -71,41 +72,28 @@ async function syncFixtures(): Promise<void> {
       }
 
       if (match.status === "live" && !activeMatches.has(match.id)) {
+        // Log witness count but don't block tracking — the engine needs to
+        // detect Moments regardless; witness count only matters for delivery.
         const witnesses = await getWitnessesForMatch(match.id);
-        if (witnesses.length === 0) continue; // FR-3.1: only track if witnesses exist
+        console.log(`[worker] Live match ${match.home} v ${match.away} (${match.id}) — ${witnesses.length} witnesses, score ${match.score.home}-${match.score.away}, min ${match.minute}`);
 
         const rawProb = await getPrematchProbabilities(match.id);
         const pPreMatch = rawProb
           ? { home: rawProb.pHome, draw: rawProb.pDraw, away: rawProb.pAway }
           : null;
 
+        if (pPreMatch) {
+          console.log(`[worker] Pre-match odds: Home=${(pPreMatch.home * 100).toFixed(1)}% Draw=${(pPreMatch.draw * 100).toFixed(1)}% Away=${(pPreMatch.away * 100).toFixed(1)}%`);
+        } else {
+          console.warn(`[worker] No pre-match odds available for ${match.id}`);
+        }
+
         // Import adapter dynamically to allow REPLAY_MODE env override
         const adapter = await getAdapter();
 
         trackMatch(match.id, match.home, match.away, pPreMatch, adapter);
         activeMatches.add(match.id);
-      }
-    }
-
-    // Mark matches that have kicked off but are no longer in the active snapshot as finished
-    const dbMatches = await listMatches().catch(() => [] as Match[]);
-    const activeIds = new Set(fixtures.map(f => f.id));
-
-    for (const dbMatch of dbMatches) {
-      if (dbMatch.status !== "finished" && !activeIds.has(dbMatch.id)) {
-        const kickoffTime = new Date(dbMatch.kickoffUtc).getTime();
-        if (kickoffTime < Date.now()) {
-          console.log(`[worker] Marking match ${dbMatch.home} v ${dbMatch.away} (${dbMatch.id}) as finished (missing from active fixtures)`);
-          await upsertMatch({
-            ...dbMatch,
-            status: "finished",
-          });
-
-          if (activeMatches.has(dbMatch.id)) {
-            untrackMatch(dbMatch.id);
-            activeMatches.delete(dbMatch.id);
-          }
-        }
+        console.log(`[worker] Now tracking: ${match.home} v ${match.away} (${match.id})`);
       }
     }
   } catch (err) {
