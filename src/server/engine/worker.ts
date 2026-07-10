@@ -28,6 +28,7 @@ import { listWorldCupMatches } from "@/server/txline/adapter";
 import { trackMatch, untrackMatch } from "@/server/engine/momentEngine";
 import { mintEdition } from "@/server/chain/mintEdition";
 import { getPrematchProbabilities } from "@/server/txline/adapter";
+import type { Match } from "@/lib/types";
 import {
   listMatches,
   getWitnessesForMatch,
@@ -83,6 +84,28 @@ async function syncFixtures(): Promise<void> {
 
         trackMatch(match.id, match.home, match.away, pPreMatch, adapter);
         activeMatches.add(match.id);
+      }
+    }
+
+    // Mark matches that have kicked off but are no longer in the active snapshot as finished
+    const dbMatches = await listMatches().catch(() => [] as Match[]);
+    const activeIds = new Set(fixtures.map(f => f.id));
+
+    for (const dbMatch of dbMatches) {
+      if (dbMatch.status !== "finished" && !activeIds.has(dbMatch.id)) {
+        const kickoffTime = new Date(dbMatch.kickoffUtc).getTime();
+        if (kickoffTime < Date.now()) {
+          console.log(`[worker] Marking match ${dbMatch.home} v ${dbMatch.away} (${dbMatch.id}) as finished (missing from active fixtures)`);
+          await upsertMatch({
+            ...dbMatch,
+            status: "finished",
+          });
+
+          if (activeMatches.has(dbMatch.id)) {
+            untrackMatch(dbMatch.id);
+            activeMatches.delete(dbMatch.id);
+          }
+        }
       }
     }
   } catch (err) {
