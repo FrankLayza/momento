@@ -12,6 +12,7 @@ import { listMatches, getUserCheckins, getUserById } from "@/server/db/queries";
 import { listWorldCupMatches, getFinishedMatchScore } from "@/server/txline/adapter";
 import { createClient } from "@/utils/supabase/server";
 import { Avatar } from "@/components/Avatar";
+import { Landing } from "@/components/landing/Landing";
 import type { Match } from "@/lib/types";
 
 export const metadata: Metadata = {
@@ -20,7 +21,24 @@ export const metadata: Metadata = {
 
 export const revalidate = 10; // ISR: refresh fixture data every 10 seconds for high-density live updates
 
-export default async function FixturesPage() {
+/**
+ * Root route branches on auth state: signed-out visitors (cold traffic,
+ * judges) get the marketing landing page; signed-in users get fixtures home.
+ * Deviation from Implementation Guide §4 — see docs/DEVIATIONS.md.
+ */
+export default async function Page() {
+  const cookieStore = cookies();
+  const supabase = createClient(cookieStore);
+  const { data: { user: sessionUser } } = await supabase.auth.getUser();
+
+  if (!sessionUser) {
+    return <Landing />;
+  }
+
+  return <FixturesPage />;
+}
+
+async function FixturesPage() {
   // 1. Get current auth user session
   const cookieStore = cookies();
   const supabase = createClient(cookieStore);

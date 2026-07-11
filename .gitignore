@@ -35,3 +35,4 @@ tsconfig.tsbuildinfo
 # ── Misc ──────────────────────────────────────────────────────────────────────
 .DS_Store
 *.pem
+moodboard/

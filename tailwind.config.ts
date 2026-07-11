@@ -44,6 +44,24 @@ const config: Config = {
           secondary: "#9CA3AF",
           muted:     "#4B5563",
         },
+        // Logged-out landing page only — a separate light theme, namespaced
+        // so it can never collide with the app's own `surface`/`ink`/`tier`
+        // tokens (the landing's own "ink" is a color, not that object).
+        landing: {
+          cream:    "#F5F4ED",
+          ink:      "#100F06",
+          gold:     "#FFDA57",
+          coral:    "#F47575",
+          malibu:   "#7DCAF6",
+          teal:     "#00917A",
+          lavender: "#A293FF",
+          pink:     "#FFBBF4",
+        },
+      },
+
+      // ── Landing-only radii ────────────────────────────────────────────────
+      borderRadius: {
+        landing: "20px",
       },
 
       // ── Typography ────────────────────────────────────────────────────────
@@ -54,6 +72,10 @@ const config: Config = {
         // Body text
         body: ["var(--font-inter)", ...fontFamily.sans],
         sans: ["var(--font-inter)", ...fontFamily.sans],
+        // Logged-out landing page only (loaded + scoped in Landing.tsx,
+        // never applied at the html/body level)
+        "landing-display": ["var(--font-unbounded)", ...fontFamily.sans],
+        "landing-body": ["var(--font-landing-body)", ...fontFamily.sans],
       },
 
       // ── Card aspect ratio (2.5:3.5 trading-card ratio) ───────────────────

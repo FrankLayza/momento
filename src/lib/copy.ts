@@ -106,6 +106,35 @@ export const copy = {
     Seismic: "Seismic",
   } as const,
 
+  // ── Logged-out landing page ─────────────────────────────────────────────
+  landing: {
+    navHowItWorks: "How it works",
+    navFaq:        "FAQ",
+    navSignIn:     "Sign in",
+    heroLine1:     "Witness the moment.",
+    heroLine2:     "Claim it forever.",
+    heroSubcopy:
+      "Check in to a live World Cup match. When the impossible happens, claim the moment as a keepsake only the fans watching live can ever own.",
+    heroCta: "See today's matches",
+    howItWorksTitle: "How it works",
+    howItWorks: [
+      {
+        title: "Check in",
+        body: "Join a live match with one tap. You are now a Witness.",
+      },
+      {
+        title: "A Moment fires",
+        body: "When a goal, red card or upset hits, we capture it instantly.",
+      },
+      {
+        title: "Claim it forever",
+        // NOTE: source spec cut off here — only "Only Witnesses can claim."
+        // was given. Flagged for the human to complete rather than invented.
+        body: "Only Witnesses can claim.",
+      },
+    ],
+  },
+
   // ── Errors ───────────────────────────────────────────────────────────────
   errors: {
     generic:   "Something went wrong. Please try again.",
