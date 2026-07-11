@@ -1,7 +1,9 @@
 /**
  * src/components/Navbar.tsx
  * Global header navigation bar.
- * Implements FR-2.3 (Auth state display) & visual direction from Linear.app (§12).
+ * Implements FR-2.3 (Auth state display) & visual direction from Linear.app (§12) —
+ * sentence-case links, generous spacing, a divider before account actions, and
+ * one pill-shaped primary action rather than a bordered button.
  */
 
 "use client";
@@ -12,6 +14,18 @@ import { useEffect, useState } from "react";
 import { createClient } from "@/utils/supabase/client";
 import type { User } from "@supabase/supabase-js";
 import { copy } from "@/lib/copy";
+import { Avatar } from "./Avatar";
+
+function displayNameFor(user: User): string {
+  const meta = user.user_metadata ?? {};
+  return (
+    (typeof meta["display_name"] === "string" && meta["display_name"]) ||
+    (typeof meta["full_name"] === "string" && meta["full_name"]) ||
+    (typeof meta["name"] === "string" && meta["name"]) ||
+    user.email?.split("@")[0] ||
+    "Fan"
+  );
+}
 
 export function Navbar() {
   const pathname = usePathname();
@@ -59,27 +73,27 @@ export function Navbar() {
   ];
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-surface-border bg-surface/80 backdrop-blur-md">
-      <div className="mx-auto flex max-w-5xl items-center justify-between px-6 h-14">
+    <header className="sticky top-0 z-40 w-full border-b border-surface-border bg-surface">
+      <div className="mx-auto flex max-w-5xl items-center justify-between px-6 h-16">
         {/* Brand Logo */}
-        <Link href="/" className="flex items-center gap-2 group">
-          <span className="h-3.5 w-3.5 rounded bg-ink-primary transition-transform group-hover:rotate-12 duration-200" />
-          <span className="font-display text-sm font-extrabold tracking-tight text-ink-primary">
+        <Link href="/" className="flex items-center gap-2.5 group">
+          <span className="h-6 w-6 rounded-full bg-ink-primary transition-transform group-hover:rotate-12 duration-200" />
+          <span className="font-display text-lg font-semibold tracking-tight text-ink-primary">
             {copy.appName}
           </span>
         </Link>
 
         {/* Navigation Links */}
-        <nav className="hidden sm:flex items-center gap-5">
+        <nav className="hidden sm:flex items-center gap-8">
           {navLinks.map((link) => {
             const isActive = pathname === link.href || (link.href !== "/" && pathname.startsWith(link.href));
             return (
               <Link
                 key={link.href}
                 href={link.href}
-                className={`text-[11px] font-medium tracking-wider uppercase transition-colors ${
+                className={`text-sm transition-colors ${
                   isActive
-                    ? "text-ink-primary font-bold"
+                    ? "text-ink-primary font-medium"
                     : "text-ink-secondary hover:text-ink-primary"
                 }`}
               >
@@ -92,26 +106,33 @@ export function Navbar() {
         {/* Auth Actions */}
         <div className="flex items-center gap-4">
           {loading ? (
-            <div className="h-8 w-20 rounded-lg bg-surface-raised animate-pulse" />
+            <div className="h-9 w-20 rounded-full bg-surface-raised animate-pulse" />
           ) : user ? (
-            <div className="flex items-center gap-3">
-              <span className="hidden md:inline text-xs text-ink-secondary truncate max-w-[120px]">
-                {user.email}
+            <>
+              <span className="hidden md:flex items-center gap-2">
+                <Avatar name={displayNameFor(user)} size="sm" />
+                <span className="text-sm text-ink-secondary truncate max-w-[120px]">
+                  {displayNameFor(user)}
+                </span>
               </span>
+              <span className="hidden sm:block h-4 w-px bg-surface-border" />
               <button
                 onClick={() => { void handleSignOut(); }}
-                className="rounded-lg border border-surface-border bg-surface-raised px-3 py-1.5 text-xs font-semibold text-ink-secondary hover:bg-surface-overlay hover:text-ink-primary transition-colors"
+                className="text-sm text-ink-secondary hover:text-ink-primary transition-colors"
               >
                 {copy.auth.signOut}
               </button>
-            </div>
+            </>
           ) : (
-            <button
-              onClick={handleSignInClick}
-              className="rounded-lg bg-ink-primary px-3.5 py-1.5 text-xs font-semibold text-surface hover:bg-white transition-colors"
-            >
-              {copy.auth.signIn}
-            </button>
+            <>
+              <span className="hidden sm:block h-4 w-px bg-surface-border" />
+              <button
+                onClick={handleSignInClick}
+                className="rounded-full bg-ink-primary px-4 py-2 text-sm font-semibold text-surface hover:bg-white transition-colors"
+              >
+                {copy.auth.signIn}
+              </button>
+            </>
           )}
         </div>
       </div>

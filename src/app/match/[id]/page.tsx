@@ -14,6 +14,7 @@ import { ProbabilityBar } from "@/components/ProbabilityBar";
 import { MomentCard } from "@/components/MomentCard";
 import { CheckinButton } from "@/components/CheckinButton";
 import { WitnessNotifications } from "@/components/WitnessNotifications";
+import { Avatar } from "@/components/Avatar";
 import type { Match, Moment } from "@/lib/types";
 
 interface Props {
@@ -122,16 +123,16 @@ export default async function MatchPage({ params }: Props) {
             FIFA World Cup
           </span>
           {isLive ? (
-            <span className="flex items-center gap-1.5 text-xs font-bold text-tier-notable bg-tier-notable/10 px-2 py-0.5 rounded border border-tier-notable/20">
+            <span className="flex items-center gap-1.5 text-xs font-bold text-tier-notable bg-tier-notable/10 px-2.5 py-1 rounded-full border border-tier-notable/20">
               <span className="h-1.5 w-1.5 rounded-full bg-tier-notable animate-pulse" />
               {copy.fixtures.live}
             </span>
           ) : isFinished ? (
-            <span className="text-xs font-semibold text-ink-muted uppercase tracking-wider bg-surface-border/50 px-2 py-0.5 rounded">
+            <span className="text-xs font-semibold text-ink-muted uppercase tracking-wider bg-surface-border/50 px-2.5 py-1 rounded-full">
               Finished
             </span>
           ) : (
-            <span className="text-xs font-semibold text-ink-secondary uppercase tracking-wider bg-surface-border/30 px-2 py-0.5 rounded">
+            <span className="text-xs font-semibold text-ink-secondary uppercase tracking-wider bg-surface-border/30 px-2.5 py-1 rounded-full">
               Scheduled
             </span>
           )}
@@ -140,8 +141,9 @@ export default async function MatchPage({ params }: Props) {
         {/* Teams and Score Grid */}
         <div className="flex items-center justify-between gap-4">
           {/* Home */}
-          <div className="flex-1 text-center sm:text-right">
-            <h1 className="font-display text-lg sm:text-xl font-bold text-ink-primary">
+          <div className="flex-1 flex flex-col items-center gap-2">
+            <Avatar name={match.home} />
+            <h1 className="font-display text-base sm:text-lg font-bold text-ink-primary text-center">
               {match.home}
             </h1>
           </div>
@@ -174,8 +176,9 @@ export default async function MatchPage({ params }: Props) {
           </div>
 
           {/* Away */}
-          <div className="flex-1 text-center sm:text-left">
-            <h1 className="font-display text-lg sm:text-xl font-bold text-ink-primary">
+          <div className="flex-1 flex flex-col items-center gap-2">
+            <Avatar name={match.away} />
+            <h1 className="font-display text-base sm:text-lg font-bold text-ink-primary text-center">
               {match.away}
             </h1>
           </div>

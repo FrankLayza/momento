@@ -62,7 +62,7 @@ export default async function PublicMomentPage({ params }: Props) {
   return (
     <main className="mx-auto max-w-lg px-4 py-12">
       {/* Moment card — centred, full display */}
-      <div className="w-48 mx-auto mb-8">
+      <div className="w-56 mx-auto mb-8">
         <MomentCard moment={moment} />
       </div>
 

@@ -7,6 +7,7 @@
 import type { Metadata } from "next";
 import { copy } from "@/lib/copy";
 import { getLeaderboard } from "@/server/db/queries";
+import { Avatar } from "@/components/Avatar";
 
 export const metadata: Metadata = {
   title: `${copy.leaderboard.title} | Momento`,
@@ -49,15 +50,15 @@ export default async function LeaderboardPage() {
         </div>
       ) : (
         <>
-          {/* Podium layout */}
+          {/* Podium layout — rank rendered as a number, never a medal emoji;
+              1st place is distinguished by height and the single cyan accent,
+              not a different hue (Section 12: one electric accent). */}
           <div className="flex items-end justify-center gap-4 mb-10 mt-6 min-h-[160px]">
             {/* 2nd Place */}
             {podium[0] && (
               <div className="flex flex-col items-center flex-1">
-                <span className="font-display text-base font-bold text-tier-notable">
-                  🥈
-                </span>
-                <span className="text-xs text-ink-primary font-semibold mt-1 truncate max-w-[100px]">
+                <Avatar name={podium[0].displayName} />
+                <span className="text-xs text-ink-primary font-semibold mt-2 truncate max-w-[100px]">
                   {podium[0].displayName}
                 </span>
                 <span className="font-display text-sm font-extrabold text-ink-secondary mt-0.5">
@@ -72,17 +73,15 @@ export default async function LeaderboardPage() {
             {/* 1st Place */}
             {podium[1] && (
               <div className="flex flex-col items-center flex-1">
-                <span className="font-display text-xl font-bold text-tier-shock">
-                  👑
-                </span>
-                <span className="text-sm text-ink-primary font-bold mt-1 truncate max-w-[120px]">
+                <Avatar name={podium[1].displayName} />
+                <span className="text-sm text-ink-primary font-bold mt-2 truncate max-w-[120px]">
                   {podium[1].displayName}
                 </span>
-                <span className="font-display text-base font-black text-tier-shock mt-0.5">
+                <span className="font-display text-base font-black text-tier-notable mt-0.5">
                   {podium[1].totalShockScore}
                 </span>
-                <div className="w-full bg-surface-overlay border-t border-x border-tier-shock/30 rounded-t-xl h-24 mt-3 flex items-center justify-center shadow-[0_0_24px_theme(colors.tier.shock.DEFAULT/10)]">
-                  <span className="font-display text-lg font-black text-tier-shock">1</span>
+                <div className="w-full bg-surface-overlay border-t border-x border-tier-notable/30 rounded-t-xl h-24 mt-3 flex items-center justify-center shadow-[0_0_24px_theme(colors.tier.notable.DEFAULT/10)]">
+                  <span className="font-display text-lg font-black text-tier-notable">1</span>
                 </div>
               </div>
             )}
@@ -90,10 +89,8 @@ export default async function LeaderboardPage() {
             {/* 3rd Place */}
             {podium[2] && (
               <div className="flex flex-col items-center flex-1">
-                <span className="font-display text-base font-bold text-tier-seismic">
-                  🥉
-                </span>
-                <span className="text-xs text-ink-primary font-semibold mt-1 truncate max-w-[100px]">
+                <Avatar name={podium[2].displayName} />
+                <span className="text-xs text-ink-primary font-semibold mt-2 truncate max-w-[100px]">
                   {podium[2].displayName}
                 </span>
                 <span className="font-display text-sm font-extrabold text-ink-secondary mt-0.5">
@@ -126,7 +123,8 @@ export default async function LeaderboardPage() {
                   </span>
 
                   {/* Display name */}
-                  <span className="flex-1 text-xs text-ink-primary font-semibold truncate">
+                  <span className="flex-1 flex items-center gap-2.5 text-xs text-ink-primary font-semibold truncate">
+                    <Avatar name={row.displayName} size="sm" />
                     {row.displayName}
                   </span>
 

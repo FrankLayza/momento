@@ -25,7 +25,8 @@ export function ProbabilityBar({ home, away, pHome, pDraw, pAway }: Props) {
         Market believes
       </p>
 
-      {/* Segmented bar */}
+      {/* Segmented bar — cyan is the app's one accent (home), everything
+          else stays neutral so it never reads as a tier-rarity color */}
       <div className="flex h-2 w-full rounded-full overflow-hidden gap-0.5 mb-3">
         <div
           className="bg-tier-notable transition-all duration-700 ease-out rounded-l-full"
@@ -38,7 +39,7 @@ export function ProbabilityBar({ home, away, pHome, pDraw, pAway }: Props) {
           title={`Draw: ${fmtPct(pDraw)}`}
         />
         <div
-          className="bg-tier-shock transition-all duration-700 ease-out rounded-r-full"
+          className="bg-ink-secondary/50 transition-all duration-700 ease-out rounded-r-full"
           style={{ width: fmtPct(pAway) }}
           title={`${away}: ${fmtPct(pAway)}`}
         />

@@ -96,10 +96,10 @@ export default async function VaultPage({
 
       {/* Sort controls */}
       {totalMoments > 0 && (
-        <div className="mb-6 flex gap-2 border-b border-surface-border/40 pb-3">
+        <div className="mb-6 flex gap-2 pb-3">
           <Link
             href="/vault?sort=date"
-            className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
+            className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition-colors ${
               sortBy === "date"
                 ? "bg-surface-raised border border-surface-border text-ink-primary"
                 : "text-ink-muted hover:text-ink-secondary"
@@ -109,7 +109,7 @@ export default async function VaultPage({
           </Link>
           <Link
             href="/vault?sort=score"
-            className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
+            className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition-colors ${
               sortBy === "score"
                 ? "bg-surface-raised border border-surface-border text-ink-primary"
                 : "text-ink-muted hover:text-ink-secondary"

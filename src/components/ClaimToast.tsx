@@ -80,7 +80,7 @@ export function ClaimToast({ moment, onClaim, onDismiss }: Props) {
         id="claim-toast-button"
         onClick={() => { void handleClaim(); }}
         disabled={claiming}
-        className="mt-3 w-full rounded-xl bg-ink-primary text-surface text-sm font-semibold py-2.5 hover:bg-white transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+        className="mt-3 w-full rounded-full bg-tier-notable text-surface text-sm font-bold py-2.5 hover:bg-tier-notable/90 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
       >
         {claiming ? copy.claim.pending : copy.claim.action}
       </button>
