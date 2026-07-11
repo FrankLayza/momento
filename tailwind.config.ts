@@ -1,5 +1,5 @@
 import type { Config } from "tailwindcss";
-import { fontFamily } from "tailwindcss/defaultTheme";
+import defaultTheme from "tailwindcss/defaultTheme";
 
 const config: Config = {
   content: [
@@ -68,14 +68,14 @@ const config: Config = {
       fontFamily: {
         // Header/display face — Sora (free substitute for Spotify's
         // proprietary "CircularSp-Deva"; see layout.tsx)
-        display: ["var(--font-sora)", ...fontFamily.sans],
+        display: ["var(--font-sora)", ...defaultTheme.fontFamily.sans],
         // Body text
-        body: ["var(--font-inter)", ...fontFamily.sans],
-        sans: ["var(--font-inter)", ...fontFamily.sans],
+        body: ["var(--font-inter)", ...defaultTheme.fontFamily.sans],
+        sans: ["var(--font-inter)", ...defaultTheme.fontFamily.sans],
         // Logged-out landing page only (loaded + scoped in Landing.tsx,
         // never applied at the html/body level)
-        "landing-display": ["var(--font-unbounded)", ...fontFamily.sans],
-        "landing-body": ["var(--font-landing-body)", ...fontFamily.sans],
+        "landing-display": ["var(--font-unbounded)", ...defaultTheme.fontFamily.sans],
+        "landing-body": ["var(--font-landing-body)", ...defaultTheme.fontFamily.sans],
       },
 
       // ── Card aspect ratio (2.5:3.5 trading-card ratio) ───────────────────

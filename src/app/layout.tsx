@@ -12,6 +12,7 @@ import type { Metadata } from "next";
 import { Inter, Sora } from "next/font/google";
 import { Navbar } from "@/components/Navbar";
 import { AuthHandler } from "@/components/AuthHandler";
+import { Suspense } from "react";
 import "./globals.css";
 
 const inter = Inter({
@@ -57,11 +58,15 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body className="min-h-dvh bg-surface text-ink-primary font-body antialiased flex flex-col">
-        <Navbar />
+        <Suspense fallback={null}>
+          <Navbar />
+        </Suspense>
         <div className="flex-1 w-full">
           {children}
         </div>
-        <AuthHandler />
+        <Suspense fallback={null}>
+          <AuthHandler />
+        </Suspense>
       </body>
     </html>
   );

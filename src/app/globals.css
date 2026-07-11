@@ -1,6 +1,5 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@config "../../tailwind.config.ts";
+@import "tailwindcss";
 
 /* Fonts (Inter, Sora) are loaded via next/font/google in layout.tsx —
    no separate @import needed here. */
