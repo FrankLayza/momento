@@ -22,10 +22,10 @@ export const revalidate = 0; // Dynamic/SSR only to always reflect latest claims
 export default async function VaultPage({
   searchParams,
 }: {
-  searchParams: { sort?: string };
+  searchParams: Promise<{ sort?: string }>;
 }) {
   // 1. Get current auth user session
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   const supabase = createClient(cookieStore);
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -56,7 +56,8 @@ export default async function VaultPage({
   const rarestTier = getRarestTier(moments);
 
   // 3. Sort moments based on query param
-  const sortBy = searchParams.sort === "score" ? "score" : "date";
+  const resolvedSearchParams = await searchParams;
+  const sortBy = resolvedSearchParams.sort === "score" ? "score" : "date";
   const sortedMoments = [...moments].sort((a, b) => {
     if (sortBy === "score") {
       return b.shockScore - a.shockScore;

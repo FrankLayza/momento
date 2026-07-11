@@ -15,7 +15,7 @@ import { createClient } from "@/utils/supabase/server";
 import { ensureWalletForUser } from "@/server/chain/wallets";
 
 export async function POST() {
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   const supabase = createClient(cookieStore);
 
   const { data: { user } } = await supabase.auth.getUser();

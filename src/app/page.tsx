@@ -27,7 +27,7 @@ export const revalidate = 10; // ISR: refresh fixture data every 10 seconds for 
  * Deviation from Implementation Guide §4 — see docs/DEVIATIONS.md.
  */
 export default async function Page() {
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   const supabase = createClient(cookieStore);
   const { data: { user: sessionUser } } = await supabase.auth.getUser();
 
@@ -40,7 +40,7 @@ export default async function Page() {
 
 async function FixturesPage() {
   // 1. Get current auth user session
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   const supabase = createClient(cookieStore);
   const { data: { user } } = await supabase.auth.getUser();
 

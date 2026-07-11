@@ -18,12 +18,13 @@ import { Avatar } from "@/components/Avatar";
 import type { Match, Moment } from "@/lib/types";
 
 interface Props {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { id } = await params;
   const matches = await listMatches().catch(() => [] as Match[]);
-  const match   = matches.find(m => m.id === params.id);
+  const match   = matches.find(m => m.id === id);
   if (!match) return { title: "Match" };
   return { title: `${match.home} v ${match.away} | Momento` };
 }
@@ -31,15 +32,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export const revalidate = 10; // ISR: refresh every 10 seconds for real-time live score updates
 
 export default async function MatchPage({ params }: Props) {
+  const { id } = await params;
   const matches = await listMatches().catch(() => [] as Match[]);
-  const match   = matches.find(m => m.id === params.id);
-  const moments = await getMomentsForMatch(params.id).catch(() => [] as Moment[]);
+  const match   = matches.find(m => m.id === id);
+  const moments = await getMomentsForMatch(id).catch(() => [] as Moment[]);
 
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   const supabase = createClient(cookieStore);
   const { data: { user } } = await supabase.auth.getUser();
   const isWitness = user
-    ? Boolean(await getCheckin(user.id, params.id).catch(() => null))
+    ? Boolean(await getCheckin(user.id, id).catch(() => null))
     : false;
 
   if (!match) {

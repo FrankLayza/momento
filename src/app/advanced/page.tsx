@@ -21,7 +21,7 @@ export const revalidate = 0; // Dynamic/SSR only to check active user wallet
 
 export default async function AdvancedPage() {
   // 1. Get current auth user session
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   const supabase = createClient(cookieStore);
   const { data: { user } } = await supabase.auth.getUser();
 

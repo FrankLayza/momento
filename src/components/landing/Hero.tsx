@@ -11,7 +11,7 @@ import Link from "next/link";
 import { copy } from "@/lib/copy";
 
 // Swap this path once the real hero photo is provided.
-const HERO_IMAGE_SRC = "/landing/hero.jpg";
+const HERO_IMAGE_SRC = "/landing/landing.png";
 
 export function Hero() {
   return (

@@ -24,9 +24,10 @@ const TIER_COLORS: Record<string, string> = {
 
 export async function GET(
   _req: NextRequest,
-  { params }: { params: { momentId: string } }
+  { params }: { params: Promise<{ momentId: string }> }
 ) {
-  const moment = await getMomentById(params.momentId).catch(() => null);
+  const { momentId } = await params;
+  const moment = await getMomentById(momentId).catch(() => null);
 
   if (!moment) {
     return new Response("Not found", { status: 404 });

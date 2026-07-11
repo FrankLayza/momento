@@ -15,14 +15,15 @@ import { TierBadge } from "@/components/TierBadge";
 import type { Moment, Match } from "@/lib/types";
 
 interface Props {
-  params: { momentId: string };
+  params: Promise<{ momentId: string }>;
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const moment = await getMomentById(params.momentId).catch(() => null);
+  const { momentId } = await params;
+  const moment = await getMomentById(momentId).catch(() => null);
   if (!moment) return { title: "Moment not found" };
 
-  const ogImageUrl = `/api/og/${params.momentId}`;
+  const ogImageUrl = `/api/og/${momentId}`;
   const title      = `Shock rating: ${moment.shockScore}/100 — ${moment.tier}`;
   const description = copy.moment.witnessCount(moment.witnessCount);
 
@@ -45,7 +46,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function PublicMomentPage({ params }: Props) {
-  const moment  = await getMomentById(params.momentId).catch(() => null as Moment | null);
+  const { momentId } = await params;
+  const moment  = await getMomentById(momentId).catch(() => null as Moment | null);
   const matches = await listMatches().catch(() => [] as Match[]);
 
   if (!moment) {
