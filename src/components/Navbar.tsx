@@ -60,8 +60,9 @@ export function Navbar() {
   };
 
   // Hide global navbar on the landing page (when logged out and at root "/")
-  if (!loading && !user && pathname === "/") {
-    return null;
+  // Also return null while loading to prevent a flash of the navbar on initial load.
+  if (pathname === "/") {
+    if (loading || !user) return null;
   }
 
   const handleSignInClick = () => {

@@ -66,16 +66,9 @@ export function HowItWorks() {
       </div>
 
       {/* Desktop View */}
-      <div className="hidden lg:block relative">
-        {/* Sticky card overlay — zero height so it doesn't push content */}
-        <div className="sticky top-0 h-0 z-10 flex justify-center pointer-events-none">
-          <div className="mt-[calc(50vh-134px)] pointer-events-auto">
-            <StickyMomentCard activeStep={activeStep} />
-          </div>
-        </div>
-
+      <div className="hidden lg:block relative max-w-5xl mx-auto">
         {/* Section intro */}
-        <div className="text-center px-8 pt-20 pb-24">
+        <div className="text-center px-8 pt-20 pb-16">
           <p className="text-[11px] font-medium tracking-[0.14em] text-ink-ghost uppercase mb-3">
             {copy.landing.howItWorksTitle}
           </p>
@@ -97,21 +90,31 @@ export function HowItWorks() {
           </div>
         </div>
 
-        {/* Feature panels — stacked, each min-h-screen */}
-        <div className="px-8">
-          {HOW_IT_WORKS.map((step, i) => (
-            <FeaturePanel
-              key={i}
-              step={step}
-              index={i}
-              ref={(el) => {
-                panelRefs.current[i] = el;
-              }}
-            />
-          ))}
+        {/* Container for sticky card and panels */}
+        <div className="relative">
+          {/* Sticky card overlay — zero height so it doesn't push content */}
+          <div className="sticky top-0 h-0 z-10 flex justify-center pointer-events-none">
+            <div className="mt-[calc(50vh-134px)] pointer-events-auto">
+              <StickyMomentCard activeStep={activeStep} />
+            </div>
+          </div>
+
+          {/* Feature panels — stacked, each min-h-[60vh] for tight scrolling */}
+          <div className="relative z-0">
+            {HOW_IT_WORKS.map((step, i) => (
+              <FeaturePanel
+                key={i}
+                step={step}
+                index={i}
+                ref={(el) => {
+                  panelRefs.current[i] = el;
+                }}
+              />
+            ))}
+          </div>
         </div>
 
-        <div className="h-[30vh]" /> {/* breathing room at bottom */}
+        <div className="h-[20vh]" /> {/* breathing room at bottom */}
       </div>
     </section>
   );
@@ -124,17 +127,19 @@ const FeaturePanel = forwardRef<
   return (
     <div
       ref={ref}
-      className="min-h-screen flex items-center"
+      className="min-h-[60vh] flex items-center w-full"
     >
-      {step.side === 'left' ? (
-        <div className="flex justify-end w-full pr-[240px]">
-          <TextBlock step={step} />
-        </div>
-      ) : (
-        <div className="flex justify-start w-full pl-[240px]">
-          <TextBlock step={step} />
-        </div>
-      )}
+      <div className="w-full grid grid-cols-2">
+        {step.side === 'left' ? (
+          <div className="flex justify-end pr-[145px]">
+            <TextBlock step={step} />
+          </div>
+        ) : (
+          <div className="col-start-2 flex justify-start pl-[145px]">
+            <TextBlock step={step} />
+          </div>
+        )}
+      </div>
     </div>
   );
 });
