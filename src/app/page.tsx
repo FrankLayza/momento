@@ -11,6 +11,7 @@ import { copy } from "@/lib/copy";
 import { listMatches, getUserCheckins, getUserById } from "@/server/db/queries";
 import { listWorldCupMatches, getFinishedMatchScore } from "@/server/txline/adapter";
 import { createClient } from "@/utils/supabase/server";
+import { Avatar } from "@/components/Avatar";
 import type { Match } from "@/lib/types";
 
 export const metadata: Metadata = {
@@ -35,7 +36,8 @@ export default async function FixturesPage() {
         getUserById(user.id),
       ]);
       userCheckins = new Set(checkins.map(c => c.matchId));
-      userDisplayName = appUser?.displayName || user.email || "";
+      // Never fall back to the raw email — fan-facing UI shows a name only.
+      userDisplayName = appUser?.displayName || user.email?.split("@")[0] || "Fan";
     } catch (err) {
       console.error("[FixturesPage] Failed to load user metadata:", err);
     }
@@ -100,15 +102,6 @@ export default async function FixturesPage() {
             Witness game-defining moments live and claim your limited-edition match keepsakes.
           </p>
         </div>
-
-        {user && (
-          <div className="flex items-center gap-2 bg-surface-raised border border-surface-border rounded-lg px-3 py-1.5 self-start sm:self-auto">
-            <span className="h-1.5 w-1.5 rounded-full bg-tier-notable" />
-            <span className="text-[11px] text-ink-secondary">
-              Logged in as <span className="font-semibold text-ink-primary">{userDisplayName}</span>
-            </span>
-          </div>
-        )}
       </div>
 
       {/* Live matches section */}
@@ -220,10 +213,11 @@ function MatchRow({ match, isWitness, isFirst }: { match: Match; isWitness: bool
       }`}
     >
       {/* Home Team */}
-      <div className="flex-1 text-right pr-4 min-w-0">
-        <span className="font-body text-xs font-medium text-ink-primary group-hover:text-white transition-colors truncate block">
+      <div className="flex-1 flex items-center justify-end gap-2 pr-4 min-w-0">
+        <span className="font-body text-xs font-medium text-ink-primary group-hover:text-white transition-colors truncate">
           {match.home}
         </span>
+        <Avatar name={match.home} size="sm" />
       </div>
 
       {/* Match Center: Score or Kickoff Time */}
@@ -256,8 +250,9 @@ function MatchRow({ match, isWitness, isFirst }: { match: Match; isWitness: bool
       </div>
 
       {/* Away Team */}
-      <div className="flex-1 text-left pl-4 min-w-0">
-        <span className="font-body text-xs font-medium text-ink-primary group-hover:text-white transition-colors truncate block">
+      <div className="flex-1 flex items-center justify-start gap-2 pl-4 min-w-0">
+        <Avatar name={match.away} size="sm" />
+        <span className="font-body text-xs font-medium text-ink-primary group-hover:text-white transition-colors truncate">
           {match.away}
         </span>
       </div>
