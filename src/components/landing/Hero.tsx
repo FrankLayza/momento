@@ -28,7 +28,7 @@ export function Hero() {
   }, []);
 
   return (
-    <section className="relative flex min-h-screen w-full flex-col items-center justify-center overflow-hidden bg-landing-ink">
+    <section className="sticky top-0 h-screen w-full z-0 flex flex-col items-center justify-center overflow-hidden bg-landing-ink">
       {/* Background image + scrim */}
       <Image
         src={HERO_IMAGE_SRC}

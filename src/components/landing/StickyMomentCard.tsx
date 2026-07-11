@@ -3,7 +3,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 
 const TIER_STYLES = {
-  Common:  { cardBg: '#EDE8DC', badge: 'bg-[#E8E3D9] text-ink-ghost' },
+  Common:  { cardBg: '#E8E2D6', badge: 'bg-[#DFD8CC] text-[#4A4540]' },
   Notable: { cardBg: '#E4F6F7', badge: 'bg-cyan/10 text-cyan'        },
   Shock:   { cardBg: '#FBF4E4', badge: 'bg-amber-50 text-amber-700'  },
   Seismic: { cardBg: '#FDE8E8', badge: 'bg-red-50 text-red-700'      },
@@ -69,19 +69,19 @@ export function StickyMomentCard({ activeStep }: { activeStep: number }) {
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.25 }}
-                className="font-display text-[40px] font-bold leading-none tracking-tight text-ink"
+                className="font-display text-[40px] font-bold leading-none tracking-tight text-[#1A1714]"
               >
                 {state.score}
               </motion.div>
             </AnimatePresence>
-            <p className="text-[11px] text-ink-secondary mt-1">{state.event}</p>
+            <p className="text-[11px] text-[#4A4540] mt-1">{state.event}</p>
           </div>
         </div>
 
         {/* Footer */}
-        <div className="bg-ink px-4 py-3">
+        <div className="bg-[#100F06] px-4 py-3">
           <p className="font-display text-[11px] font-bold text-cream tracking-wide">Spain vs Belgium</p>
-          <p className="text-[9px] text-ink-ghost tracking-[0.08em] uppercase mt-0.5">{state.minute}</p>
+          <p className="text-[9px] text-[#DFD8CC] tracking-[0.08em] uppercase mt-0.5">{state.minute}</p>
         </div>
       </motion.div>
 

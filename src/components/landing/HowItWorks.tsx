@@ -26,18 +26,18 @@ export function HowItWorks() {
   }, []);
 
   return (
-    <section id="how-it-works" className="bg-landing-cream relative z-20 -mt-16 rounded-t-[48px] shadow-2xl">
+    <section id="how-it-works" className="bg-[#F5F0E8] relative z-20 rounded-t-[48px] shadow-2xl">
       {/* Mobile View */}
       <div className="lg:hidden">
         {/* Section intro */}
-        <div className="text-center px-8 pt-20 pb-10">
-          <p className="text-[11px] font-medium tracking-[0.14em] text-ink-ghost uppercase mb-3">
+        <div className="text-center px-8 pt-16 pb-6">
+          <p className="text-[11px] font-medium tracking-[0.14em] text-[#4A4540] uppercase mb-3">
             {copy.landing.howItWorksTitle}
           </p>
-          <h2 className="font-display text-[36px] font-bold text-ink leading-[1.1] mb-3 whitespace-pre-line">
+          <h2 className="font-display text-[36px] font-bold text-[#1A1714] leading-[1.1] mb-3 whitespace-pre-line">
             {copy.landing.howItWorksHeading}
           </h2>
-          <p className="text-[15px] text-ink-secondary max-w-sm mx-auto">
+          <p className="text-[15px] text-[#4A4540] max-w-sm mx-auto">
             {copy.landing.howItWorksSubcopy}
           </p>
         </div>
@@ -51,13 +51,13 @@ export function HowItWorks() {
         <div className="px-8 space-y-14 pb-20">
           {HOW_IT_WORKS.map((step, i) => (
             <div key={i} className="max-w-[280px] mx-auto text-center">
-              <p className="text-[11px] font-medium tracking-[0.14em] text-ink-ghost uppercase mb-3.5">
+              <p className="text-[11px] font-medium tracking-[0.14em] text-[#4A4540] uppercase mb-3.5">
                 {step.number}
               </p>
-              <h3 className="font-display text-[28px] font-bold text-ink leading-[1.15] mb-3 whitespace-pre-line">
+              <h3 className="font-display text-[28px] font-bold text-[#1A1714] leading-[1.15] mb-3 whitespace-pre-line">
                 {step.heading}
               </h3>
-              <p className="text-[14px] text-ink-secondary leading-[1.7]">
+              <p className="text-[14px] text-[#4A4540] leading-[1.7]">
                 {step.body}
               </p>
             </div>
@@ -68,14 +68,14 @@ export function HowItWorks() {
       {/* Desktop View */}
       <div className="hidden lg:block relative max-w-5xl mx-auto">
         {/* Section intro */}
-        <div className="text-center px-8 pt-20 pb-16">
-          <p className="text-[11px] font-medium tracking-[0.14em] text-ink-ghost uppercase mb-3">
+        <div className="text-center px-8 pt-16 pb-6">
+          <p className="text-[11px] font-medium tracking-[0.14em] text-[#4A4540] uppercase mb-3">
             {copy.landing.howItWorksTitle}
           </p>
-          <h2 className="font-display text-[36px] font-bold text-ink leading-[1.1] mb-3 whitespace-pre-line">
+          <h2 className="font-display text-[36px] font-bold text-[#1A1714] leading-[1.1] mb-3 whitespace-pre-line">
             {copy.landing.howItWorksHeading}
           </h2>
-          <p className="text-[15px] text-ink-secondary max-w-sm mx-auto mb-6">
+          <p className="text-[15px] text-[#4A4540] max-w-sm mx-auto mb-6">
             {copy.landing.howItWorksSubcopy}
           </p>
           {/* Progress dots */}
@@ -83,7 +83,7 @@ export function HowItWorks() {
             {HOW_IT_WORKS.map((_, i) => (
               <span
                 key={i}
-                className="h-1.5 rounded-full bg-ink transition-all duration-300"
+                className="h-1.5 rounded-full bg-[#1A1714] transition-all duration-300"
                 style={{ width: i === activeStep ? 18 : 6, opacity: i === activeStep ? 1 : 0.18 }}
               />
             ))}
@@ -131,11 +131,11 @@ const FeaturePanel = forwardRef<
     >
       <div className="w-full grid grid-cols-2">
         {step.side === 'left' ? (
-          <div className="flex justify-end pr-[145px]">
+          <div className="flex justify-end pr-[180px]">
             <TextBlock step={step} />
           </div>
         ) : (
-          <div className="col-start-2 flex justify-start pl-[145px]">
+          <div className="col-start-2 flex justify-start pl-[180px]">
             <TextBlock step={step} />
           </div>
         )}
@@ -148,13 +148,13 @@ FeaturePanel.displayName = "FeaturePanel";
 function TextBlock({ step }: { step: HowItWorksStep }) {
   return (
     <div className="max-w-[220px]">
-      <p className="text-[11px] font-medium tracking-[0.14em] text-ink-ghost uppercase mb-3.5">
+      <p className="text-[11px] font-medium tracking-[0.14em] text-[#4A4540] uppercase mb-3.5">
         {step.number}
       </p>
-      <h3 className="font-display text-[28px] font-bold text-ink leading-[1.15] mb-3 whitespace-pre-line">
+      <h3 className="font-display text-[28px] font-bold text-[#1A1714] leading-[1.15] mb-3 whitespace-pre-line">
         {step.heading}
       </h3>
-      <p className="text-[14px] text-ink-secondary leading-[1.7]">
+      <p className="text-[14px] text-[#4A4540] leading-[1.7]">
         {step.body}
       </p>
     </div>
