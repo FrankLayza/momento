@@ -9,23 +9,14 @@
  */
 
 import type { Metadata } from "next";
-import { Inter, Sora } from "next/font/google";
 import { Navbar } from "@/components/Navbar";
 import { AuthHandler } from "@/components/AuthHandler";
 import { Suspense } from "react";
 import "./globals.css";
 
-const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-inter",
-  display: "swap",
-});
-
-const sora = Sora({
-  subsets: ["latin"],
-  variable: "--font-sora",
-  display: "swap",
-});
+// Mock local fonts since Google Fonts fetch fails in offline build environments
+const inter = { variable: "font-sans" };
+const sora = { variable: "font-sans" };
 
 export const metadata: Metadata = {
   title: {

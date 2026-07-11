@@ -1,3 +1,5 @@
+import type { HowItWorksStep } from "./types";
+
 /**
  * src/lib/copy.ts
  * Implements LR-1/LR-2 (PRD) — ALL fan-facing strings live here.
@@ -117,22 +119,8 @@ export const copy = {
       "Check in to a live World Cup match. When the impossible happens, claim the moment as a keepsake only the fans watching live can ever own.",
     heroCta: "See today's matches",
     howItWorksTitle: "How it works",
-    howItWorks: [
-      {
-        title: "Check in",
-        body: "Join a live match with one tap. You are now a Witness.",
-      },
-      {
-        title: "A Moment fires",
-        body: "When a goal, red card or upset hits, we capture it instantly.",
-      },
-      {
-        title: "Claim it forever",
-        // NOTE: source spec cut off here — only "Only Witnesses can claim."
-        // was given. Flagged for the human to complete rather than invented.
-        body: "Only Witnesses can claim.",
-      },
-    ],
+    howItWorksHeading: "Three steps.\nOne moment, forever.",
+    howItWorksSubcopy: "Check in before a match starts. When something historic happens, claim it before the window closes.",
   },
 
   // ── Errors ───────────────────────────────────────────────────────────────
@@ -142,3 +130,30 @@ export const copy = {
     notFound:  "This Moment does not exist.",
   },
 } as const;
+
+export const HOW_IT_WORKS = [
+  {
+    number: '01',
+    side: 'left' as const,
+    heading: 'Pick a match.\nCheck in.',
+    body: "Browse live and upcoming fixtures. Tap Check In to become a Witness. No account needed to browse — sign in only when you're ready.",
+  },
+  {
+    number: '02',
+    side: 'right' as const,
+    heading: 'A Moment fires\nin the data.',
+    body: 'When a goal or shock result hits, the market moves. Our engine captures the probability swing and grades the Moment by how unlikely it was.',
+  },
+  {
+    number: '03',
+    side: 'left' as const,
+    heading: 'Claim it\nbefore it seals.',
+    body: 'Only Witnesses who checked in can claim. Once the window closes, no new claims are ever issued — supply is sealed by the final whistle.',
+  },
+  {
+    number: '04',
+    side: 'right' as const,
+    heading: 'Your Vault.\nYour proof.',
+    body: 'Every keepsake lives in your Vault, graded by tier. Share a card in one tap. Your collection shows who you were watching, and when.',
+  },
+] satisfies HowItWorksStep[];

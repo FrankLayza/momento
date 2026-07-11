@@ -98,3 +98,12 @@ export interface AppUser {
   displayName: string;
   pubkey: string;            // Solana public key (base58); never shown to Greg
 }
+
+// ── How It Works Step ────────────────────────────────────────────────────────
+
+export interface HowItWorksStep {
+  number: string;
+  side: "left" | "right";
+  heading: string;
+  body: string;
+}

@@ -30,16 +30,22 @@ export function Hero() {
       <div className="absolute inset-0 bg-landing-ink/25" aria-hidden="true" />
 
       {/* Floating glass pill nav */}
-      <div className="absolute top-8 left-0 right-0 z-10 flex items-center justify-between px-6 sm:px-10">
+      <div className="fixed top-8 left-1/2 -translate-x-1/2 w-full max-w-5xl z-50 flex items-center justify-between px-6 sm:px-10">
         <span className="font-landing-display text-lg font-bold text-white">
           Momento
         </span>
 
-        <nav className="hidden sm:flex items-center gap-8 rounded-full border border-white/15 bg-white/10 px-8 py-3 backdrop-blur-md">
-          <Link href="#how-it-works" className="font-landing-body text-sm text-white/90 hover:text-white transition-colors">
+        <nav className="hidden sm:flex items-center gap-1.5 rounded-full border border-white/15 bg-white/10 p-1.5 backdrop-blur-md">
+          <Link
+            href="#how-it-works"
+            className="font-landing-body text-sm text-white/90 px-5 py-2.5 rounded-full hover:bg-cream hover:text-landing-ink transition-all duration-200"
+          >
             {copy.landing.navHowItWorks}
           </Link>
-          <Link href="#faq" className="font-landing-body text-sm text-white/90 hover:text-white transition-colors">
+          <Link
+            href="#faq"
+            className="font-landing-body text-sm text-white/90 px-5 py-2.5 rounded-full hover:bg-cream hover:text-landing-ink transition-all duration-200"
+          >
             {copy.landing.navFaq}
           </Link>
         </nav>
@@ -50,8 +56,8 @@ export function Hero() {
       </div>
 
       {/* Headline */}
-      <div className="relative z-10 mx-auto max-w-3xl px-6 text-center">
-        <h1 className="font-landing-display text-5xl sm:text-7xl font-bold leading-[1.05] tracking-tight text-white">
+      <div className="relative z-10 mx-auto max-w-3xl px-6 text-center mt-20">
+        <h1 className="font-landing-display text-5xl sm:text-7xl leading-[1.05] tracking-tight text-white">
           {copy.landing.heroLine1}
           <br />
           {copy.landing.heroLine2}

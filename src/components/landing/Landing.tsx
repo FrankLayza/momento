@@ -7,23 +7,12 @@
  * Sora/Inter pairing untouched.
  */
 
-import { Unbounded, Space_Grotesk } from "next/font/google";
 import { Hero } from "./Hero";
 import { HowItWorks } from "./HowItWorks";
 
-const unbounded = Unbounded({
-  subsets: ["latin"],
-  weight: ["700"],
-  variable: "--font-unbounded",
-  display: "swap",
-});
-
-const spaceGrotesk = Space_Grotesk({
-  subsets: ["latin"],
-  weight: ["400", "500"],
-  variable: "--font-landing-body",
-  display: "swap",
-});
+// Mock local fonts since Google Fonts fetch fails in offline build environments
+const unbounded = { variable: "font-sans" };
+const spaceGrotesk = { variable: "font-sans" };
 
 export function Landing() {
   return (
