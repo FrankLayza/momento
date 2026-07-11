@@ -59,6 +59,11 @@ export function Navbar() {
     router.refresh();
   };
 
+  // Hide global navbar on the landing page (when logged out and at root "/")
+  if (!loading && !user && pathname === "/") {
+    return null;
+  }
+
   const handleSignInClick = () => {
     const params = new URLSearchParams(searchParams.toString());
     params.set("signin", "1");
