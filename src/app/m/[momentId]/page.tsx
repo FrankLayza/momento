@@ -7,9 +7,12 @@
  */
 
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import Link from "next/link";
-import { getMomentById, listMatches } from "@/server/db/queries";
+import { getMomentById, listMatches, getUserById } from "@/server/db/queries";
 import { copy } from "@/lib/copy";
+import { createClient } from "@/utils/supabase/server";
+import { Navbar } from "@/components/Navbar";
 import { MomentCard } from "@/components/MomentCard";
 import { TierBadge } from "@/components/TierBadge";
 import type { Moment, Match } from "@/lib/types";
@@ -50,6 +53,20 @@ export default async function PublicMomentPage({ params }: Props) {
   const moment  = await getMomentById(momentId).catch(() => null as Moment | null);
   const matches = await listMatches().catch(() => [] as Match[]);
 
+  const cookieStore = await cookies();
+  const supabase = createClient(cookieStore);
+  const { data: { user } } = await supabase.auth.getUser();
+
+  let displayName = "Fan";
+  if (user) {
+    try {
+      const appUser = await getUserById(user.id).catch(() => null);
+      displayName = appUser?.displayName || user.email?.split("@")[0] || "Fan";
+    } catch (err) {
+      console.error("[PublicMomentPage] Failed to fetch user profile:", err);
+    }
+  }
+
   if (!moment) {
     return (
       <main className="mx-auto max-w-lg px-4 py-16 text-center">
@@ -62,7 +79,9 @@ export default async function PublicMomentPage({ params }: Props) {
   const upcomingMatches = matches.filter(m => m.status !== "finished").slice(0, 3);
 
   return (
-    <main className="mx-auto max-w-lg px-4 py-12">
+    <>
+      <Navbar displayName={displayName} />
+      <main className="mx-auto max-w-lg px-4 py-12">
       {/* Moment card — centred, full display */}
       <div className="w-56 mx-auto mb-8">
         <MomentCard moment={moment} />
@@ -114,5 +133,6 @@ export default async function PublicMomentPage({ params }: Props) {
         </section>
       )}
     </main>
+  </>
   );
 }

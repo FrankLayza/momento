@@ -32,15 +32,22 @@ export const copy = {
     today:    "Today",
     upcoming: "Upcoming",
     live:     "Live",
+    liveNow:  "Live now",
     kickoff:  "Kick-off",
     noFixtures: "No matches scheduled right now.",
     replayBadge: "Replay",  // FR-1.3 — must be clearly labelled
+    fixturesTitle: "Fixtures",
+    fifaWorldCup2026: "FIFA World Cup 2026",
+    fixturesSubtitle: "Witness game-defining moments live and claim your limited-edition keepsakes.",
   },
 
   // ── Check-in / Witnessing (FR-2.1, LR-2) ────────────────────────────────
   checkin: {
     action:      "Check in",
     checkedIn:   "Watching",
+    checkedInLabel: "Checked In ✓",
+    matchNo:     "MATCH NO.",
+    minuteCaption: "Minute",
     tooLate:     "Match finished — check-in closed.",
     witnesses:   (n: number) => `${n.toLocaleString()} ${n === 1 ? "Witness" : "Witnesses"}`,
   },

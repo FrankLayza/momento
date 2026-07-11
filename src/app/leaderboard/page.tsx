@@ -5,9 +5,12 @@
  */
 
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import { copy } from "@/lib/copy";
-import { getLeaderboard } from "@/server/db/queries";
+import { getLeaderboard, getUserById } from "@/server/db/queries";
+import { createClient } from "@/utils/supabase/server";
 import { Avatar } from "@/components/Avatar";
+import { Navbar } from "@/components/Navbar";
 
 export const metadata: Metadata = {
   title: `${copy.leaderboard.title} | Momento`,
@@ -16,6 +19,20 @@ export const metadata: Metadata = {
 export const revalidate = 60; // 1-minute ISR for active tournaments
 
 export default async function LeaderboardPage() {
+  const cookieStore = await cookies();
+  const supabase = createClient(cookieStore);
+  const { data: { user } } = await supabase.auth.getUser();
+
+  let displayName = "Fan";
+  if (user) {
+    try {
+      const appUser = await getUserById(user.id).catch(() => null);
+      displayName = appUser?.displayName || user.email?.split("@")[0] || "Fan";
+    } catch (err) {
+      console.error("[LeaderboardPage] Failed to fetch user profile:", err);
+    }
+  }
+
   const rows = await getLeaderboard(50).catch(
     () => [] as Awaited<ReturnType<typeof getLeaderboard>>
   );
@@ -31,7 +48,9 @@ export default async function LeaderboardPage() {
   ];
 
   return (
-    <main className="mx-auto max-w-xl px-6 py-10">
+    <>
+      <Navbar displayName={displayName} />
+      <main className="mx-auto max-w-xl px-6 py-10">
       {/* Header */}
       <div className="mb-10 text-center">
         <h1 className="font-display text-3xl font-extrabold tracking-tight text-ink-primary">
@@ -139,5 +158,6 @@ export default async function LeaderboardPage() {
         </>
       )}
     </main>
+  </>
   );
 }

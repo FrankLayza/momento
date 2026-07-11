@@ -12,6 +12,7 @@ import { cookies } from "next/headers";
 import { createClient } from "@/utils/supabase/server";
 import { getUserById } from "@/server/db/queries";
 import { ExportWalletSection } from "./ExportWalletSection";
+import { Navbar } from "@/components/Navbar";
 
 export const metadata: Metadata = {
   title: "Advanced Settings | Momento",
@@ -26,17 +27,21 @@ export default async function AdvancedPage() {
   const { data: { user } } = await supabase.auth.getUser();
 
   let pubkey: string | null = null;
+  let displayName = "Fan";
   if (user) {
     try {
       const appUser = await getUserById(user.id);
       pubkey = appUser?.pubkey ?? null;
+      displayName = appUser?.displayName || user.email?.split("@")[0] || "Fan";
     } catch (err) {
-      console.error("[AdvancedPage] Failed to load user pubkey:", err);
+      console.error("[AdvancedPage] Failed to load user metadata:", err);
     }
   }
 
   return (
-    <main className="mx-auto max-w-xl px-6 py-10">
+    <>
+      <Navbar displayName={displayName} />
+      <main className="mx-auto max-w-xl px-6 py-10">
       <div className="mb-8">
         <h1 className="font-display text-2xl font-extrabold tracking-tight text-ink-primary">
           Advanced Settings
@@ -81,5 +86,6 @@ export default async function AdvancedPage() {
         Production migration path: transition key derivation to non-custodial systems like Privy or Web3Auth.
       </p>
     </main>
+  </>
   );
 }

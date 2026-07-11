@@ -8,9 +8,10 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { copy } from "@/lib/copy";
-import { getUserMoments } from "@/server/db/queries";
+import { getUserMoments, getUserById } from "@/server/db/queries";
 import { createClient } from "@/utils/supabase/server";
 import { MomentCard } from "@/components/MomentCard";
+import { Navbar } from "@/components/Navbar";
 import type { Moment } from "@/lib/types";
 
 export const metadata: Metadata = {
@@ -39,10 +40,16 @@ export default async function VaultPage({
 
   // 2. Fetch claimed moments for the user
   let userMoments: Array<{ edition: any; moment: Moment }> = [];
+  let displayName = "Fan";
   try {
-    userMoments = await getUserMoments(user.id);
+    const [momentsRes, appUser] = await Promise.all([
+      getUserMoments(user.id),
+      getUserById(user.id).catch(() => null),
+    ]);
+    userMoments = momentsRes;
+    displayName = appUser?.displayName || user.email?.split("@")[0] || "Fan";
   } catch (err) {
-    console.error("[VaultPage] Failed to fetch user moments:", err);
+    console.error("[VaultPage] Failed to fetch user moments / metadata:", err);
   }
 
   const totalMoments = userMoments.length;
@@ -67,7 +74,9 @@ export default async function VaultPage({
   });
 
   return (
-    <main className="mx-auto max-w-3xl px-6 py-10">
+    <>
+      <Navbar displayName={displayName} />
+      <main className="mx-auto max-w-3xl px-6 py-10">
       {/* Header */}
       <div className="mb-8">
         <h1 className="font-display text-3xl font-extrabold tracking-tight text-ink-primary">
@@ -136,6 +145,7 @@ export default async function VaultPage({
         </div>
       )}
     </main>
+  </>
   );
 }
 

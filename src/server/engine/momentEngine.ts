@@ -27,6 +27,12 @@ import {
 
 // ── State per tracked match ───────────────────────────────────────────────────
 
+interface PendingSwingMoment {
+  trigger: "T1" | "T2";
+  minute:  number;
+  pBefore: ProbabilitySnapshot;
+}
+
 interface MatchState {
   matchId:     string;
   home:        string;
@@ -37,6 +43,10 @@ interface MatchState {
   score:       { home: number; away: number };
   status:      "scheduled" | "live" | "finished";
   unsub:       UnsubscribeFn;
+  /** T1/T2 moments waiting for the next odds tick so pAfter reflects the real post-event swing */
+  pending:          PendingSwingMoment[];
+  lastKnownMinute:      number | null;
+  lastKnownMinuteAtUtc: string | null;
 }
 
 const tracked = new Map<string, MatchState>();
@@ -79,6 +89,9 @@ export function trackMatch(
     score:       { home: 0, away: 0 },
     status:      "live",
     unsub:       () => undefined,
+    pending:     [],
+    lastKnownMinute:      null,
+    lastKnownMinuteAtUtc: null,
   };
 
   const unsub = adapter.subscribeMatch(
@@ -115,6 +128,21 @@ function handleTick(state: MatchState, tick: NormalisedOddsTick): void {
     h => new Date(h.atUtc).getTime() >= windowStart
   );
 
+  // Resolve any T1/T2 moments waiting on a post-event tick, now that one arrived —
+  // this is what lets shockScore's swing term reflect the real odds move from the goal/card.
+  if (state.pending.length > 0) {
+    const toResolve = state.pending;
+    state.pending = [];
+    for (const p of toResolve) {
+      void fireMoment(state, p.trigger, {
+        minute:  p.minute,
+        pBefore: p.pBefore,
+        pAfter:  { home: tick.pHome, draw: tick.pDraw, away: tick.pAway },
+        trigger: p.trigger,
+      });
+    }
+  }
+
   if (!prev || state.tickHistory.length < 2) return;
 
   // T3: check for ≥15pp swing in any of the three outcomes
@@ -130,7 +158,7 @@ function handleTick(state: MatchState, tick: NormalisedOddsTick): void {
     const after  = tick[key] as number;
     if (Math.abs(after - before) >= QUAKE_THRESHOLD) {
       void fireMoment(state, "T3", {
-        minute:  estimateMinute(tick.atUtc),
+        minute:  estimateMinute(state, tick.atUtc),
         pBefore: { home: oldest.tick.pHome, draw: oldest.tick.pDraw, away: oldest.tick.pAway },
         pAfter:  { home: tick.pHome,         draw: tick.pDraw,         away: tick.pAway },
         trigger: "T3",
@@ -145,26 +173,30 @@ function handleTick(state: MatchState, tick: NormalisedOddsTick): void {
 function handleEvent(state: MatchState, event: NormalisedEvent): void {
   const prev = state.latestTick;
 
+  // Anchor for estimateMinute(): every real event carries a feed-derived minute.
+  state.lastKnownMinute = event.minute;
+  state.lastKnownMinuteAtUtc = event.atUtc;
+
   if (event.kind === "goal") {
     // Update score — simplified: assume single score increment
     if (event.team === "home") state.score.home++;
     else if (event.team === "away") state.score.away++;
 
     if (!prev) return;
-    void fireMoment(state, "T1", {
+    // Queue rather than fire immediately: pAfter is resolved from the next odds
+    // tick so shockScore's swing term reflects the actual post-goal odds move.
+    state.pending.push({
+      trigger: "T1",
       minute:  event.minute,
       pBefore: { home: prev.pHome, draw: prev.pDraw, away: prev.pAway },
-      pAfter:  { home: prev.pHome, draw: prev.pDraw, away: prev.pAway }, // will be updated on next tick
-      trigger: "T1",
     });
   }
 
   if (event.kind === "red_card" && prev) {
-    void fireMoment(state, "T2", {
+    state.pending.push({
+      trigger: "T2",
       minute:  event.minute,
       pBefore: { home: prev.pHome, draw: prev.pDraw, away: prev.pAway },
-      pAfter:  { home: prev.pHome, draw: prev.pDraw, away: prev.pAway },
-      trigger: "T2",
     });
   }
 
@@ -264,8 +296,14 @@ async function fireMoment(
 
 // ── Utility ───────────────────────────────────────────────────────────────────
 
-function estimateMinute(atUtc: string): number {
-  // Rough estimate from timestamp; real implementation uses TxLINE minute field
-  const d = new Date(atUtc);
-  return d.getMinutes();
+function estimateMinute(state: MatchState, atUtc: string): number {
+  // Anchor off the last feed-reported minute (from a goal/red_card/kickoff event)
+  // and extrapolate by elapsed wall-clock time — TxLINE odds ticks don't carry minute.
+  if (state.lastKnownMinute === null || state.lastKnownMinuteAtUtc === null) {
+    return 0;
+  }
+  const elapsedMinutes = Math.round(
+    (new Date(atUtc).getTime() - new Date(state.lastKnownMinuteAtUtc).getTime()) / 60_000
+  );
+  return state.lastKnownMinute + Math.max(0, elapsedMinutes);
 }

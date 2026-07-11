@@ -32,6 +32,7 @@
  */
 
 import { z } from "zod";
+import tls from "node:tls";
 import type {
   NormalisedMatch,
   NormalisedOddsTick,
@@ -40,6 +41,13 @@ import type {
   MatchEventCallback,
   UnsubscribeFn,
 } from "./types";
+
+// On some networks, Node's TLS 1.3 handshake to TxLINE's CloudFront-fronted
+// dev API stalls for 20-30s (or hits undici's 10s connect timeout) even
+// though TCP connects instantly and other TLS clients (e.g. curl/schannel)
+// handshake in ~1s — a TLS 1.3 negotiation quirk specific to this endpoint.
+// Capping Node's max TLS version to 1.2 avoids the stall entirely.
+tls.DEFAULT_MAX_VERSION = "TLSv1.2";
 
 // ── Environment ───────────────────────────────────────────────────────────────
 
@@ -245,11 +253,11 @@ function parseScoreRecordsRaw(
   p1IsHome: boolean
 ): ParsedScoreState {
   // Filter for records that have a valid numeric StatusId
-  const validRecords = records.filter(
+  const unsortedValidRecords = records.filter(
     (r) => typeof r === "object" && r !== null && typeof r.StatusId === "number"
   );
 
-  if (validRecords.length === 0) {
+  if (unsortedValidRecords.length === 0) {
     return {
       status: "scheduled",
       statusId: 1,
@@ -259,29 +267,42 @@ function parseScoreRecordsRaw(
     };
   }
 
+  // The API does NOT guarantee array order matches chronological order — a
+  // pre-kickoff record (e.g. a "weather" event with Seq: 7) can appear after
+  // in-progress records with far higher Seq values. Sort by Seq ascending so
+  // "last element" genuinely means "most recent state".
+  const validRecords = [...unsortedValidRecords].sort(
+    (a, b) => (typeof a.Seq === "number" ? a.Seq : 0) - (typeof b.Seq === "number" ? b.Seq : 0)
+  );
+
   // Override p1IsHome from records if available
   const recordWithHome = validRecords.find((r) => typeof r.Participant1IsHome === "boolean");
   if (recordWithHome) {
     p1IsHome = recordWithHome.Participant1IsHome;
   }
 
-  // The last valid record is the most recent state
+  // The last valid record (by Seq) is the most recent state
   const latest = validRecords[validRecords.length - 1]!;
   const statusId: number = latest.StatusId;
   const status = statusIdToStatus(statusId);
 
-  // Extract score from the nested Score.ParticipantN.Total.Goals structure
+  // Not every record carries a Score block (e.g. "weather" metadata events don't) —
+  // scan backward from the most recent record for the last one that actually has one.
   let p1Goals = 0;
   let p2Goals = 0;
-  if (latest.Score) {
-    p1Goals = latest.Score?.Participant1?.Total?.Goals ?? 0;
-    p2Goals = latest.Score?.Participant2?.Total?.Goals ?? 0;
-  }
-
-  // Fallback: use Stats keys 1 and 2 (total goals per participant)
-  if (p1Goals === 0 && p2Goals === 0 && latest.Stats) {
-    p1Goals = latest.Stats["1"] ?? 0;
-    p2Goals = latest.Stats["2"] ?? 0;
+  for (let i = validRecords.length - 1; i >= 0; i--) {
+    const rec = validRecords[i]!;
+    if (rec.Score) {
+      p1Goals = rec.Score?.Participant1?.Total?.Goals ?? 0;
+      p2Goals = rec.Score?.Participant2?.Total?.Goals ?? 0;
+      break;
+    }
+    // Fallback: use Stats keys 1 and 2 (total goals per participant)
+    if (rec.Stats && (rec.Stats["1"] !== undefined || rec.Stats["2"] !== undefined)) {
+      p1Goals = rec.Stats["1"] ?? 0;
+      p2Goals = rec.Stats["2"] ?? 0;
+      break;
+    }
   }
 
   const score = {
@@ -715,6 +736,9 @@ export function subscribeMatch(
       }
 
       // Process new events (goal, red_card) — only those with seq > lastSeenSeq
+      let homeGoalFiredThisPoll = false;
+      let awayGoalFiredThisPoll = false;
+
       for (const evt of state.events) {
         if (evt.seq <= lastSeenSeq) continue;
         lastSeenSeq = evt.seq;
@@ -725,6 +749,9 @@ export function subscribeMatch(
             (evt.participant === 1 && p1IsHome) || (evt.participant === 2 && !p1IsHome)
               ? "home"
               : "away";
+
+          if (team === "home") homeGoalFiredThisPoll = true;
+          else awayGoalFiredThisPoll = true;
 
           onEvent({
             matchId,
@@ -751,35 +778,26 @@ export function subscribeMatch(
         }
       }
 
-      // Fallback goal detection via score-diff (in case Action events are missed)
-      if (state.score.home > lastHomeScore) {
-        // Only fire if we didn't already fire from events above
-        const goalEventsFired = state.events.some(
-          e => e.action === "goal" && e.seq > lastSeenSeq - state.events.length
-        );
-        if (!goalEventsFired) {
-          onEvent({
-            matchId,
-            atUtc: new Date().toISOString(),
-            minute: currentMinute,
-            kind: "goal",
-            team: "home",
-          });
-        }
+      // Fallback goal detection via score-diff (in case Action events are missed).
+      // Only fires if the events loop above did NOT already emit a goal for that
+      // side this poll — tracked directly via the flags, not inferred from seq math.
+      if (state.score.home > lastHomeScore && !homeGoalFiredThisPoll) {
+        onEvent({
+          matchId,
+          atUtc: new Date().toISOString(),
+          minute: currentMinute,
+          kind: "goal",
+          team: "home",
+        });
       }
-      if (state.score.away > lastAwayScore) {
-        const goalEventsFired = state.events.some(
-          e => e.action === "goal" && e.seq > lastSeenSeq - state.events.length
-        );
-        if (!goalEventsFired) {
-          onEvent({
-            matchId,
-            atUtc: new Date().toISOString(),
-            minute: currentMinute,
-            kind: "goal",
-            team: "away",
-          });
-        }
+      if (state.score.away > lastAwayScore && !awayGoalFiredThisPoll) {
+        onEvent({
+          matchId,
+          atUtc: new Date().toISOString(),
+          minute: currentMinute,
+          kind: "goal",
+          team: "away",
+        });
       }
 
       lastHomeScore = state.score.home;

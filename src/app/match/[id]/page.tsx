@@ -7,9 +7,10 @@
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { copy } from "@/lib/copy";
-import { getMomentsForMatch, listMatches, getCheckin } from "@/server/db/queries";
+import { getMomentsForMatch, listMatches, getCheckin, getUserById } from "@/server/db/queries";
 import { getLiveMatchState, getPrematchProbabilities, getFinishedMatchScore } from "@/server/txline/adapter";
 import { createClient } from "@/utils/supabase/server";
+import { Navbar } from "@/components/Navbar";
 import { ProbabilityBar } from "@/components/ProbabilityBar";
 import { MomentCard } from "@/components/MomentCard";
 import { CheckinButton } from "@/components/CheckinButton";
@@ -43,6 +44,16 @@ export default async function MatchPage({ params }: Props) {
   const isWitness = user
     ? Boolean(await getCheckin(user.id, id).catch(() => null))
     : false;
+
+  let displayName = "Fan";
+  if (user) {
+    try {
+      const appUser = await getUserById(user.id).catch(() => null);
+      displayName = appUser?.displayName || user.email?.split("@")[0] || "Fan";
+    } catch (err) {
+      console.error("[MatchPage] Failed to fetch user profile:", err);
+    }
+  }
 
   if (!match) {
     return (
@@ -117,7 +128,9 @@ export default async function MatchPage({ params }: Props) {
   }
 
   return (
-    <main className="mx-auto max-w-2xl px-6 py-10">
+    <>
+      <Navbar displayName={displayName} />
+      <main className="mx-auto max-w-2xl px-6 py-10">
       {/* Match header */}
       <div className="mb-8 bg-surface-raised border border-surface-border p-6 rounded-2xl">
         <div className="flex items-center justify-between mb-4">
@@ -230,5 +243,6 @@ export default async function MatchPage({ params }: Props) {
         )}
       </section>
     </main>
+  </>
   );
 }

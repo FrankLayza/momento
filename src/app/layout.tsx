@@ -9,7 +9,6 @@
  */
 
 import type { Metadata } from "next";
-import { Navbar } from "@/components/Navbar";
 import { AuthHandler } from "@/components/AuthHandler";
 import { Suspense } from "react";
 import "./globals.css";
@@ -45,13 +44,10 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${inter.variable} ${sora.variable} dark`}
+      className="dark"
       suppressHydrationWarning
     >
-      <body className="min-h-dvh bg-surface text-ink-primary font-body antialiased flex flex-col">
-        <Suspense fallback={null}>
-          <Navbar />
-        </Suspense>
+      <body className="min-h-dvh bg-cream font-body antialiased flex flex-col">
         <div className="flex-1 w-full">
           {children}
         </div>

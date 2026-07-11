@@ -3,6 +3,25 @@
 @config "../../tailwind.config.ts";
 @import "tailwindcss";
 
+@theme {
+  /* Palette */
+  --color-cream: #F5F0E8;
+  --color-cream-surface: #EDE8DC;
+  --color-cream-border: #D8D1C4;
+  --color-cream-muted: #C8C0B4;
+
+  --color-ink: #1A1714;
+  --color-ink-secondary: #6B6459;
+  --color-ink-ghost: #9B9187;
+
+  --color-live: #E03C28;
+  --color-cyan: #00A8B5;
+
+  /* Typography */
+  --font-display: 'Space Grotesk', sans-serif;
+  --font-body: 'Inter', sans-serif;
+}
+
 /* ── Base reset ────────────────────────────────────────────────────────────── */
 @layer base {
   :root {
