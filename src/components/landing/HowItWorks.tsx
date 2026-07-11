@@ -26,7 +26,7 @@ export function HowItWorks() {
   }, []);
 
   return (
-    <section id="how-it-works" className="bg-landing-cream relative">
+    <section id="how-it-works" className="bg-landing-cream relative z-20 -mt-16 rounded-t-[48px] shadow-2xl">
       {/* Mobile View */}
       <div className="lg:hidden">
         {/* Section intro */}
