@@ -1,3 +1,5 @@
+"use client";
+
 /**
  * src/components/landing/Hero.tsx
  * Full-viewport hero for the logged-out landing page.
@@ -10,7 +12,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { copy } from "@/lib/copy";
 
-// Swap this path once the real hero photo is provided.
+
 const HERO_IMAGE_SRC = "/landing/landing.png";
 
 export function Hero() {
