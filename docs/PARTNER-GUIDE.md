@@ -33,23 +33,28 @@ Here is a quick breakdown of the core systems we are building:
   To make minting collectibles affordable (fractions of a cent), we use Solana **compressed NFTs (cNFTs)**. A single Merkle Tree created on-chain handles all claims for the entire tournament.
 * **Embedded Custodial Wallets (`src/server/chain/wallets.ts`):** 
   To hide the complexity of blockchain from casual fans, the backend automatically generates a Solana keypair for each user on sign-up, encrypts it using the Supabase Service Key, and stores it in the database. Advanced users can reveal and export their private keys.
+* **Supabase Client SDK Helpers (`src/lib/supabase/`):**
+  Custom helpers `server.ts` and `client.ts` implementing standard Supabase Auth interactions. The server helper utilizes dynamic async cookies matching Next.js 15/16 requirements.
 
 ---
 
-## 📈 Current Project Progress (We are at Day 7)
+## 📈 Current Project Progress (Completed Setup)
 
-We have successfully scaffolded the project, set up the database, and completed the core sports engine integration. 
+We have completed the project scaffolding, database schema, sports/moment engines, page styling, and authentication protection gates.
 
 | Feature / Step | Status | Description |
 |---|---|---|
-| **Project Scaffolding** | **Complete** | Folder structure, Tailwind configuration, TypeScript strict rules, and testing configurations are fully established. |
+| **Project Scaffolding** | **Complete** | Folder structure, Next.js 16 App Router, TypeScript strict rules, Tailwind v4 theme configurations, and vitest testing configurations are fully established. |
 | **Solana Tree Setup** | **Complete** | Merkle tree initialized on Solana Devnet: `J6zFZwUgR4y2CzDrWGaspbd2sPApCun5y2CxcpvCHYCH`. |
 | **TxLINE Activation** | **Complete** | Subscribed on-chain and registered API Token: `txoracle_api_86e80f9bae1b4702b3a4a9a20d2c3d18`. |
 | **Database Schema** | **Complete** | Database tables (`users`, `matches`, `checkins`, `moments`, `editions`) created in Supabase with Row Level Security (RLS) active. |
 | **Shock Score Formula** | **Complete** | Built in `src/lib/score.ts`. Verified by unit tests. |
 | **Worker / Engine** | **Complete** | Worker automatically polls matches, updates database tables, and tracks live events. IPv6 connection timeouts have been resolved by forcing IPv4 DNS resolution. |
-| **Frontend UI (v1)** | **In Progress** | Homepage listing upcoming fixtures and match details page with the Live Probability Bar are running. |
-| **Check-in Interaction** | **In Progress** | Created `CheckinButton` with `localStorage` fallback to easily mock and test check-in states before auth is completely wired. |
+| **Cream theme UI** | **Complete** | Fixtures dashboard page matches the cream-themed styling spec. Implemented `LiveTicketCard.tsx` stub card (featuring probability bars and custom barcode styles) and `UpcomingMatchRow.tsx`. |
+| **Auth Setup & Sign-In** | **Complete** | Created Custom cardless `(auth)/sign-in` page and form handling Google OAuth and Passwordless Magic Link OTP. Refactored `/auth/callback` callback route to automate signup + custodial wallet keypair provisioning. |
+| **Route Protection & Gates** | **Complete** | Applied server-side redirects on `/vault` and `/advanced` pages. Wired client action gates via custom `useCheckIn` redirect hook and non-rendering auto check-in listeners. Protected check-in and claim API routes under a `401 Unauthorized` gate. |
+| **Cleanup & Refactoring** | **Complete** | Deleted legacy utility files `src/utils/supabase/*` and unused middleware files (`src/proxy.ts`), replacing them with active async-cookies client helpers. Verified build compilation. |
+| **Landing Navigation Spacing**| **Complete** | Extracted `LandingNavbar` to a direct-child layout in `Landing.tsx` to maintain vertical layering above the interactive cover sheet. Spaced out layout and calibrated dynamic scroll transitions based on viewport coverage. |
 
 ---
 
