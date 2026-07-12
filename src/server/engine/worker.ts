@@ -91,7 +91,7 @@ async function syncFixtures(): Promise<void> {
         // Import adapter dynamically to allow REPLAY_MODE env override
         const adapter = await getAdapter();
 
-        trackMatch(match.id, match.home, match.away, pPreMatch, adapter);
+        trackMatch(match.id, match.home, match.away, pPreMatch, adapter, match.score);
         activeMatches.add(match.id);
         console.log(`[worker] Now tracking: ${match.home} v ${match.away} (${match.id})`);
       }

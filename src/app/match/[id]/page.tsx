@@ -9,8 +9,9 @@ import { cookies } from "next/headers";
 import { copy } from "@/lib/copy";
 import { getMomentsForMatch, listMatches, getCheckin, getUserById } from "@/server/db/queries";
 import { getLiveMatchState, getPrematchProbabilities, getFinishedMatchScore } from "@/server/txline/adapter";
-import { createClient } from "@/utils/supabase/server";
+import { createClient } from "@/lib/supabase/server";
 import { Navbar } from "@/components/Navbar";
+import { AutoCheckIn } from "@/components/AutoCheckIn";
 import { ProbabilityBar } from "@/components/ProbabilityBar";
 import { MomentCard } from "@/components/MomentCard";
 import { CheckinButton } from "@/components/CheckinButton";
@@ -38,8 +39,7 @@ export default async function MatchPage({ params }: Props) {
   const match   = matches.find(m => m.id === id);
   const moments = await getMomentsForMatch(id).catch(() => [] as Moment[]);
 
-  const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   const isWitness = user
     ? Boolean(await getCheckin(user.id, id).catch(() => null))
@@ -130,6 +130,7 @@ export default async function MatchPage({ params }: Props) {
   return (
     <>
       <Navbar displayName={displayName} />
+      <AutoCheckIn matchId={id} initialCheckedIn={isWitness} />
       <main className="mx-auto max-w-2xl px-6 py-10">
       {/* Match header */}
       <div className="mb-8 bg-surface-raised border border-surface-border p-6 rounded-2xl">

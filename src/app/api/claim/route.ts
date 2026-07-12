@@ -15,9 +15,8 @@
  */
 
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
 import { z } from "zod";
-import { createClient } from "@/utils/supabase/server";
+import { createClient } from "@/lib/supabase/server";
 import {
   getMomentById,
   getCheckin,
@@ -38,14 +37,14 @@ const ClaimRequestSchema = z.object({
 // ── Handler ───────────────────────────────────────────────────────────────────
 
 export async function POST(req: Request) {
-  const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
-  const { data: { user } } = await supabase.auth.getUser();
-  const userId = user?.id ?? null;
+  const supabase = await createClient();
+  const { data: { session } } = await supabase.auth.getSession();
 
-  if (!userId) {
-    return NextResponse.json({ error: "Sign in required." }, { status: 401 });
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  const userId = session.user.id;
 
   // Parse body
   let body: unknown;
@@ -91,7 +90,7 @@ export async function POST(req: Request) {
   // Check for duplicate claim
   const existing = await getEditionByUserAndMoment(userId, momentId).catch(() => null);
   if (existing) {
-    return NextResponse.json({ error: "You have already claimed this Moment." }, { status: 409 });
+    return NextResponse.json({ ok: true, alreadyClaimed: true });
   }
 
   // Create the edition row (pending_chain) — fan sees "Claimed" instantly
@@ -103,17 +102,17 @@ export async function POST(req: Request) {
   const match   = matches.find(m => m.id === moment.matchId);
 
   if (appUser && match) {
-    try {
-      const result = await mintEdition(moment, appUser.pubkey, match.home, match.away);
-      await updateEditionChainStatus(edition.id, {
-        chainStatus: "confirmed",
-        assetId:     result.assetId,
-        txSig:       result.txSig,
+    mintEdition(moment, appUser.pubkey, match.home, match.away)
+      .then(async (result) => {
+        await updateEditionChainStatus(edition.id, {
+          chainStatus: "confirmed",
+          assetId:     result.assetId,
+          txSig:       result.txSig,
+        });
+      })
+      .catch((err) => {
+        console.error("[api/claim] Mint failed (worker will retry):", err);
       });
-    } catch (err) {
-      // Mint failure is non-fatal — edition stays pending_chain; worker retries
-      console.error("[api/claim] Mint failed (worker will retry):", err);
-    }
   }
 
   return NextResponse.json({

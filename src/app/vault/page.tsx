@@ -9,7 +9,8 @@ import Link from "next/link";
 import { cookies } from "next/headers";
 import { copy } from "@/lib/copy";
 import { getUserMoments, getUserById } from "@/server/db/queries";
-import { createClient } from "@/utils/supabase/server";
+import { createClient } from "@/lib/supabase/server";
+import { redirect } from "next/navigation";
 import { MomentCard } from "@/components/MomentCard";
 import { Navbar } from "@/components/Navbar";
 import type { Moment } from "@/lib/types";
@@ -26,17 +27,14 @@ export default async function VaultPage({
   searchParams: Promise<{ sort?: string }>;
 }) {
   // 1. Get current auth user session
-  const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
-  const { data: { user } } = await supabase.auth.getUser();
+  const supabase = await createClient();
+  const { data: { session } } = await supabase.auth.getSession();
 
-  if (!user) {
-    return (
-      <main className="mx-auto max-w-3xl px-6 py-10">
-        <p className="text-ink-muted text-sm">{copy.errors.signIn}</p>
-      </main>
-    );
+  if (!session) {
+    redirect('/sign-in?next=/vault&reason=vault');
   }
+
+  const user = session.user;
 
   // 2. Fetch claimed moments for the user
   let userMoments: Array<{ edition: any; moment: Moment }> = [];

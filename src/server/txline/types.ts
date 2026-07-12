@@ -16,6 +16,14 @@ export interface NormalisedMatch {
   status: "scheduled" | "live" | "finished";
   minute: number | null;
   score: { home: number; away: number };
+  /**
+   * Whatever TxLINE's fixture `Competition` field returns, verbatim — or
+   * undefined if absent. Do NOT guess a "Group A · Matchday 2"-style format;
+   * TxLINE's real string shape is documented in TXLINE-NOTES.md §5. Callers
+   * must fall back to a generic label (e.g. "FIFA World Cup 2026") when this
+   * is undefined rather than hardcoding a fake stage/group.
+   */
+  competition?: string;
 }
 
 // ── Normalised odds tick ──────────────────────────────────────────────────────

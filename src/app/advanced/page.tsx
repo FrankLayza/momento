@@ -8,8 +8,8 @@
  */
 
 import type { Metadata } from "next";
-import { cookies } from "next/headers";
-import { createClient } from "@/utils/supabase/server";
+import { createClient } from "@/lib/supabase/server";
+import { redirect } from "next/navigation";
 import { getUserById } from "@/server/db/queries";
 import { ExportWalletSection } from "./ExportWalletSection";
 import { Navbar } from "@/components/Navbar";
@@ -22,20 +22,22 @@ export const revalidate = 0; // Dynamic/SSR only to check active user wallet
 
 export default async function AdvancedPage() {
   // 1. Get current auth user session
-  const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
-  const { data: { user } } = await supabase.auth.getUser();
+  const supabase = await createClient();
+  const { data: { session } } = await supabase.auth.getSession();
 
+  if (!session) {
+    redirect('/sign-in?next=/advanced&reason=default');
+  }
+
+  const user = session.user;
   let pubkey: string | null = null;
   let displayName = "Fan";
-  if (user) {
-    try {
-      const appUser = await getUserById(user.id);
-      pubkey = appUser?.pubkey ?? null;
-      displayName = appUser?.displayName || user.email?.split("@")[0] || "Fan";
-    } catch (err) {
-      console.error("[AdvancedPage] Failed to load user metadata:", err);
-    }
+  try {
+    const appUser = await getUserById(user.id);
+    pubkey = appUser?.pubkey ?? null;
+    displayName = appUser?.displayName || user.email?.split("@")[0] || "Fan";
+  } catch (err) {
+    console.error("[AdvancedPage] Failed to load user metadata:", err);
   }
 
   return (

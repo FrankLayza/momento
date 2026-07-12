@@ -164,3 +164,23 @@ export const HOW_IT_WORKS = [
     body: 'Every keepsake lives in your Vault, graded by tier. Share a card in one tap. Your collection shows who you were watching, and when.',
   },
 ] satisfies HowItWorksStep[];
+
+export const SIGN_IN_HEADINGS: Record<string, { title: string; sub: string }> = {
+  checkin: {
+    title: 'Witness this match.',
+    sub: 'Sign in to check in. Only Witnesses can claim Moments.',
+  },
+  claim: {
+    title: 'Claim your Edition.',
+    sub: 'Sign in to claim. Your collection is waiting.',
+  },
+  vault: {
+    title: 'Your Vault.',
+    sub: 'Sign in to see your collection.',
+  },
+  default: {
+    title: 'Welcome to Momento.',
+    sub: 'Sign in to start witnessing.',
+  },
+}
+

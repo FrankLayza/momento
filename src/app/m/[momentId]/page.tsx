@@ -11,7 +11,7 @@ import { cookies } from "next/headers";
 import Link from "next/link";
 import { getMomentById, listMatches, getUserById } from "@/server/db/queries";
 import { copy } from "@/lib/copy";
-import { createClient } from "@/utils/supabase/server";
+import { createClient } from "@/lib/supabase/server";
 import { Navbar } from "@/components/Navbar";
 import { MomentCard } from "@/components/MomentCard";
 import { TierBadge } from "@/components/TierBadge";
@@ -53,8 +53,7 @@ export default async function PublicMomentPage({ params }: Props) {
   const moment  = await getMomentById(momentId).catch(() => null as Moment | null);
   const matches = await listMatches().catch(() => [] as Match[]);
 
-  const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
   let displayName = "Fan";

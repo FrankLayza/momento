@@ -1,7 +1,7 @@
 // Implements FR-1.1, FR-1.2, FR-1.3
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { Navbar } from '@/components/Navbar'
@@ -40,6 +40,19 @@ export function FixturesPageClient({
   const router = useRouter()
   const [isCheckedIn, setIsCheckedIn] = useState(initialCheckedIn)
   const [loading, setLoading] = useState(false)
+
+  // Keep the live card (score, minute, probability bar) current while a match
+  // is in progress — the server component only re-fetches on navigation or
+  // router.refresh(), so without this the card freezes at page-load values.
+  useEffect(() => {
+    if (!initialLiveMatch) return
+
+    const interval = setInterval(() => {
+      router.refresh()
+    }, 12_000)
+
+    return () => clearInterval(interval)
+  }, [initialLiveMatch, router])
 
   const handleCheckIn = async () => {
     if (!userId) {
@@ -104,7 +117,7 @@ export function FixturesPageClient({
               odds={initialLiveOdds}
               isCheckedIn={isCheckedIn}
               onCheckIn={handleCheckIn}
-              competition="Group A · Matchday 2"
+              competition="FIFA World Cup 2026"
             />
             {/* Divider */}
             <div className="h-px bg-cream-border my-8" />

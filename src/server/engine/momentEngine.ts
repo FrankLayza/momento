@@ -75,7 +75,8 @@ export function trackMatch(
   home: string,
   away: string,
   pPreMatch: ProbabilitySnapshot | null,
-  adapter: AdapterLike
+  adapter: AdapterLike,
+  initialScore: { home: number; away: number } = { home: 0, away: 0 }
 ): void {
   if (tracked.has(matchId)) return;  // already tracked
 
@@ -86,7 +87,10 @@ export function trackMatch(
     pPreMatch,
     latestTick:  null,
     tickHistory: [],
-    score:       { home: 0, away: 0 },
+    // Seeded from the real current score — matches are often tracked mid-progress
+    // (worker restarted, witness checks in after kickoff), so starting from 0-0
+    // would misreport scoreHome/scoreAway on every Moment for the rest of the match.
+    score:       { ...initialScore },
     status:      "live",
     unsub:       () => undefined,
     pending:     [],

@@ -227,6 +227,7 @@ function normaliseMatch(
     status,
     minute: liveMinute ?? null,
     score: liveScore ?? { home: 0, away: 0 },
+    competition: raw.Competition ?? undefined,
   };
 }
 
@@ -310,13 +311,25 @@ function parseScoreRecordsRaw(
     away: p1IsHome ? p2Goals : p1Goals,
   };
 
-  // Derive minute from Clock.Seconds
+  // Derive minute. Status-based checkpoints apply regardless of whether the
+  // single most-recent record happens to carry Clock data (e.g. a
+  // "halftime_finalised" record often doesn't) — otherwise scan backward for
+  // the most recent record that does carry Clock.Seconds, same as Score above.
   let minute: number | null = null;
-  if (latest.Clock && typeof latest.Clock.Seconds === "number" && latest.Clock.Seconds > 0) {
-    minute = Math.ceil(latest.Clock.Seconds / 60);
-    if (statusId === 3) minute = 45;       // Halftime
-    if (statusId === 5) minute = 90;       // Full time
-    if (statusId === 10) minute = 120;     // After ET
+  if (statusId === 3) {
+    minute = 45;        // Halftime
+  } else if (statusId === 5) {
+    minute = 90;        // Full time
+  } else if (statusId === 10) {
+    minute = 120;        // After ET
+  } else {
+    for (let i = validRecords.length - 1; i >= 0; i--) {
+      const rec = validRecords[i]!;
+      if (rec.Clock && typeof rec.Clock.Seconds === "number" && rec.Clock.Seconds > 0) {
+        minute = Math.ceil(rec.Clock.Seconds / 60);
+        break;
+      }
+    }
   }
 
   // Collect events (goals, cards) from all valid records
@@ -661,6 +674,11 @@ export function subscribeMatch(
   let lastSeenSeq = 0; // Track which score records we've already processed
   let hasKickoffFired = false;
   let p1IsHome = true; // will be set from the first score record
+  // Matches are often tracked mid-progress (worker restarted, or a witness
+  // checks in after kickoff). Without this, the first poll would treat every
+  // goal/card that already happened earlier in the match as brand-new —
+  // misattributed to the current minute and double-counted into the score.
+  let isFirstPoll = true;
 
   const poll = async () => {
     try {
@@ -720,88 +738,101 @@ export function subscribeMatch(
 
       const currentMinute = state.minute ?? 0;
 
-      // Synthesize Kickoff
-      if (
-        !hasKickoffFired &&
-        [2, 3, 4, 6, 7, 8, 9, 11, 12].includes(state.statusId) // any live status
-      ) {
+      // Synthesize Kickoff — only meaningful the first time we see a live
+      // status; if the match is already live on our first poll (tracking
+      // started mid-match), treat kickoff as already having happened.
+      const isCurrentlyLive = [2, 3, 4, 6, 7, 8, 9, 11, 12].includes(state.statusId);
+      if (!hasKickoffFired && isCurrentlyLive) {
         hasKickoffFired = true;
-        onEvent({
-          matchId,
-          atUtc: new Date().toISOString(),
-          minute: currentMinute || 1,
-          kind: "kickoff",
-          team: null,
-        });
-      }
-
-      // Process new events (goal, red_card) — only those with seq > lastSeenSeq
-      let homeGoalFiredThisPoll = false;
-      let awayGoalFiredThisPoll = false;
-
-      for (const evt of state.events) {
-        if (evt.seq <= lastSeenSeq) continue;
-        lastSeenSeq = evt.seq;
-
-        if (evt.action === "goal" && evt.confirmed !== false) {
-          // Determine which team scored
-          const team: "home" | "away" =
-            (evt.participant === 1 && p1IsHome) || (evt.participant === 2 && !p1IsHome)
-              ? "home"
-              : "away";
-
-          if (team === "home") homeGoalFiredThisPoll = true;
-          else awayGoalFiredThisPoll = true;
-
+        if (!isFirstPoll) {
           onEvent({
             matchId,
             atUtc: new Date().toISOString(),
-            minute: evt.clockSeconds ? Math.ceil(evt.clockSeconds / 60) : currentMinute,
+            minute: currentMinute || 1,
+            kind: "kickoff",
+            team: null,
+          });
+        }
+      }
+
+      if (isFirstPoll) {
+        // Establish a baseline instead of replaying the match's entire event
+        // history as if it were happening now.
+        for (const evt of state.events) {
+          if (evt.seq > lastSeenSeq) lastSeenSeq = evt.seq;
+        }
+        lastHomeScore = state.score.home;
+        lastAwayScore = state.score.away;
+        isFirstPoll = false;
+      } else {
+        // Process new events (goal, red_card) — only those with seq > lastSeenSeq
+        let homeGoalFiredThisPoll = false;
+        let awayGoalFiredThisPoll = false;
+
+        for (const evt of state.events) {
+          if (evt.seq <= lastSeenSeq) continue;
+          lastSeenSeq = evt.seq;
+
+          if (evt.action === "goal" && evt.confirmed !== false) {
+            // Determine which team scored
+            const team: "home" | "away" =
+              (evt.participant === 1 && p1IsHome) || (evt.participant === 2 && !p1IsHome)
+                ? "home"
+                : "away";
+
+            if (team === "home") homeGoalFiredThisPoll = true;
+            else awayGoalFiredThisPoll = true;
+
+            onEvent({
+              matchId,
+              atUtc: new Date().toISOString(),
+              minute: evt.clockSeconds ? Math.ceil(evt.clockSeconds / 60) : currentMinute,
+              kind: "goal",
+              team,
+            });
+          }
+
+          if (evt.action === "red_card" && evt.confirmed !== false) {
+            const team: "home" | "away" =
+              (evt.participant === 1 && p1IsHome) || (evt.participant === 2 && !p1IsHome)
+                ? "home"
+                : "away";
+
+            onEvent({
+              matchId,
+              atUtc: new Date().toISOString(),
+              minute: evt.clockSeconds ? Math.ceil(evt.clockSeconds / 60) : currentMinute,
+              kind: "red_card",
+              team,
+            });
+          }
+        }
+
+        // Fallback goal detection via score-diff (in case Action events are missed).
+        // Only fires if the events loop above did NOT already emit a goal for that
+        // side this poll — tracked directly via the flags, not inferred from seq math.
+        if (state.score.home > lastHomeScore && !homeGoalFiredThisPoll) {
+          onEvent({
+            matchId,
+            atUtc: new Date().toISOString(),
+            minute: currentMinute,
             kind: "goal",
-            team,
+            team: "home",
           });
         }
-
-        if (evt.action === "red_card" && evt.confirmed !== false) {
-          const team: "home" | "away" =
-            (evt.participant === 1 && p1IsHome) || (evt.participant === 2 && !p1IsHome)
-              ? "home"
-              : "away";
-
+        if (state.score.away > lastAwayScore && !awayGoalFiredThisPoll) {
           onEvent({
             matchId,
             atUtc: new Date().toISOString(),
-            minute: evt.clockSeconds ? Math.ceil(evt.clockSeconds / 60) : currentMinute,
-            kind: "red_card",
-            team,
+            minute: currentMinute,
+            kind: "goal",
+            team: "away",
           });
         }
-      }
 
-      // Fallback goal detection via score-diff (in case Action events are missed).
-      // Only fires if the events loop above did NOT already emit a goal for that
-      // side this poll — tracked directly via the flags, not inferred from seq math.
-      if (state.score.home > lastHomeScore && !homeGoalFiredThisPoll) {
-        onEvent({
-          matchId,
-          atUtc: new Date().toISOString(),
-          minute: currentMinute,
-          kind: "goal",
-          team: "home",
-        });
+        lastHomeScore = state.score.home;
+        lastAwayScore = state.score.away;
       }
-      if (state.score.away > lastAwayScore && !awayGoalFiredThisPoll) {
-        onEvent({
-          matchId,
-          atUtc: new Date().toISOString(),
-          minute: currentMinute,
-          kind: "goal",
-          team: "away",
-        });
-      }
-
-      lastHomeScore = state.score.home;
-      lastAwayScore = state.score.away;
 
       // Synthesize Full Time
       if ([5, 10, 13].includes(state.statusId)) {

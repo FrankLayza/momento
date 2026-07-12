@@ -133,13 +133,39 @@ GET /api/fixtures/snapshot?competitionId=<id>
 ```typescript
 interface TxLineFixture {
   FixtureId: number;         // use as matchId (cast to string per NormalisedMatch)
-  StartTime: string;         // ISO-8601 UTC
+  StartTime: number;         // Unix ms, NOT an ISO-8601 string (confirmed live 2026-07-11)
   Participant1: string;      // team name
   Participant2: string;      // team name
+  Participant1Id: number;
+  Participant2Id: number;
   Participant1IsHome: boolean; // true = Participant1 is home side
-  // additional fields likely present; validate with zod, pick only what we need
+  Competition: string;       // confirmed: literally just "World Cup" — see note below
+  CompetitionId: number;     // opaque numeric id (72 for World Cup on devnet)
+  FixtureGroupId: number;    // opaque numeric id — no known human-readable mapping
+  GameState: number;         // STALE — stays 1 ("NS") even for live matches, do not use
+  Ts: number;                // Unix ms, feed timestamp of this snapshot row
 }
 ```
+
+**Real sample object** (Norway vs England, fetched live 2026-07-11):
+```json
+{
+  "Ts": 1783306800000,
+  "StartTime": 1783803600000,
+  "Competition": "World Cup",
+  "CompetitionId": 72,
+  "FixtureGroupId": 10115675,
+  "Participant1Id": 2661,
+  "Participant1": "Norway",
+  "Participant2Id": 1888,
+  "Participant2": "England",
+  "FixtureId": 18213979,
+  "Participant1IsHome": true,
+  "GameState": 1
+}
+```
+
+**`Competition` field — confirmed, do not guess a richer format:** it is literally the string `"World Cup"` for every World Cup fixture, with no group/stage/matchday breakdown. `CompetitionId` and `FixtureGroupId` are opaque numeric ids with no confirmed human-readable mapping — do not attempt to derive a "Group A · Matchday 2"-style label from them. `NormalisedMatch.competition` is populated verbatim from this field (`raw.Competition ?? undefined`); UI callers must fall back to a generic label (e.g. "FIFA World Cup 2026") since this field alone isn't display-ready.
 
 **Important note from docs:**
 > `Participant1IsHome` is the feed's home/away designation. For the World Cup (neutral venues), `Participant1IsHome: true` means Participant1 is listed as the home side for feed purposes only — it is NOT a venue guarantee.
@@ -149,10 +175,11 @@ interface TxLineFixture {
 home = fixture.Participant1IsHome ? fixture.Participant1 : fixture.Participant2
 away = fixture.Participant1IsHome ? fixture.Participant2 : fixture.Participant1
 id   = String(fixture.FixtureId)
-kickoffUtc = fixture.StartTime  // already ISO-8601
+kickoffUtc = new Date(fixture.StartTime).toISOString()  // StartTime is Unix ms, not ISO already
+competition = fixture.Competition ?? undefined
 ```
 
-[NEEDS-HUMAN-INPUT: Paste a real fixture snapshot response object for a World Cup match so we can confirm all field names and whether status/score are included in the snapshot or only in the scores endpoint.]
+Confirmed live 2026-07-11: the fixtures snapshot does NOT include status or score — those only come from `/api/scores/snapshot/{id}` (§7 below), consistent with adapter.ts's approach of probing scores separately for any fixture that may have kicked off.
 
 ---
 

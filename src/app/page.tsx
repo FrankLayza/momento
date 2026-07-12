@@ -8,7 +8,7 @@ import type { Metadata } from "next"
 import { cookies } from "next/headers"
 import { listMatches, getUserCheckins, getUserById } from "@/server/db/queries"
 import { listWorldCupMatches, getPrematchProbabilities } from "@/server/txline/adapter"
-import { createClient } from "@/utils/supabase/server"
+import { createClient } from "@/lib/supabase/server"
 import { Landing } from "@/components/landing/Landing"
 import { FixturesPageClient } from "@/components/FixturesPageClient"
 import type { NormalisedMatch, NormalisedOddsTick } from "@/server/txline/types"
@@ -21,8 +21,7 @@ export const revalidate = 10 // ISR: refresh fixture data every 10 seconds for h
 
 // Implements FR-1.1 (browse-first, no auth wall via branching)
 export default async function Page() {
-  const cookieStore = await cookies()
-  const supabase = createClient(cookieStore)
+  const supabase = await createClient()
   const { data: { user: sessionUser } } = await supabase.auth.getUser()
 
   if (!sessionUser) {

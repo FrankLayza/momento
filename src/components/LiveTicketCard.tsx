@@ -21,7 +21,7 @@ export function LiveTicketCard({
   odds,
   isCheckedIn,
   onCheckIn,
-  competition = 'Group A · Matchday 2',
+  competition = 'FIFA World Cup 2026',
 }: LiveTicketCardProps) {
   // Normalize probabilities to percentages
   const pHomePct = Math.round(odds.pHome * 100)

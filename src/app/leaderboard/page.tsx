@@ -8,7 +8,7 @@ import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { copy } from "@/lib/copy";
 import { getLeaderboard, getUserById } from "@/server/db/queries";
-import { createClient } from "@/utils/supabase/server";
+import { createClient } from "@/lib/supabase/server";
 import { Avatar } from "@/components/Avatar";
 import { Navbar } from "@/components/Navbar";
 
@@ -19,8 +19,7 @@ export const metadata: Metadata = {
 export const revalidate = 60; // 1-minute ISR for active tournaments
 
 export default async function LeaderboardPage() {
-  const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
   let displayName = "Fan";
