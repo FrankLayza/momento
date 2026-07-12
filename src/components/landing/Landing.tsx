@@ -7,6 +7,7 @@
  * Sora/Inter pairing untouched.
  */
 
+import { LandingNavbar } from "./LandingNavbar";
 import { Hero } from "./Hero";
 import { HowItWorks } from "./HowItWorks";
 
@@ -16,7 +17,8 @@ const spaceGrotesk = { variable: "font-sans" };
 
 export function Landing() {
   return (
-    <div className={`${unbounded.variable} ${spaceGrotesk.variable}`}>
+    <div className={`${unbounded.variable} ${spaceGrotesk.variable} relative`}>
+      <LandingNavbar />
       <Hero />
       <HowItWorks />
       {/*
