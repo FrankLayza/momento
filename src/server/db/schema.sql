@@ -30,8 +30,12 @@ create table if not exists matches (
   away         text,
   kickoff_utc  timestamptz,
   status       text,                       -- "scheduled" | "live" | "finished"
-  p_prematch   jsonb                       -- { home, draw, away } implied probs
+  p_prematch   jsonb,                      -- { home, draw, away } implied probs
+  finished_at  timestamptz                 -- stamped once at full-time; anchors the 24h seal window (FR-5.2)
 );
+
+-- Additive migration for existing installs (safe to re-run).
+alter table matches add column if not exists finished_at timestamptz;
 
 -- ── checkins ──────────────────────────────────────────────────────────────────
 -- Records when a user became a Witness for a match (FR-2.1, FR-2.2).

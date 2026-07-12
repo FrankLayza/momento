@@ -99,6 +99,22 @@ export async function listMatches(): Promise<Match[]> {
   }));
 }
 
+/**
+ * Stamps a match's full-time timestamp exactly once (FR-5.2 anchor).
+ * `finished_at is null` guard means repeated 60s worker polls after full-time
+ * don't keep pushing the 24h seal window forward. `upsertMatch` never touches
+ * this column, so it is safe from being clobbered on subsequent syncs.
+ */
+export async function markMatchFinished(matchId: string): Promise<void> {
+  const db = getServiceClient();
+  const { error } = await db
+    .from("matches")
+    .update({ finished_at: new Date().toISOString() })
+    .eq("id", matchId)
+    .is("finished_at", null);
+  if (error) throw new Error(`markMatchFinished failed: ${error.message}`);
+}
+
 // ── Check-ins ─────────────────────────────────────────────────────────────────
 
 /** Implements FR-2.1, FR-2.2 */
@@ -215,6 +231,47 @@ export async function getMomentsForMatch(matchId: string): Promise<Moment[]> {
 
   if (error) throw new Error(`getMomentsForMatch failed: ${error.message}`);
   return (data ?? []).map(dbRowToMoment);
+}
+
+/**
+ * Seals every still-unsealed Moment whose match finished more than 24h ago
+ * (FR-5.2). Setting `sealed_at = now` puts each Moment past the claim route's
+ * `now > sealedAt` cutoff, freezing supply. Returns the number sealed.
+ */
+export async function sealExpiredMoments(windowMs = 24 * 60 * 60 * 1_000): Promise<number> {
+  const db = getServiceClient();
+  const cutoffMs = Date.now() - windowMs;
+
+  // Unsealed moments joined to their match's finished_at (inner join skips
+  // matches with no finished_at, i.e. not yet full-time).
+  const { data, error } = await db
+    .from("moments")
+    .select("id, match:matches!inner(finished_at)")
+    .is("sealed_at", null);
+
+  if (error) throw new Error(`sealExpiredMoments select failed: ${error.message}`);
+
+  const dueIds = (data ?? [])
+    .filter(row => {
+      // Supabase types the joined relation as an object or array depending on
+      // the FK cardinality — normalise to a single record.
+      const rel = (row as { match: unknown }).match;
+      const finishedAt = Array.isArray(rel)
+        ? (rel[0] as { finished_at?: string } | undefined)?.finished_at
+        : (rel as { finished_at?: string } | null)?.finished_at;
+      return finishedAt != null && new Date(finishedAt).getTime() < cutoffMs;
+    })
+    .map(row => (row as { id: string }).id);
+
+  if (dueIds.length === 0) return 0;
+
+  const { error: updateError } = await db
+    .from("moments")
+    .update({ sealed_at: new Date().toISOString() })
+    .in("id", dueIds);
+
+  if (updateError) throw new Error(`sealExpiredMoments update failed: ${updateError.message}`);
+  return dueIds.length;
 }
 
 // ── Editions ──────────────────────────────────────────────────────────────────

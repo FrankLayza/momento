@@ -36,6 +36,8 @@ import {
   updateEditionChainStatus,
   getUserById,
   upsertMatch,
+  markMatchFinished,
+  sealExpiredMoments,
 } from "@/server/db/queries";
 
 // ── Config ────────────────────────────────────────────────────────────────────
@@ -63,6 +65,8 @@ async function syncFixtures(): Promise<void> {
       });
 
       if (match.status === "finished") {
+        // Stamp the full-time timestamp once — anchors the 24h seal window (FR-5.2).
+        await markMatchFinished(match.id);
         if (activeMatches.has(match.id)) {
           console.log(`[worker] Match finished: ${match.home} v ${match.away} (${match.id}) — untracking`);
           untrackMatch(match.id);
@@ -137,6 +141,19 @@ async function retryPendingMints(): Promise<void> {
   }
 }
 
+// ── Seal loop (FR-5.2) ────────────────────────────────────────────────────────
+
+async function runSeal(): Promise<void> {
+  try {
+    const sealed = await sealExpiredMoments(SEAL_AFTER_MS);
+    if (sealed > 0) {
+      console.log(`[worker] Sealed ${sealed} Moment(s) past the 24h claim window`);
+    }
+  } catch (err) {
+    console.error("[worker] runSeal error:", err);
+  }
+}
+
 // ── Adapter selection (live vs. replay) ──────────────────────────────────────
 
 async function getAdapter() {
@@ -161,6 +178,10 @@ async function main(): Promise<void> {
 
   // Recurring mint retry
   setInterval(() => { void retryPendingMints(); }, RETRY_MINT_INTERVAL_MS);
+
+  // Recurring seal check (FR-5.2) — freeze Moments 24h after full-time
+  void runSeal();
+  setInterval(() => { void runSeal(); }, SEAL_CHECK_INTERVAL_MS);
 
   console.log("[worker] Engine running. Ctrl+C to stop.");
 }
