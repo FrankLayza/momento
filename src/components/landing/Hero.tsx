@@ -36,12 +36,12 @@ export function Hero() {
           <br />
           {copy.landing.heroLine2}
         </h1>
-        <p className="font-landing-body mt-6 text-base sm:text-lg text-white/85 max-w-xl mx-auto leading-relaxed">
+        <p className="font-landing-body mt-4 text-base sm:text-lg text-white/85 max-w-xl mx-auto leading-relaxed">
           {copy.landing.heroSubcopy}
         </p>
         <Link
           href="/?signin=1"
-          className="font-landing-body mt-8 inline-block rounded-full bg-landing-gold px-8 py-4 text-sm font-bold text-landing-ink hover:brightness-95 transition-all"
+          className="font-landing-body mt-4 inline-block rounded-full bg-landing-gold px-8 py-4 text-sm font-bold text-landing-ink hover:brightness-95 transition-all"
         >
           {copy.landing.heroCta}
         </Link>
