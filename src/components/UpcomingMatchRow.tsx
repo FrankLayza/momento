@@ -26,7 +26,7 @@ export function UpcomingMatchRow({ match, isLast = false }: UpcomingMatchRowProp
   return (
     <Link
       href={`/match/${match.id}`}
-      className={`flex items-center px-6 py-4 transition-colors cursor-pointer hover:bg-cream-surface block ${
+      className={`flex items-center px-6 py-4 transition-colors cursor-pointer hover:bg-cream-surface ${
         isLast ? '' : 'border-b border-cream-border'
       }`}
     >

@@ -160,7 +160,7 @@ export default async function MatchPage({ params }: Props) {
           {/* Home */}
           <div className="flex-1 flex flex-col items-center gap-3">
             <img
-              src={flagUrl(match.home, 64)}
+              src={flagUrl(match.home, 20)}
               alt={match.home}
               className="w-12 h-8 rounded-sm object-cover border border-cream-border/30 shadow-sm"
             />
@@ -199,7 +199,7 @@ export default async function MatchPage({ params }: Props) {
           {/* Away */}
           <div className="flex-1 flex flex-col items-center gap-3">
             <img
-              src={flagUrl(match.away, 64)}
+              src={flagUrl(match.away, 20)}
               alt={match.away}
               className="w-12 h-8 rounded-sm object-cover border border-cream-border/30 shadow-sm"
             />
