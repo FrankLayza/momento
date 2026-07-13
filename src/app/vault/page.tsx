@@ -73,11 +73,11 @@ export default async function VaultPage({
 
   return (
     <>
-      <Navbar displayName={displayName} />
+      <Navbar displayName={displayName} userId={user.id} />
       <main className="mx-auto max-w-3xl px-6 py-10">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="font-display text-3xl font-extrabold tracking-tight text-ink-primary">
+        <h1 className="font-display text-3xl font-extrabold tracking-tight text-ink">
           {copy.vault.title}
         </h1>
         
@@ -109,8 +109,8 @@ export default async function VaultPage({
             href="/vault?sort=date"
             className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition-colors ${
               sortBy === "date"
-                ? "bg-surface-raised border border-surface-border text-ink-primary"
-                : "text-ink-muted hover:text-ink-secondary"
+                ? "bg-cream-surface border border-cream-border text-ink"
+                : "text-ink-secondary hover:text-ink"
             }`}
           >
             {copy.vault.sortByDate}
@@ -119,8 +119,8 @@ export default async function VaultPage({
             href="/vault?sort=score"
             className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition-colors ${
               sortBy === "score"
-                ? "bg-surface-raised border border-surface-border text-ink-primary"
-                : "text-ink-muted hover:text-ink-secondary"
+                ? "bg-cream-surface border border-cream-border text-ink"
+                : "text-ink-secondary hover:text-ink"
             }`}
           >
             {copy.vault.sortByScore}
@@ -136,8 +136,8 @@ export default async function VaultPage({
           ))}
         </div>
       ) : (
-        <div className="text-center py-24 border border-surface-border/40 border-dashed rounded-2xl bg-surface-raised/10">
-          <p className="text-sm text-ink-muted leading-relaxed max-w-sm mx-auto">
+        <div className="text-center py-24 border border-cream-border border-dashed rounded-2xl bg-cream-surface/30">
+          <p className="text-sm text-ink-secondary leading-relaxed max-w-sm mx-auto">
             {copy.vault.empty}
           </p>
         </div>

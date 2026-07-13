@@ -69,7 +69,7 @@ export default async function PublicMomentPage({ params }: Props) {
   if (!moment) {
     return (
       <main className="mx-auto max-w-lg px-4 py-16 text-center">
-        <p className="text-ink-muted">{copy.errors.notFound}</p>
+        <p className="text-ink-secondary">{copy.errors.notFound}</p>
       </main>
     );
   }
@@ -79,7 +79,7 @@ export default async function PublicMomentPage({ params }: Props) {
 
   return (
     <>
-      <Navbar displayName={displayName} />
+      <Navbar displayName={displayName} userId={user?.id ?? null} />
       <main className="mx-auto max-w-lg px-4 py-12">
       {/* Moment card — centred, full display */}
       <div className="w-56 mx-auto mb-8">
@@ -92,7 +92,7 @@ export default async function PublicMomentPage({ params }: Props) {
       </div>
 
       {/* Headline */}
-      <h1 className="font-display text-center text-2xl font-bold mb-2">
+      <h1 className="font-display text-center text-2xl font-bold mb-2 text-ink">
         {copy.moment.marketChance(Math.round((1 - moment.pBefore.home) * 100))}
       </h1>
       <p className="text-center text-sm text-ink-secondary mb-6">
@@ -100,11 +100,11 @@ export default async function PublicMomentPage({ params }: Props) {
       </p>
 
       {/* FOMO line for non-witnesses (FR-6.3) */}
-      <div className="rounded-2xl border border-surface-border bg-surface-raised p-6 text-center mb-8">
+      <div className="rounded-2xl border border-cream-border bg-cream-surface p-6 text-center mb-8 shadow-sm">
         <p className="text-sm text-ink-secondary mb-1">
           {copy.publicMoment.notWitness}
         </p>
-        <p className="text-xs text-ink-muted">
+        <p className="text-xs text-ink-secondary">
           {copy.publicMoment.fomoLine}
         </p>
       </div>
@@ -112,7 +112,7 @@ export default async function PublicMomentPage({ params }: Props) {
       {/* Next fixtures CTA */}
       {upcomingMatches.length > 0 && (
         <section>
-          <p className="text-xs font-semibold uppercase tracking-widest text-ink-muted mb-3 text-center">
+          <p className="text-xs font-semibold uppercase tracking-widest text-ink-secondary mb-3 text-center">
             {copy.publicMoment.joinNext}
           </p>
           <div className="space-y-2">
@@ -120,10 +120,10 @@ export default async function PublicMomentPage({ params }: Props) {
               <Link
                 key={m.id}
                 href={`/match/${m.id}`}
-                className="flex items-center justify-between rounded-xl border border-surface-border bg-surface-raised px-4 py-3 hover:bg-surface-overlay transition-colors"
+                className="flex items-center justify-between rounded-xl border border-cream-border bg-cream-surface px-4 py-3 hover:bg-cream-surface/80 transition-colors"
               >
-                <span className="font-display text-sm font-semibold">
-                  {m.home} <span className="text-ink-muted font-normal">v</span> {m.away}
+                <span className="font-display text-sm font-semibold text-ink">
+                  {m.home} <span className="text-ink-secondary font-normal">v</span> {m.away}
                 </span>
                 <span className="text-xs text-ink-secondary">{copy.checkin.action} →</span>
               </Link>

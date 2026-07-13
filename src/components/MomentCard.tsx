@@ -37,7 +37,7 @@ const SCORE_COLOR: Record<string, string> = {
 
 export function MomentCard({ moment, featured = false }: Props) {
   const accentBorder = TIER_ACCENT_CLASS[moment.tier] ?? "";
-  const scoreColor   = SCORE_COLOR[moment.tier] ?? "text-ink-primary";
+  const scoreColor   = SCORE_COLOR[moment.tier] ?? "text-ink";
   const hasFoil      = moment.tier === "Shock" || moment.tier === "Seismic";
   const pct          = Math.round((1 - moment.pBefore.home) * 100);
 
@@ -51,8 +51,8 @@ export function MomentCard({ moment, featured = false }: Props) {
     <Link
       href={`/m/${moment.id}`}
       className={`
-        relative flex flex-col rounded-2xl overflow-hidden border
-        bg-surface-raised transition-transform hover:-translate-y-0.5
+        relative flex flex-col rounded-2xl overflow-hidden border border-cream-border
+        bg-cream-surface transition-transform hover:-translate-y-0.5 shadow-sm
         ${accentBorder}
         ${hasFoil ? "foil-sheen" : ""}
         ${featured ? "w-full" : "aspect-card"}
@@ -61,7 +61,7 @@ export function MomentCard({ moment, featured = false }: Props) {
       {/* Top section: tier badge + event */}
       <div className="flex items-start justify-between p-3 pb-0">
         <TierBadge tier={moment.tier} size="sm" />
-        <span className="text-[10px] text-ink-muted font-semibold">{eventLabel}</span>
+        <span className="text-[10px] text-ink-secondary font-semibold">{eventLabel}</span>
       </div>
 
       {/* Score — the hero number */}
@@ -69,7 +69,7 @@ export function MomentCard({ moment, featured = false }: Props) {
         <div className={`font-display text-5xl font-extrabold leading-none ${scoreColor}`}>
           {moment.shockScore}
         </div>
-        <div className="text-[10px] text-ink-muted mt-1 uppercase tracking-widest">
+        <div className="text-[10px] text-ink-secondary mt-1 uppercase tracking-widest">
           {copy.moment.shockRating}
         </div>
       </div>
@@ -79,7 +79,7 @@ export function MomentCard({ moment, featured = false }: Props) {
         <p className="text-[10px] text-ink-secondary leading-snug">
           {copy.moment.marketChance(pct)}
         </p>
-        <p className="text-[10px] text-ink-muted">
+        <p className="text-[10px] text-ink-secondary">
           {copy.moment.witnessCount(moment.witnessCount)}
         </p>
       </div>

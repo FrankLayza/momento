@@ -129,13 +129,13 @@ export default async function MatchPage({ params }: Props) {
 
   return (
     <>
-      <Navbar displayName={displayName} />
+      <Navbar displayName={displayName} userId={user?.id ?? null} />
       <AutoCheckIn matchId={id} initialCheckedIn={isWitness} />
       <main className="mx-auto max-w-2xl px-6 py-10">
       {/* Match header */}
-      <div className="mb-8 bg-surface-raised border border-surface-border p-6 rounded-2xl">
+      <div className="mb-8 bg-cream-surface border border-cream-border p-6 rounded-2xl shadow-sm">
         <div className="flex items-center justify-between mb-4">
-          <span className="text-xs font-semibold uppercase tracking-widest text-ink-muted">
+          <span className="text-xs font-semibold uppercase tracking-widest text-ink-secondary">
             FIFA World Cup
           </span>
           {isLive ? (
@@ -144,11 +144,11 @@ export default async function MatchPage({ params }: Props) {
               {copy.fixtures.live}
             </span>
           ) : isFinished ? (
-            <span className="text-xs font-semibold text-ink-muted uppercase tracking-wider bg-surface-border/50 px-2.5 py-1 rounded-full">
+            <span className="text-xs font-semibold text-ink-secondary uppercase tracking-wider bg-cream-border/50 px-2.5 py-1 rounded-full">
               Finished
             </span>
           ) : (
-            <span className="text-xs font-semibold text-ink-secondary uppercase tracking-wider bg-surface-border/30 px-2.5 py-1 rounded-full">
+            <span className="text-xs font-semibold text-ink-secondary uppercase tracking-wider bg-cream-border/30 px-2.5 py-1 rounded-full">
               Scheduled
             </span>
           )}
@@ -159,7 +159,7 @@ export default async function MatchPage({ params }: Props) {
           {/* Home */}
           <div className="flex-1 flex flex-col items-center gap-2">
             <Avatar name={match.home} />
-            <h1 className="font-display text-base sm:text-lg font-bold text-ink-primary text-center">
+            <h1 className="font-display text-base sm:text-lg font-bold text-ink text-center">
               {match.home}
             </h1>
           </div>
@@ -168,9 +168,9 @@ export default async function MatchPage({ params }: Props) {
           <div className="flex flex-col items-center justify-center min-w-[80px]">
             {isLive || isFinished ? (
               <>
-                <div className="font-display text-4xl font-extrabold tracking-tight text-ink-primary">
+                <div className="font-display text-4xl font-extrabold tracking-tight text-ink">
                   {liveScore.home}
-                  <span className="text-ink-muted text-2xl mx-1.5">–</span>
+                  <span className="text-ink-secondary text-2xl mx-1.5">–</span>
                   {liveScore.away}
                 </div>
                 {isLive && liveMinute !== null && (
@@ -181,7 +181,7 @@ export default async function MatchPage({ params }: Props) {
               </>
             ) : (
               <div className="flex flex-col items-center">
-                <span className="font-display text-base font-bold text-ink-primary">
+                <span className="font-display text-base font-bold text-ink">
                   {kickoffTime}
                 </span>
                 <span className="text-[9px] text-ink-secondary mt-0.5 tracking-wider uppercase">
@@ -194,7 +194,7 @@ export default async function MatchPage({ params }: Props) {
           {/* Away */}
           <div className="flex-1 flex flex-col items-center gap-2">
             <Avatar name={match.away} />
-            <h1 className="font-display text-base sm:text-lg font-bold text-ink-primary text-center">
+            <h1 className="font-display text-base sm:text-lg font-bold text-ink text-center">
               {match.away}
             </h1>
           </div>
@@ -226,7 +226,7 @@ export default async function MatchPage({ params }: Props) {
 
       {/* Moments for this match */}
       <section className="mt-10">
-        <h2 className="text-xs font-semibold uppercase tracking-widest text-ink-secondary mb-4 border-b border-surface-border/40 pb-2">
+        <h2 className="text-xs font-semibold uppercase tracking-widest text-ink-secondary mb-4 border-b border-cream-border/60 pb-2">
           Match Moments ({moments.length})
         </h2>
         {moments.length > 0 ? (
@@ -236,8 +236,8 @@ export default async function MatchPage({ params }: Props) {
             ))}
           </div>
         ) : (
-          <div className="text-center py-12 border border-surface-border/30 border-dashed rounded-xl">
-            <p className="text-sm text-ink-muted">
+          <div className="text-center py-12 border border-cream-border border-dashed rounded-xl bg-cream-surface/20">
+            <p className="text-sm text-ink-secondary">
               No game-defining moments have occurred yet. Check back during live events!
             </p>
           </div>

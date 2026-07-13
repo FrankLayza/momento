@@ -42,10 +42,10 @@ export default async function AdvancedPage() {
 
   return (
     <>
-      <Navbar displayName={displayName} />
+      <Navbar displayName={displayName} userId={user.id} />
       <main className="mx-auto max-w-xl px-6 py-10">
       <div className="mb-8">
-        <h1 className="font-display text-2xl font-extrabold tracking-tight text-ink-primary">
+        <h1 className="font-display text-2xl font-extrabold tracking-tight text-ink">
           Advanced Settings
         </h1>
         <p className="text-sm text-ink-secondary mt-1">
@@ -54,16 +54,16 @@ export default async function AdvancedPage() {
       </div>
 
       {/* Wallet info */}
-      <section className="rounded-2xl border border-surface-border bg-surface-raised p-6 mb-6">
-        <h2 className="text-xs font-semibold uppercase tracking-widest text-ink-secondary mb-5 border-b border-surface-border/40 pb-2">
+      <section className="rounded-2xl border border-cream-border bg-cream-surface p-6 mb-6 shadow-sm">
+        <h2 className="text-xs font-semibold uppercase tracking-widest text-ink-secondary mb-5 border-b border-cream-border/60 pb-2">
           Your Embedded Wallet
         </h2>
         <ExportWalletSection pubkey={pubkey} />
       </section>
 
       {/* On-chain records */}
-      <section className="rounded-2xl border border-surface-border bg-surface-raised p-6">
-        <h2 className="text-xs font-semibold uppercase tracking-widest text-ink-secondary mb-4 border-b border-surface-border/40 pb-2">
+      <section className="rounded-2xl border border-cream-border bg-cream-surface p-6 shadow-sm">
+        <h2 className="text-xs font-semibold uppercase tracking-widest text-ink-secondary mb-4 border-b border-cream-border/60 pb-2">
           On-Chain Records
         </h2>
         <p className="text-xs text-ink-secondary leading-relaxed">

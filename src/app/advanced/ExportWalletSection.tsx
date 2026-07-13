@@ -72,16 +72,16 @@ export function ExportWalletSection({ pubkey }: Props) {
     <div className="space-y-6">
       {/* Public Key Display */}
       <div>
-        <label className="block text-xs font-semibold text-ink-muted uppercase tracking-wider mb-2">
+        <label className="block text-xs font-semibold text-ink-secondary uppercase tracking-wider mb-2">
           Public key
         </label>
         <div className="flex gap-2">
-          <div className="flex-1 font-display text-xs break-all text-ink-secondary bg-surface border border-surface-border rounded-lg p-3 select-all">
+          <div className="flex-1 font-display text-xs break-all text-ink-secondary bg-cream border border-cream-border rounded-lg p-3 select-all">
             {pubkey}
           </div>
           <button
             onClick={() => { void handleCopyPub(); }}
-            className="px-4 rounded-lg border border-surface-border bg-surface text-xs font-semibold text-ink-primary hover:bg-surface-raised transition-colors"
+            className="px-4 rounded-lg border border-cream-border bg-cream text-xs font-semibold text-ink hover:bg-cream-surface transition-colors cursor-pointer"
           >
             {copiedPub ? "Copied" : "Copy"}
           </button>
@@ -101,12 +101,12 @@ export function ExportWalletSection({ pubkey }: Props) {
         {revealed && privateKey ? (
           <div className="space-y-3">
             <div className="flex gap-2">
-              <div className="flex-1 font-display text-xs break-all text-tier-shock bg-surface border border-tier-shock/30 rounded-lg p-3">
+              <div className="flex-1 font-display text-xs break-all text-tier-shock bg-cream border border-tier-shock/30 rounded-lg p-3">
                 {privateKey}
               </div>
               <button
                 onClick={() => { void handleCopyPriv(); }}
-                className="px-4 rounded-lg border border-tier-shock/40 bg-tier-shock/10 text-xs font-semibold text-tier-shock hover:bg-tier-shock/20 transition-colors"
+                className="px-4 rounded-lg border border-tier-shock/40 bg-tier-shock/10 text-xs font-semibold text-tier-shock hover:bg-tier-shock/20 transition-colors cursor-pointer"
               >
                 {copiedPriv ? "Copied" : "Copy"}
               </button>
@@ -126,7 +126,7 @@ export function ExportWalletSection({ pubkey }: Props) {
             <p className="text-xs font-semibold text-tier-seismic uppercase tracking-wider">
               ⚠️ Warning: Critical Security Risk
             </p>
-            <p className="text-xs text-ink-primary leading-relaxed">
+            <p className="text-xs text-ink leading-relaxed">
               Revealing your private key allows anyone to transfer your items and access your wallet. 
               Only proceed if you are in a private space and understand the risks.
             </p>
@@ -134,13 +134,13 @@ export function ExportWalletSection({ pubkey }: Props) {
               <button
                 onClick={() => { void handleReveal(); }}
                 disabled={loading}
-                className="rounded-lg bg-tier-seismic px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-600 transition-colors disabled:opacity-50"
+                className="rounded-lg bg-tier-seismic px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-600 transition-colors disabled:opacity-50 cursor-pointer"
               >
                 {loading ? "Decrypting..." : "I understand, reveal private key"}
               </button>
               <button
                 onClick={() => setShowWarning(false)}
-                className="rounded-lg border border-surface-border bg-surface px-3 py-1.5 text-xs font-semibold text-ink-secondary hover:text-ink-primary transition-colors"
+                className="rounded-lg border border-cream-border bg-cream px-3 py-1.5 text-xs font-semibold text-ink-secondary hover:text-ink transition-colors cursor-pointer"
               >
                 Cancel
               </button>
@@ -149,7 +149,7 @@ export function ExportWalletSection({ pubkey }: Props) {
         ) : (
           <button
             onClick={() => setShowWarning(true)}
-            className="w-full rounded-lg border border-surface-border bg-surface px-4 py-2.5 text-xs font-semibold text-ink-secondary hover:border-tier-shock/50 hover:text-ink-primary transition-colors"
+            className="w-full rounded-lg border border-cream-border bg-cream px-4 py-2.5 text-xs font-semibold text-ink-secondary hover:border-tier-shock/50 hover:text-ink transition-colors cursor-pointer"
           >
             Reveal private key
           </button>

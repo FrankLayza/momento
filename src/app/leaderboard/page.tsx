@@ -48,11 +48,11 @@ export default async function LeaderboardPage() {
 
   return (
     <>
-      <Navbar displayName={displayName} />
+      <Navbar displayName={displayName} userId={user?.id ?? null} />
       <main className="mx-auto max-w-xl px-6 py-10">
       {/* Header */}
       <div className="mb-10 text-center">
-        <h1 className="font-display text-3xl font-extrabold tracking-tight text-ink-primary">
+        <h1 className="font-display text-3xl font-extrabold tracking-tight text-ink">
           {copy.leaderboard.title}
         </h1>
         <p className="mt-2 text-xs text-ink-secondary uppercase tracking-widest font-semibold">
@@ -61,8 +61,8 @@ export default async function LeaderboardPage() {
       </div>
 
       {rows.length === 0 ? (
-        <div className="text-center py-20 border border-surface-border/50 rounded-2xl bg-surface-raised/30">
-          <p className="text-sm text-ink-muted">
+        <div className="text-center py-20 border border-cream-border rounded-2xl bg-cream-surface/30">
+          <p className="text-sm text-ink-secondary">
             No claims yet — check in to a match to get started.
           </p>
         </div>
@@ -76,14 +76,14 @@ export default async function LeaderboardPage() {
             {podium[0] && (
               <div className="flex flex-col items-center flex-1">
                 <Avatar name={podium[0].displayName} />
-                <span className="text-xs text-ink-primary font-semibold mt-2 truncate max-w-[100px]">
+                <span className="text-xs text-ink font-semibold mt-2 truncate max-w-[100px]">
                   {podium[0].displayName}
                 </span>
                 <span className="font-display text-sm font-extrabold text-ink-secondary mt-0.5">
                   {podium[0].totalShockScore}
                 </span>
-                <div className="w-full bg-surface-raised border-t border-x border-surface-border rounded-t-xl h-16 mt-3 flex items-center justify-center">
-                  <span className="font-display text-sm font-extrabold text-ink-muted">2</span>
+                <div className="w-full bg-cream-surface border-t border-x border-cream-border rounded-t-xl h-16 mt-3 flex items-center justify-center">
+                  <span className="font-display text-sm font-extrabold text-ink-secondary">2</span>
                 </div>
               </div>
             )}
@@ -92,13 +92,13 @@ export default async function LeaderboardPage() {
             {podium[1] && (
               <div className="flex flex-col items-center flex-1">
                 <Avatar name={podium[1].displayName} />
-                <span className="text-sm text-ink-primary font-bold mt-2 truncate max-w-[120px]">
+                <span className="text-sm text-ink font-bold mt-2 truncate max-w-[120px]">
                   {podium[1].displayName}
                 </span>
                 <span className="font-display text-base font-black text-tier-notable mt-0.5">
                   {podium[1].totalShockScore}
                 </span>
-                <div className="w-full bg-surface-overlay border-t border-x border-tier-notable/30 rounded-t-xl h-24 mt-3 flex items-center justify-center shadow-[0_0_24px_theme(colors.tier.notable.DEFAULT/10)]">
+                <div className="w-full bg-cream-surface border-t border-x border-tier-notable/40 rounded-t-xl h-24 mt-3 flex items-center justify-center shadow-[0_0_24px_theme(colors.tier.notable.DEFAULT/15)]">
                   <span className="font-display text-lg font-black text-tier-notable">1</span>
                 </div>
               </div>
@@ -108,14 +108,14 @@ export default async function LeaderboardPage() {
             {podium[2] && (
               <div className="flex flex-col items-center flex-1">
                 <Avatar name={podium[2].displayName} />
-                <span className="text-xs text-ink-primary font-semibold mt-2 truncate max-w-[100px]">
+                <span className="text-xs text-ink font-semibold mt-2 truncate max-w-[100px]">
                   {podium[2].displayName}
                 </span>
                 <span className="font-display text-sm font-extrabold text-ink-secondary mt-0.5">
                   {podium[2].totalShockScore}
                 </span>
-                <div className="w-full bg-surface-raised border-t border-x border-surface-border rounded-t-xl h-12 mt-3 flex items-center justify-center">
-                  <span className="font-display text-sm font-extrabold text-ink-muted">3</span>
+                <div className="w-full bg-cream-surface border-t border-x border-cream-border rounded-t-xl h-12 mt-3 flex items-center justify-center">
+                  <span className="font-display text-sm font-extrabold text-ink-secondary">3</span>
                 </div>
               </div>
             )}
@@ -133,21 +133,21 @@ export default async function LeaderboardPage() {
               {remaining.map((row, i) => (
                 <div
                   key={row.userId}
-                  className="flex items-center justify-between rounded-xl border border-surface-border bg-surface-raised px-4 py-3.5 transition-colors hover:bg-surface-overlay"
+                  className="flex items-center justify-between rounded-xl border border-cream-border bg-cream-surface px-4 py-3.5 transition-colors hover:bg-cream-surface/80"
                 >
                   {/* Rank */}
-                  <span className="font-display text-xs w-10 text-ink-muted font-bold">
+                  <span className="font-display text-xs w-10 text-ink-secondary font-bold">
                     {i + 4}
                   </span>
 
                   {/* Display name */}
-                  <span className="flex-1 flex items-center gap-2.5 text-xs text-ink-primary font-semibold truncate">
+                  <span className="flex-1 flex items-center gap-2.5 text-xs text-ink font-semibold truncate">
                     <Avatar name={row.displayName} size="sm" />
                     {row.displayName}
                   </span>
 
                   {/* Score */}
-                  <span className="font-display text-sm font-bold text-ink-primary">
+                  <span className="font-display text-sm font-bold text-ink">
                     {row.totalShockScore}
                   </span>
                 </div>

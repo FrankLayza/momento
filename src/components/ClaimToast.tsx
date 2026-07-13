@@ -54,13 +54,13 @@ export function ClaimToast({ moment, onClaim, onDismiss }: Props) {
 
         {/* Content */}
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-ink-primary leading-snug">
+          <p className="text-sm font-semibold text-ink leading-snug">
             A Moment just happened.
           </p>
           <p className="text-xs text-ink-secondary mt-0.5">
             {eventLabel} · {copy.moment.marketChance(pct)}
           </p>
-          <p className="text-xs text-ink-muted mt-0.5">
+          <p className="text-xs text-ink-secondary mt-0.5">
             {copy.moment.witnessCount(moment.witnessCount)}
           </p>
         </div>
@@ -69,7 +69,7 @@ export function ClaimToast({ moment, onClaim, onDismiss }: Props) {
         <button
           onClick={onDismiss}
           aria-label="Dismiss"
-          className="flex-shrink-0 text-ink-muted hover:text-ink-secondary transition-colors text-lg leading-none"
+          className="flex-shrink-0 text-ink-secondary hover:text-ink transition-colors text-lg leading-none cursor-pointer"
         >
           ×
         </button>
@@ -80,7 +80,7 @@ export function ClaimToast({ moment, onClaim, onDismiss }: Props) {
         id="claim-toast-button"
         onClick={() => { void handleClaim(); }}
         disabled={claiming}
-        className="mt-3 w-full rounded-full bg-tier-notable text-surface text-sm font-bold py-2.5 hover:bg-tier-notable/90 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+        className="mt-3 w-full rounded-full bg-ink text-cream text-sm font-bold py-2.5 hover:bg-ink/90 transition-colors disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
       >
         {claiming ? copy.claim.pending : copy.claim.action}
       </button>
