@@ -10,6 +10,7 @@
 import { LandingNavbar } from "./LandingNavbar";
 import { Hero } from "./Hero";
 import { HowItWorks } from "./HowItWorks";
+import { SiteFooter } from "./SiteFooter";
 
 // Mock local fonts since Google Fonts fetch fails in offline build environments
 const unbounded = { variable: "font-sans" };
@@ -21,13 +22,7 @@ export function Landing() {
       <LandingNavbar />
       <Hero />
       <HowItWorks />
-      {/*
-        Still to build once the rest of the spec arrives:
-        - RevealPanel (needs the pinned-scroll mechanism + hero image asset)
-        - RarityLadder
-        - LiveNow
-        - SiteFooter
-      */}
+      <SiteFooter />
     </div>
   );
 }
