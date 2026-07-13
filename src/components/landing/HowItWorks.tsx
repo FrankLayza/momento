@@ -91,16 +91,16 @@ export function HowItWorks() {
         </div>
 
         {/* Container for sticky card and panels */}
-        <div className="relative">
-          {/* Sticky card overlay — zero height so it doesn't push content */}
-          <div className="sticky top-0 h-0 z-10 flex justify-center pointer-events-none">
-            <div className="mt-[calc(50vh-134px)] pointer-events-auto">
+        <div className="relative grid grid-cols-1 grid-rows-1">
+          {/* Sticky card overlay */}
+          <div className="sticky top-[calc(50vh-134px)] h-[268px] z-10 flex justify-center pointer-events-none col-start-1 row-start-1 self-start">
+            <div className="pointer-events-auto">
               <StickyMomentCard activeStep={activeStep} />
             </div>
           </div>
 
           {/* Feature panels — stacked, each min-h-[60vh] for tight scrolling */}
-          <div className="relative z-0">
+          <div className="relative z-0 col-start-1 row-start-1">
             {HOW_IT_WORKS.map((step, i) => (
               <FeaturePanel
                 key={i}

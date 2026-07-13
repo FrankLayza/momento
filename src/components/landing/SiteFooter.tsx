@@ -5,15 +5,13 @@ import { copy } from '@/lib/copy'
 
 export function SiteFooter() {
   return (
-    <footer className="bg-landing-ink text-landing-cream relative overflow-hidden z-20 pt-20 pb-10">
-      {/* Subtle top border gradient using landing accents */}
-      <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-landing-gold via-landing-coral to-landing-malibu" />
+    <footer className="relative bg-gradient-to-r from-landing-gold via-landing-coral to-landing-malibu pt-[3px] rounded-t-[48px] md:rounded-t-[64px] z-20">
+      <div className="bg-landing-ink text-landing-cream relative overflow-hidden rounded-t-[45px] md:rounded-t-[61px] pt-20 pb-10">
+        {/* Background ambient glow */}
+        <div className="absolute -top-40 left-1/4 w-[500px] h-[500px] rounded-full bg-landing-teal/5 blur-[120px] pointer-events-none" />
+        <div className="absolute -bottom-40 right-1/4 w-[400px] h-[400px] rounded-full bg-landing-lavender/5 blur-[100px] pointer-events-none" />
 
-      {/* Background ambient glow */}
-      <div className="absolute -top-40 left-1/4 w-[500px] h-[500px] rounded-full bg-landing-teal/5 blur-[120px] pointer-events-none" />
-      <div className="absolute -bottom-40 right-1/4 w-[400px] h-[400px] rounded-full bg-landing-lavender/5 blur-[100px] pointer-events-none" />
-
-      <div className="max-w-[1400px] mx-auto px-8 sm:px-12 relative z-10">
+        <div className="max-w-[1400px] mx-auto px-8 sm:px-12 relative z-10">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-12 md:gap-8 pb-16 border-b border-landing-cream/10">
           
           {/* Brand block */}
@@ -120,6 +118,7 @@ export function SiteFooter() {
         <span className="font-landing-display text-[64px] sm:text-[120px] font-black uppercase text-white/[0.02] tracking-[0.15em] leading-none">
           Momento
         </span>
+      </div>
       </div>
     </footer>
   )
