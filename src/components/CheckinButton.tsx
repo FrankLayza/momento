@@ -40,26 +40,30 @@ export function CheckinButton({ matchId, initialCheckedIn = false }: Props) {
     <>
       {/* Injecting explosive custom keyframes smoothly without needing to touch tailwind.config.js */}
       <style>{`
-        @keyframes explosiveKick {
+        @keyframes trackedKick {
           0% {
-            transform: translate3d(-2rem, -50%, 0) rotate(0deg);
+            /* Starts safely tucked away on the left */
+            transform: translate3d(-2.5rem, -50%, 0) rotate(0deg);
             opacity: 0;
           }
-          5% {
+          15% {
             opacity: 1;
           }
           85% {
             opacity: 1;
           }
           100% {
-            /* Translates completely across its own parent containers width plus padding */
-            transform: translate3d(calc(100cqw + 2rem), -50%, 0) rotate(1080deg);
+            /* Dynamically clears the button width plus its own size */
+            transform: translate3d(calc(100cqw + 2.5rem), -50%, 0) rotate(540deg);
             opacity: 0;
           }
         }
         .animate-kick {
-          /* cubic-bezier(0.1, 1, 0.1, 1) provides maximum instantaneous initial velocity */
-          animation: explosiveKick 0.45s cubic-bezier(0.1, 1, 0.1, 1) forwards;
+          /* Increased duration to 0.75s.
+            Using a cubic-bezier(0.25, 1, 0.5, 1) to give it a fast start,
+            but enough brake control through the middle so the eye can follow the ball.
+          */
+          animation: trackedKick 0.75s cubic-bezier(0.25, 1, 0.5, 1) forwards;
         }
       `}</style>
 
@@ -73,10 +77,10 @@ export function CheckinButton({ matchId, initialCheckedIn = false }: Props) {
         disabled={loading}
         className="@container relative w-full bg-ink text-cream rounded-lg py-2.5 text-[11px] font-display font-bold tracking-[0.06em] uppercase hover:bg-ink/90 cursor-pointer overflow-hidden active:scale-[0.98] transition-all duration-75 select-none disabled:opacity-50"
       >
-        {/* Hidden Masked Soccer Ball */}
+        {/* Upsized Soccer Ball Asset */}
         <div
           onAnimationEnd={handleAnimationEnd}
-          className={`absolute top-1/2 left-0 w-5 h-5 pointer-events-none opacity-0 z-20 ${
+          className={`absolute top-1/2 left-0 w-7 h-7 pointer-events-none opacity-0 z-20 ${
             isKicked ? 'animate-kick' : ''
           }`}
         >
