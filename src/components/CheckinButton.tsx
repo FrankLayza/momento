@@ -11,16 +11,13 @@ interface Props {
 
 export function CheckinButton({ matchId, initialCheckedIn = false }: Props) {
   const { isCheckedIn, loading, checkIn } = useCheckIn(matchId, initialCheckedIn)
-  const [isAnimating, setIsAnimating] = useState(false)
-
-  const handleHover = () => {
-    if (!isAnimating && !isCheckedIn && !loading) {
-      setIsAnimating(true)
-    }
-  }
+  const [isHovering, setIsHovering] = useState(false)
+  const [isKicked, setIsKicked] = useState(false)
 
   const handleAnimationEnd = () => {
-    setIsAnimating(false)
+    if (isKicked) {
+      setIsKicked(false)
+    }
   }
 
   if (isCheckedIn) {
@@ -38,23 +35,38 @@ export function CheckinButton({ matchId, initialCheckedIn = false }: Props) {
   return (
     <>
       <style>{`
-        /* 1. The Boot: Swings down hard from the top left, hits the ball, and retracts */
+        /* 1. Juggling/Hover Boot */
+        @keyframes bootJuggle {
+          0%, 100% {
+            transform: translate3d(-3rem, -1.5rem, 0) rotate(-35deg);
+            opacity: 1;
+          }
+          50% {
+            transform: translate3d(-0.5rem, -0.2rem, 0) rotate(-10deg);
+            opacity: 1;
+          }
+        }
+
+        /* 2. Juggling/Hover Ball */
+        @keyframes ballJuggle {
+          0%, 100% {
+            transform: translate3d(-2.5rem, -50%, 0) rotate(0deg);
+            opacity: 1;
+          }
+          50% {
+            transform: translate3d(-2rem, -70%, 0) rotate(45deg);
+            opacity: 1;
+          }
+        }
+
+        /* 3. Strike Boot */
         @keyframes bootStrike {
           0% {
-            transform: translate3d(-3rem, -2rem, 0) rotate(-45deg);
-            opacity: 0;
-          }
-          10% {
+            transform: translate3d(-0.5rem, -0.2rem, 0) rotate(-10deg);
             opacity: 1;
           }
-          25% {
-            /* The Sweet Spot: Impact at the base of the ball */
-            transform: translate3d(-0.25rem, -0.45rem, 0) rotate(-10deg);
-            opacity: 1;
-          }
-          35% {
-            /* Follow-through */
-            transform: translate3d(0.5rem, -0.5rem, 0) rotate(0deg);
+          20% {
+            transform: translate3d(0.5rem, -0.5rem, 0) rotate(5deg);
             opacity: 1;
           }
           70% {
@@ -66,18 +78,10 @@ export function CheckinButton({ matchId, initialCheckedIn = false }: Props) {
           }
         }
 
-        /* 2. The Ball: Waits for the impact frame (20%), then rockets forward across the pitch */
+        /* 4. Strike Ball */
         @keyframes pitchKick {
           0% {
-            transform: translate3d(-2.5rem, -50%, 0) rotate(0deg);
-            opacity: 0;
-          }
-          20% {
-            /* Ball stays stationary until the boot connects */
-            transform: translate3d(-2.5rem, -50%, 0) rotate(0deg);
-            opacity: 1;
-          }
-          85% {
+            transform: translate3d(-2rem, -70%, 0) rotate(45deg);
             opacity: 1;
           }
           100% {
@@ -86,35 +90,52 @@ export function CheckinButton({ matchId, initialCheckedIn = false }: Props) {
           }
         }
 
-        .animate-boot {
-          animation: bootStrike 0.8s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+        .animate-boot-juggle {
+          animation: bootJuggle 0.6s infinite ease-in-out;
         }
 
-        .animate-ball {
+        .animate-ball-juggle {
+          animation: ballJuggle 0.6s infinite ease-in-out;
+        }
+
+        .animate-boot-strike {
+          animation: bootStrike 0.5s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+        }
+
+        .animate-ball-strike {
           animation: pitchKick 0.8s cubic-bezier(0.25, 1, 0.5, 1) forwards;
         }
       `}</style>
 
       <button
-        onMouseEnter={handleHover}
+        onMouseEnter={() => !isKicked && setIsHovering(true)}
+        onMouseLeave={() => setIsHovering(false)}
         onClick={(e) => {
           e.stopPropagation()
-          handleHover()
-          void checkIn()
+          if (!loading && !isKicked) {
+            setIsKicked(true)
+            void checkIn()
+          }
         }}
         disabled={loading}
-        /* - Added dynamic green grass color system on hover.
-          - Added @container for responsive tracking.
-        */
-        className="group @container relative w-full bg-ink text-cream rounded-lg py-2.5 text-[11px] font-display font-bold tracking-[0.06em] uppercase hover:bg-gradient-to-r hover:from-[#1b4332] hover:via-[#2d6a4f] hover:to-[#1b4332] hover:text-white transition-all duration-300 cursor-pointer overflow-hidden active:scale-[0.98] select-none disabled:opacity-50"
+        className="group @container relative w-full bg-ink text-cream rounded-lg py-2.5 text-[11px] font-display font-bold tracking-[0.06em] uppercase transition-all duration-300 cursor-pointer overflow-hidden active:scale-[0.98] select-none disabled:opacity-50"
       >
-        {/* FIELD GRAPHICS: Faint Pitch Grass Striping on Hover */}
-        <div className="absolute inset-0 opacity-0 group-hover:opacity-10 bg-[linear-gradient(90deg,rgba(255,255,255,0.07)_50%,transparent_50%)] bg-[length:20px_100%] pointer-events-none transition-opacity duration-300" />
+        {/* GREEN GRASS BOTTOM */}
+        <div 
+          className={`absolute bottom-0 left-0 right-0 h-[60%] bg-gradient-to-t from-[#1b4332] to-[#2d6a4f] pointer-events-none transition-transform duration-300 origin-bottom ${isHovering || isKicked ? 'scale-y-100' : 'scale-y-0'}`} 
+        />
+        <div 
+          className={`absolute bottom-0 left-0 right-0 h-[60%] bg-[linear-gradient(90deg,rgba(255,255,255,0.07)_50%,transparent_50%)] bg-[length:16px_100%] pointer-events-none transition-transform duration-300 origin-bottom ${isHovering || isKicked ? 'scale-y-100' : 'scale-y-0'}`} 
+        />
 
         {/* LAYER 1: THE FOOTBALL BOOT */}
         <div
-          className={`absolute top-1/2 left-0 w-8 h-8 pointer-events-none opacity-0 z-30 ${
-            isAnimating ? 'animate-boot' : ''
+          className={`absolute top-1/2 left-0 w-8 h-8 pointer-events-none z-30 transition-opacity duration-200 ${
+            isKicked 
+              ? 'animate-boot-strike opacity-100' 
+              : isHovering 
+                ? 'animate-boot-juggle opacity-100' 
+                : 'opacity-0'
           }`}
           style={{ transformOrigin: 'top left' }}
         >
@@ -127,8 +148,12 @@ export function CheckinButton({ matchId, initialCheckedIn = false }: Props) {
         {/* LAYER 2: THE SOCCER BALL */}
         <div
           onAnimationEnd={handleAnimationEnd}
-          className={`absolute top-1/2 left-0 w-6 h-6 pointer-events-none opacity-0 z-20 ${
-            isAnimating ? 'animate-ball' : ''
+          className={`absolute top-1/2 left-0 w-6 h-6 pointer-events-none z-20 transition-opacity duration-200 ${
+            isKicked 
+              ? 'animate-ball-strike opacity-100' 
+              : isHovering 
+                ? 'animate-ball-juggle opacity-100' 
+                : 'opacity-0'
           }`}
         >
           <svg viewBox="0 0 512 512" className="w-full h-full fill-white drop-shadow-[0_2px_3px_rgba(0,0,0,0.5)]" xmlns="http://www.w3.org/2000/svg">
@@ -137,7 +162,7 @@ export function CheckinButton({ matchId, initialCheckedIn = false }: Props) {
         </div>
 
         {/* LAYER 3: TEXT CONTENT */}
-        <span className="relative z-10 block transition-transform duration-200 group-hover:scale-105">
+        <span className="relative z-10 block transition-transform duration-200 group-hover:scale-105 group-hover:-translate-y-1">
           {loading ? "Checking in..." : copy.checkin.action}
         </span>
       </button>
