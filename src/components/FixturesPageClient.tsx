@@ -1,7 +1,7 @@
 // Implements FR-1.1, FR-1.2, FR-1.3
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { Navbar } from '@/components/Navbar'
@@ -38,8 +38,6 @@ export function FixturesPageClient({
   userId,
 }: FixturesPageClientProps) {
   const router = useRouter()
-  const [isCheckedIn, setIsCheckedIn] = useState(initialCheckedIn)
-  const [loading, setLoading] = useState(false)
 
   // Keep the live card (score, minute, probability bar) current while a match
   // is in progress — the server component only re-fetches on navigation or
@@ -53,37 +51,6 @@ export function FixturesPageClient({
 
     return () => clearInterval(interval)
   }, [initialLiveMatch, router])
-
-  const handleCheckIn = async () => {
-    if (!userId) {
-      router.push('/sign-in?next=%2F&reason=checkin')
-      return
-    }
-
-    if (loading || isCheckedIn || !initialLiveMatch) return
-
-    setLoading(true)
-    try {
-      const res = await fetch('/api/checkin', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ matchId: initialLiveMatch.id }),
-      })
-
-      if (res.ok) {
-        setIsCheckedIn(true)
-        router.refresh()
-      } else {
-        const data = await res.json()
-        alert(data.error || copy.errors.generic)
-      }
-    } catch (err) {
-      console.error('[FixturesPageClient] Check-in request failed:', err)
-      alert(copy.errors.generic)
-    } finally {
-      setLoading(false)
-    }
-  }
 
   return (
     <div className="bg-cream min-h-screen font-body text-ink">
@@ -112,8 +79,7 @@ export function FixturesPageClient({
             <LiveTicketCard
               match={initialLiveMatch}
               odds={initialLiveOdds}
-              isCheckedIn={isCheckedIn}
-              onCheckIn={handleCheckIn}
+              initialCheckedIn={initialCheckedIn}
               competition="FIFA World Cup 2026"
             />
             {/* Divider */}

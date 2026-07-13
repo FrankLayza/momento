@@ -5,13 +5,13 @@ import { motion } from 'framer-motion'
 import { useRouter } from 'next/navigation'
 import { flagUrl } from '@/lib/teamFlags'
 import { copy } from '@/lib/copy'
+import { CheckinButton } from '@/components/CheckinButton'
 import type { NormalisedMatch, NormalisedOddsTick } from '@/server/txline/types'
 
 interface LiveTicketCardProps {
   match: NormalisedMatch
   odds: NormalisedOddsTick
-  isCheckedIn: boolean
-  onCheckIn: () => void
+  initialCheckedIn: boolean
   competition?: string
 }
 
@@ -20,8 +20,7 @@ const BARCODE_PATTERN = [1.5, 2, 2.5, 3, 1.5, 2.5, 2, 3, 1.5, 3, 2, 2.5, 1.5, 3]
 export function LiveTicketCard({
   match,
   odds,
-  isCheckedIn,
-  onCheckIn,
+  initialCheckedIn,
   competition = 'FIFA World Cup 2026',
 }: LiveTicketCardProps) {
   // Normalize probabilities to percentages
@@ -133,25 +132,7 @@ export function LiveTicketCard({
             ))}
           </div>
           {/* Check-in Button */}
-          {isCheckedIn ? (
-            <button
-              disabled
-              onClick={(e) => e.stopPropagation()}
-              className="w-full bg-ink/40 text-cream rounded-lg py-2.5 text-[11px] font-display font-bold tracking-[0.06em] uppercase cursor-default"
-            >
-              {copy.checkin.checkedInLabel}
-            </button>
-          ) : (
-            <button
-              onClick={(e) => {
-                e.stopPropagation()
-                onCheckIn()
-              }}
-              className="w-full bg-ink text-cream rounded-lg py-2.5 text-[11px] font-display font-bold tracking-[0.06em] uppercase hover:bg-ink/90 transition-colors cursor-pointer"
-            >
-              {copy.checkin.action}
-            </button>
-          )}
+          <CheckinButton matchId={match.id} initialCheckedIn={initialCheckedIn} />
         </div>
       </div>
     </motion.div>
