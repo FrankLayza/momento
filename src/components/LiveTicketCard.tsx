@@ -99,7 +99,7 @@ export function LiveTicketCard({
       </div>
 
       {/* Right Stub Divider */}
-      <div className="w-36 flex-shrink-0 bg-cream border-l-2 border-dashed border-cream-muted p-5 flex flex-col justify-between">
+      <div className="w-36 shrink-0 bg-cream border-l-2 border-dashed border-cream-muted p-5 flex flex-col justify-between">
         {/* Match number info */}
         <div>
           <div className="text-[10px] font-medium tracking-[0.14em] text-ink-ghost uppercase">

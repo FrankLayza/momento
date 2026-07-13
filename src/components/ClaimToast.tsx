@@ -48,7 +48,7 @@ export function ClaimToast({ moment, onClaim, onDismiss }: Props) {
     >
       <div className="flex items-start gap-3">
         {/* Tier badge */}
-        <div className="flex-shrink-0 mt-0.5">
+        <div className="shrink-0 mt-0.5">
           <TierBadge tier={moment.tier} size="sm" />
         </div>
 
@@ -69,7 +69,7 @@ export function ClaimToast({ moment, onClaim, onDismiss }: Props) {
         <button
           onClick={onDismiss}
           aria-label="Dismiss"
-          className="flex-shrink-0 text-ink-secondary hover:text-ink transition-colors text-lg leading-none cursor-pointer"
+          className="shrink-0 text-ink-secondary hover:text-ink transition-colors text-lg leading-none cursor-pointer"
         >
           ×
         </button>

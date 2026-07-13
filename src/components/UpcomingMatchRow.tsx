@@ -41,7 +41,7 @@ export function UpcomingMatchRow({ match, isLast = false }: UpcomingMatchRowProp
       </div>
 
       {/* Time block (centered) */}
-      <div className="text-center w-24 flex-shrink-0">
+      <div className="text-center w-24 shrink-0">
         <div className="font-display text-xl font-bold text-ink leading-none">
           {timeStr}
         </div>

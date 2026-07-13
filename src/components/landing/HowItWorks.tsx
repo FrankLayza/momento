@@ -26,7 +26,7 @@ export function HowItWorks() {
   }, []);
 
   return (
-    <section id="how-it-works" className="bg-[#F5F0E8] relative z-20 rounded-t-[48px] shadow-2xl">
+    <section id="how-it-works" className="bg-cream relative z-20 rounded-t-[48px] shadow-2xl">
       {/* Mobile View */}
       <div className="lg:hidden">
         {/* Section intro */}
@@ -34,7 +34,7 @@ export function HowItWorks() {
           <p className="text-[11px] font-medium tracking-[0.14em] text-[#4A4540] uppercase mb-3">
             {copy.landing.howItWorksTitle}
           </p>
-          <h2 className="font-display text-[36px] font-bold text-[#1A1714] leading-[1.1] mb-3 whitespace-pre-line">
+          <h2 className="font-display text-[36px] font-bold text-ink leading-[1.1] mb-3 whitespace-pre-line">
             {copy.landing.howItWorksHeading}
           </h2>
           <p className="text-[15px] text-[#4A4540] max-w-sm mx-auto">
