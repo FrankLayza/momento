@@ -2,6 +2,7 @@
 'use client'
 
 import { motion } from 'framer-motion'
+import { useRouter } from 'next/navigation'
 import { flagUrl } from '@/lib/teamFlags'
 import { copy } from '@/lib/copy'
 import type { NormalisedMatch, NormalisedOddsTick } from '@/server/txline/types'
@@ -27,13 +28,15 @@ export function LiveTicketCard({
   const pHomePct = Math.round(odds.pHome * 100)
   const pAwayPct = Math.round(odds.pAway * 100)
   const pDrawPct = 100 - pHomePct - pAwayPct // ensure sum to exactly 100%
+  const router = useRouter()
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] as const }}
-      className="rounded-2xl overflow-hidden border border-cream-border shadow-sm flex bg-cream-surface"
+      onClick={() => router.push(`/match/${match.id}`)}
+      className="rounded-2xl overflow-hidden border border-cream-border shadow-sm flex bg-cream-surface cursor-pointer hover:border-ink/20 transition-colors"
     >
       {/* Left Panel */}
       <div className="flex-1 p-7 flex flex-col justify-between">
@@ -133,13 +136,17 @@ export function LiveTicketCard({
           {isCheckedIn ? (
             <button
               disabled
+              onClick={(e) => e.stopPropagation()}
               className="w-full bg-ink/40 text-cream rounded-lg py-2.5 text-[11px] font-display font-bold tracking-[0.06em] uppercase cursor-default"
             >
               {copy.checkin.checkedInLabel}
             </button>
           ) : (
             <button
-              onClick={onCheckIn}
+              onClick={(e) => {
+                e.stopPropagation()
+                onCheckIn()
+              }}
               className="w-full bg-ink text-cream rounded-lg py-2.5 text-[11px] font-display font-bold tracking-[0.06em] uppercase hover:bg-ink/90 transition-colors cursor-pointer"
             >
               {copy.checkin.action}

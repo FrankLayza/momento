@@ -1,6 +1,7 @@
 // Implements FR-1.1
 'use client'
 
+import Link from 'next/link'
 import { flagUrl } from '@/lib/teamFlags'
 import { copy } from '@/lib/copy'
 import type { NormalisedMatch } from '@/server/txline/types'
@@ -23,8 +24,9 @@ export function UpcomingMatchRow({ match, isLast = false }: UpcomingMatchRowProp
   })
 
   return (
-    <div
-      className={`flex items-center px-6 py-4 transition-colors cursor-pointer hover:bg-cream-surface ${
+    <Link
+      href={`/match/${match.id}`}
+      className={`flex items-center px-6 py-4 transition-colors cursor-pointer hover:bg-cream-surface block ${
         isLast ? '' : 'border-b border-cream-border'
       }`}
     >
@@ -66,6 +68,6 @@ export function UpcomingMatchRow({ match, isLast = false }: UpcomingMatchRowProp
       <div className="text-[11px] font-medium tracking-[0.08em] text-ink-ghost uppercase w-24 text-right pl-3 border-l border-cream-border/40 ml-3">
         {copy.fixtures.upcoming}
       </div>
-    </div>
+    </Link>
   )
 }
