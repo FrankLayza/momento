@@ -17,6 +17,7 @@ import { MomentCard } from "@/components/MomentCard";
 import { CheckinButton } from "@/components/CheckinButton";
 import { WitnessNotifications } from "@/components/WitnessNotifications";
 import { Avatar } from "@/components/Avatar";
+import { flagUrl } from "@/lib/teamFlags";
 import type { Match, Moment } from "@/lib/types";
 
 interface Props {
@@ -157,8 +158,12 @@ export default async function MatchPage({ params }: Props) {
         {/* Teams and Score Grid */}
         <div className="flex items-center justify-between gap-4">
           {/* Home */}
-          <div className="flex-1 flex flex-col items-center gap-2">
-            <Avatar name={match.home} />
+          <div className="flex-1 flex flex-col items-center gap-3">
+            <img
+              src={flagUrl(match.home, 64)}
+              alt={match.home}
+              className="w-12 h-8 rounded-sm object-cover border border-cream-border/30 shadow-sm"
+            />
             <h1 className="font-display text-base sm:text-lg font-bold text-ink text-center">
               {match.home}
             </h1>
@@ -192,8 +197,12 @@ export default async function MatchPage({ params }: Props) {
           </div>
 
           {/* Away */}
-          <div className="flex-1 flex flex-col items-center gap-2">
-            <Avatar name={match.away} />
+          <div className="flex-1 flex flex-col items-center gap-3">
+            <img
+              src={flagUrl(match.away, 64)}
+              alt={match.away}
+              className="w-12 h-8 rounded-sm object-cover border border-cream-border/30 shadow-sm"
+            />
             <h1 className="font-display text-base sm:text-lg font-bold text-ink text-center">
               {match.away}
             </h1>
