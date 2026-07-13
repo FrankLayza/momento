@@ -40,7 +40,7 @@ export function Hero() {
           {copy.landing.heroSubcopy}
         </p>
         <Link
-          href="/?signin=1"
+          href="/"
           className="font-landing-body mt-4 inline-block rounded-full bg-landing-gold px-8 py-4 text-sm font-bold text-landing-ink hover:brightness-95 transition-all"
         >
           {copy.landing.heroCta}

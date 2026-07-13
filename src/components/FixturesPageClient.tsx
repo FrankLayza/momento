@@ -56,10 +56,7 @@ export function FixturesPageClient({
 
   const handleCheckIn = async () => {
     if (!userId) {
-      // Prompt sign in modal if not authenticated
-      const params = new URLSearchParams(window.location.search)
-      params.set('signin', '1')
-      router.push(`/?${params.toString()}`)
+      router.push('/sign-in?next=%2F&reason=checkin')
       return
     }
 
@@ -90,7 +87,7 @@ export function FixturesPageClient({
 
   return (
     <div className="bg-cream min-h-screen font-body text-ink">
-      <Navbar displayName={displayName} />
+      <Navbar displayName={displayName} userId={userId} />
       <main className="max-w-3xl mx-auto px-8 py-10">
         {/* Page header */}
         <p className="text-[11px] font-medium tracking-[0.12em] text-ink-ghost uppercase mb-2">

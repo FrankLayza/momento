@@ -11,7 +11,13 @@ const links = [
   { href: '/advanced', label: 'Advanced' },
 ]
 
-export function Navbar({ displayName }: { displayName: string }) {
+export function Navbar({
+  displayName,
+  userId = null,
+}: {
+  displayName: string
+  userId?: string | null
+}) {
   const pathname = usePathname()
   const router = useRouter()
   const supabase = createClient()
@@ -40,13 +46,22 @@ export function Navbar({ displayName }: { displayName: string }) {
           </Link>
         ))}
       </div>
-      <button
-        onClick={() => { void handleSignOut() }}
-        title="Click to Sign out"
-        className="w-8 h-8 rounded-full bg-ink text-cream text-xs font-display font-semibold flex items-center justify-center hover:opacity-85 transition-all cursor-pointer"
-      >
-        {displayName.slice(0, 2).toUpperCase()}
-      </button>
+      {userId ? (
+        <button
+          onClick={() => { void handleSignOut() }}
+          title="Click to Sign out"
+          className="w-8 h-8 rounded-full bg-ink text-cream text-xs font-display font-semibold flex items-center justify-center hover:opacity-85 transition-all cursor-pointer"
+        >
+          {displayName.slice(0, 2).toUpperCase()}
+        </button>
+      ) : (
+        <Link
+          href={`/sign-in?next=${encodeURIComponent(pathname)}`}
+          className="text-[13px] font-semibold text-ink hover:text-ink/80 transition-colors"
+        >
+          Sign in
+        </Link>
+      )}
     </nav>
   )
 }

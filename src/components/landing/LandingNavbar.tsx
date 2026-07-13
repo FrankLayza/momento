@@ -59,7 +59,7 @@ export function LandingNavbar() {
 
       {/* Sign in */}
       <Link
-        href="/?signin=1"
+        href="/sign-in"
         className={`font-landing-body text-sm transition-colors duration-300 ${
           isScrolled
             ? 'text-landing-ink/90 hover:text-landing-ink'

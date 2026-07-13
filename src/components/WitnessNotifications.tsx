@@ -81,7 +81,7 @@ export function WitnessNotifications({ matchId, isWitness }: Props) {
       });
 
       if (res.status === 401) {
-        router.push("/?signin=1");
+        router.push(`/sign-in?next=${encodeURIComponent(`/match/${matchId}`)}&reason=claim`);
         return;
       }
 

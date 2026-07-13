@@ -1,7 +1,7 @@
 /**
  * src/app/layout.tsx
  * Root layout for Momento.
- * Dark theme, Inter (body) + Sora (headers/display).
+ * Cream theme throughout, Inter (body) + Sora (headers/display).
  *
  * Sora is the header font — a free, geometric-grotesk substitute for
  * Spotify's proprietary "CircularSp-Deva" (not licensable for use here;
@@ -9,8 +9,6 @@
  */
 
 import type { Metadata } from "next";
-import { AuthHandler } from "@/components/AuthHandler";
-import { Suspense } from "react";
 import "./globals.css";
 
 // Mock local fonts since Google Fonts fetch fails in offline build environments
@@ -44,16 +42,12 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className="dark"
       suppressHydrationWarning
     >
       <body className="min-h-dvh bg-cream font-body antialiased flex flex-col">
         <div className="flex-1 w-full">
           {children}
         </div>
-        <Suspense fallback={null}>
-          <AuthHandler />
-        </Suspense>
       </body>
     </html>
   );

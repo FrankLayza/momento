@@ -28,13 +28,11 @@ export default async function VaultPage({
 }) {
   // 1. Get current auth user session
   const supabase = await createClient();
-  const { data: { session } } = await supabase.auth.getSession();
+  const { data: { user } } = await supabase.auth.getUser();
 
-  if (!session) {
+  if (!user) {
     redirect('/sign-in?next=/vault&reason=vault');
   }
-
-  const user = session.user;
 
   // 2. Fetch claimed moments for the user
   let userMoments: Array<{ edition: any; moment: Moment }> = [];

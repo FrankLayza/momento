@@ -23,13 +23,11 @@ export const revalidate = 0; // Dynamic/SSR only to check active user wallet
 export default async function AdvancedPage() {
   // 1. Get current auth user session
   const supabase = await createClient();
-  const { data: { session } } = await supabase.auth.getSession();
+  const { data: { user } } = await supabase.auth.getUser();
 
-  if (!session) {
+  if (!user) {
     redirect('/sign-in?next=/advanced&reason=default');
   }
-
-  const user = session.user;
   let pubkey: string | null = null;
   let displayName = "Fan";
   try {

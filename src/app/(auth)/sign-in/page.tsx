@@ -11,10 +11,10 @@ interface Props {
 export default async function SignInPage({ searchParams }: Props) {
   const resolvedSearchParams = await searchParams
   const supabase = await createClient()
-  const { data: { session } } = await supabase.auth.getSession()
+  const { data: { user } } = await supabase.auth.getUser()
 
   // Already signed in — send them where they were going
-  if (session) {
+  if (user) {
     const next = resolvedSearchParams.next ?? '/'
     // Security: only redirect to internal paths
     const safePath = next.startsWith('/') ? next : '/'

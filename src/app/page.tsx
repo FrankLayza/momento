@@ -1,15 +1,14 @@
 /**
  * src/app/page.tsx
  * Fixtures homepage — Implements FR-1.1 (PRD) & visual direction from fotMob / Linear.
- * Branches on auth state: guests see landing page, logged in users see fixtures.
+ * Fully public: no session check of any kind. Guests see the same fixtures
+ * feed as signed-in users; only Check In / Claim / Vault / Advanced gate on auth.
  */
 
 import type { Metadata } from "next"
-import { cookies } from "next/headers"
 import { listMatches, getUserCheckins, getUserById } from "@/server/db/queries"
 import { listWorldCupMatches, getPrematchProbabilities } from "@/server/txline/adapter"
 import { createClient } from "@/lib/supabase/server"
-import { Landing } from "@/components/landing/Landing"
 import { FixturesPageClient } from "@/components/FixturesPageClient"
 import type { NormalisedMatch, NormalisedOddsTick } from "@/server/txline/types"
 
@@ -19,27 +18,25 @@ export const metadata: Metadata = {
 
 export const revalidate = 10 // ISR: refresh fixture data every 10 seconds for high-density live updates
 
-// Implements FR-1.1 (browse-first, no auth wall via branching)
+// Implements FR-1.1 (browse-first, no auth wall)
 export default async function Page() {
   const supabase = await createClient()
   const { data: { user: sessionUser } } = await supabase.auth.getUser()
 
-  if (!sessionUser) {
-    return <Landing />
-  }
-
-  // 1. Fetch user details and check-ins
+  // 1. Fetch user details and check-ins (guests get empty defaults, no gate)
   let userCheckins = new Set<string>()
   let displayName = "Fan"
-  try {
-    const [checkins, appUser] = await Promise.all([
-      getUserCheckins(sessionUser.id),
-      getUserById(sessionUser.id),
-    ])
-    userCheckins = new Set(checkins.map(c => c.matchId))
-    displayName = appUser?.displayName || sessionUser.email?.split("@")[0] || "Fan"
-  } catch (err) {
-    console.error("[FixturesPage] Failed to load user metadata:", err)
+  if (sessionUser) {
+    try {
+      const [checkins, appUser] = await Promise.all([
+        getUserCheckins(sessionUser.id),
+        getUserById(sessionUser.id),
+      ])
+      userCheckins = new Set(checkins.map(c => c.matchId))
+      displayName = appUser?.displayName || sessionUser.email?.split("@")[0] || "Fan"
+    } catch (err) {
+      console.error("[FixturesPage] Failed to load user metadata:", err)
+    }
   }
 
   // 2. Fetch matches from DB
@@ -106,7 +103,7 @@ export default async function Page() {
       upcomingMatches={upcomingMatches}
       initialCheckedIn={isCheckedIn}
       displayName={displayName}
-      userId={sessionUser.id}
+      userId={sessionUser?.id ?? null}
     />
   )
 }
