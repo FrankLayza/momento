@@ -98,7 +98,7 @@ export default async function LeaderboardPage() {
                 <span className="font-display text-base font-black text-tier-notable mt-0.5">
                   {podium[1].totalShockScore}
                 </span>
-                <div className="w-full bg-cream-surface border-t border-x border-tier-notable/40 rounded-t-xl h-24 mt-3 flex items-center justify-center shadow-[0_0_24px_theme(colors.tier.notable.DEFAULT/15)]">
+                <div className="w-full bg-cream-surface border-t border-x border-tier-notable/40 rounded-t-xl h-24 mt-3 flex items-center justify-center shadow-[0_0_24px_--theme(--color-tier-notable/15)]">
                   <span className="font-display text-lg font-black text-tier-notable">1</span>
                 </div>
               </div>

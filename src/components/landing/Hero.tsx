@@ -11,14 +11,16 @@
 import Image from "next/image";
 import Link from "next/link";
 import { copy } from "@/lib/copy";
+// import { FlowmapHero } from "./FlowmapHero";
 
 
 const HERO_IMAGE_SRC = "/landing/landing.png";
+const HERO_IMAGE_SIZE: [number, number] = [1200, 800]; // landing.png natural pixel size
 
 export function Hero() {
   return (
     <section className="sticky top-0 h-screen w-full z-0 flex flex-col items-center justify-start pt-[180px] sm:pt-[220px] overflow-hidden bg-landing-ink">
-      {/* Background image + scrim */}
+      {/* Background image — base layer, also the fallback if WebGL is unavailable */}
       <Image
         src={HERO_IMAGE_SRC}
         alt=""
@@ -27,6 +29,9 @@ export function Hero() {
         className="object-cover"
         onError={(e) => { e.currentTarget.style.display = "none"; }}
       />
+      {/* Mouse flowmap distortion canvas — transparent until its texture loads,
+          then visually covers the static image above with the same crop. */}
+      {/* <FlowmapHero src={HERO_IMAGE_SRC} imgSize={HERO_IMAGE_SIZE} className="absolute inset-0" /> */}
       <div className="absolute inset-0 bg-landing-ink/25" aria-hidden="true" />
 
       {/* Headline */}

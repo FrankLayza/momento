@@ -68,11 +68,7 @@ export function SiteFooter() {
                     Discord
                   </a>
                 </li>
-                <li>
-                  <a href="https://instagram.com" target="_blank" rel="noreferrer" className="font-landing-body text-sm text-landing-cream/70 hover:text-white hover:underline transition-colors duration-200">
-                    Instagram
-                  </a>
-                </li>
+              
               </ul>
             </div>
 
