@@ -96,20 +96,33 @@ export function FixturesPageClient({
           </>
         )}
 
+        {fallbackMatch && (
+          <>
+            <div className="flex items-center gap-2 mb-4">
+              <span className="text-[11px] font-medium tracking-[0.12em] text-ink-secondary uppercase">
+                {copy.fixtures.upNext}
+              </span>
+            </div>
+            <UpcomingFallbackCard match={fallbackMatch} />
+            {/* Divider */}
+            <div className="h-px bg-cream-border my-8" />
+          </>
+        )}
+
         {/* Upcoming section */}
         <div className="flex items-center gap-2 mb-4">
           <span className="text-[11px] font-medium tracking-[0.12em] text-ink-secondary uppercase">
             {copy.fixtures.upcoming}
           </span>
         </div>
-        {upcomingMatches.length > 0 ? (
+        {listedMatches.length > 0 ? (
           <div className="bg-cream-surface rounded-2xl border border-cream-border overflow-hidden">
             <motion.div variants={container} initial="hidden" animate="show">
-              {upcomingMatches.map((match, i) => (
+              {listedMatches.map((match, i) => (
                 <motion.div key={match.id} variants={rowVariant}>
                   <UpcomingMatchRow
                     match={match}
-                    isLast={i === upcomingMatches.length - 1}
+                    isLast={i === listedMatches.length - 1}
                   />
                 </motion.div>
               ))}
