@@ -112,3 +112,39 @@ create policy "editions: select own" on editions for select using (auth.uid() = 
 -- Run once per project (Supabase SQL editor or migration).
 
 alter publication supabase_realtime add table moments;
+
+-- ── leaderboard_view ─────────────────────────────────────────────────────────
+-- Required for FR-7.1 and Leaderboard pages.
+-- Calculates cumulative moment count and highest-tier rank per user.
+
+create or replace view leaderboard_view as
+with user_stats as (
+  select
+    u.id as user_id,
+    u.display_name,
+    count(e.id) as moment_count,
+    case min(case m.tier when 'Seismic' then 1 when 'Shock' then 2 when 'Notable' then 3 else 4 end)
+      when 1 then 'Seismic'
+      when 2 then 'Shock'
+      when 3 then 'Notable'
+      else 'Common'
+    end as top_tier
+  from users u
+  left join editions e on u.id = e.user_id
+  left join moments m on e.moment_id = m.id
+  group by u.id, u.display_name
+)
+select
+  user_id,
+  display_name,
+  moment_count,
+  top_tier,
+  case top_tier 
+    when 'Seismic' then 1 
+    when 'Shock' then 2 
+    when 'Notable' then 3 
+    else 4 
+  end as top_tier_rank
+from user_stats;
+
+

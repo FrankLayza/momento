@@ -4,6 +4,7 @@ import { flagUrl } from '@/lib/teamFlags'
 import { useCheckIn } from '@/hooks/useCheckIn'
 import { MatchTimeline } from '@/components/MatchTimeline'
 import { MatchLineups } from '@/components/MatchLineups'
+import { Navbar } from '@/components/Navbar'
 import type { NormalisedMatch, NormalisedOddsTick } from '@/server/txline/types'
 
 type Tab = 'timeline' | 'lineups'
@@ -13,9 +14,10 @@ interface Props {
   odds?: NormalisedOddsTick
   initialCheckedIn: boolean
   userId: string | null
+  displayName: string
 }
 
-export function MatchPageClient({ match, odds, initialCheckedIn, userId }: Props) {
+export function MatchPageClient({ match, odds, initialCheckedIn, userId, displayName }: Props) {
   const [tab, setTab] = useState<Tab>('timeline')
   const { isCheckedIn, loading, checkIn } = useCheckIn(match.id, initialCheckedIn)
 
@@ -25,6 +27,7 @@ export function MatchPageClient({ match, odds, initialCheckedIn, userId }: Props
 
   return (
     <div className="bg-cream min-h-screen font-body">
+      <Navbar displayName={displayName} userId={userId} />
       <div className="max-w-3xl mx-auto px-8 py-8">
 
         {/* Match header */}

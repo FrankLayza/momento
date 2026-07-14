@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { MatchPageClient } from '@/components/MatchPageClient'
-import { listMatches } from '@/server/db/queries'
+import { listMatches, getUserById } from '@/server/db/queries'
 
 async function getMatch(id: string) {
   const matches = await listMatches().catch(() => [])
@@ -27,11 +27,22 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
         .maybeSingle()
     : null
 
+  let displayName = 'Fan'
+  if (session?.user) {
+    try {
+      const appUser = await getUserById(session.user.id).catch(() => null)
+      displayName = appUser?.displayName || session.user.email?.split('@')[0] || 'Fan'
+    } catch (err) {
+      console.error('[MatchPage] Failed to fetch user profile:', err)
+    }
+  }
+
   return (
     <MatchPageClient
       match={match}
       initialCheckedIn={!!checkin?.data}
       userId={session?.user.id ?? null}
+      displayName={displayName}
     />
   )
 }

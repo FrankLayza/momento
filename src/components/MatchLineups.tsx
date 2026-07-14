@@ -13,13 +13,20 @@ interface Props {
   away: string
 }
 
-// Mock formation — replace with real data
-const MOCK_HOME: Player[][] = [
+// Mock formations
+const MOCK_AWAY: Player[][] = [
   [{ number: 1, name: 'GK' }],
-  [{ number: 2, name: '' }, { number: 5, name: '' }, { number: 6, name: '' }, { number: 3, name: '' }],
-  [{ number: 4, name: '' }, { number: 8, name: '' }],
-  [{ number: 7, name: '' }, { number: 10, name: '' }, { number: 11, name: '' }],
+  [{ number: 2, name: '' }, { number: 4, name: '' }, { number: 5, name: '' }, { number: 3, name: '' }],
+  [{ number: 6, name: '' }, { number: 8, name: '' }, { number: 10, name: '' }],
+  [{ number: 7, name: '' }, { number: 9, name: '' }, { number: 11, name: '' }],
+]
+
+const MOCK_HOME: Player[][] = [
   [{ number: 9, name: '' }],
+  [{ number: 7, name: '' }, { number: 10, name: '' }, { number: 11, name: '' }],
+  [{ number: 4, name: '' }, { number: 8, name: '' }],
+  [{ number: 2, name: '' }, { number: 5, name: '' }, { number: 6, name: '' }, { number: 3, name: '' }],
+  [{ number: 1, name: 'GK' }],
 ]
 
 export function MatchLineups({ matchId, home, away }: Props) {
@@ -31,19 +38,42 @@ export function MatchLineups({ matchId, home, away }: Props) {
         <span>{away} <strong className="text-ink font-display">4-3-3</strong></span>
       </div>
 
-      <div className="bg-[#C8DDB8] rounded-xl p-4 flex flex-col justify-between gap-5" style={{ minHeight: 320 }}>
-        {MOCK_HOME.slice().reverse().map((row, ri) => (
-          <div key={ri} className="flex justify-center gap-1">
-            {row.map((p) => (
-              <div key={p.number} className="flex flex-col items-center gap-1 flex-1">
-                <div className="w-8 h-8 rounded-full bg-ink text-cream flex items-center justify-center font-display text-[11px] font-bold border-2 border-white/30">
-                  {p.number}
+      <div className="bg-[#C8DDB8] rounded-xl p-4 flex flex-col justify-between gap-4 relative overflow-hidden" style={{ minHeight: 440 }}>
+        {/* Pitch markings */}
+        <div className="absolute inset-x-0 top-1/2 h-px bg-white/20 -translate-y-1/2" />
+        <div className="absolute top-1/2 left-1/2 w-20 h-20 border border-white/20 rounded-full -translate-x-1/2 -translate-y-1/2" />
+
+        {/* Away Team (Top Half - Spain) */}
+        <div className="flex flex-col justify-start gap-4 z-10">
+          {MOCK_AWAY.map((row, ri) => (
+            <div key={`away-${ri}`} className="flex justify-center gap-1">
+              {row.map((p) => (
+                <div key={`away-${p.number}`} className="flex flex-col items-center gap-1 flex-1">
+                  <div className="w-8 h-8 rounded-full bg-live text-cream flex items-center justify-center font-display text-[11px] font-bold border-2 border-white/30 shadow-sm">
+                    {p.number}
+                  </div>
+                  {p.name && <span className="text-[8px] text-[#3A5C2A] font-medium">{p.name}</span>}
                 </div>
-                {p.name && <span className="text-[8px] text-[#3A5C2A] font-medium">{p.name}</span>}
-              </div>
-            ))}
-          </div>
-        ))}
+              ))}
+            </div>
+          ))}
+        </div>
+
+        {/* Home Team (Bottom Half - France) */}
+        <div className="flex flex-col justify-end gap-4 z-10">
+          {MOCK_HOME.map((row, ri) => (
+            <div key={`home-${ri}`} className="flex justify-center gap-1">
+              {row.map((p) => (
+                <div key={`home-${p.number}`} className="flex flex-col items-center gap-1 flex-1">
+                  <div className="w-8 h-8 rounded-full bg-ink text-cream flex items-center justify-center font-display text-[11px] font-bold border-2 border-white/30 shadow-sm">
+                    {p.number}
+                  </div>
+                  {p.name && <span className="text-[8px] text-[#3A5C2A] font-medium">{p.name}</span>}
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
       </div>
 
       <div className="flex items-center gap-4 mt-3">
