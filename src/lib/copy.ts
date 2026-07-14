@@ -39,6 +39,9 @@ export const copy = {
     fixturesTitle: "Fixtures",
     fifaWorldCup2026: "FIFA World Cup 2026",
     fixturesSubtitle: "Witness game-defining moments live and claim your limited-edition keepsakes.",
+    upNext:      "Up next",
+    kicksOffAt:  (time: string) => `Kicks off at ${time}`,
+    notYetLive:  "Not yet live",
   },
 
   // ── Check-in / Witnessing (FR-2.1, LR-2) ────────────────────────────────

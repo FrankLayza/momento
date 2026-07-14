@@ -1,21 +1,11 @@
 "use client";
 
-/**
- * src/components/landing/Hero.tsx
- * Full-viewport hero for the logged-out landing page.
- *
- * Background image is exposed as a single constant so the real asset can
- * be dropped in later without touching layout code.
- */
-
 import Image from "next/image";
 import Link from "next/link";
 import { copy } from "@/lib/copy";
-// import { FlowmapHero } from "./FlowmapHero";
-
+import { FlowmapHero } from "./FlowmapHero";
 
 const HERO_IMAGE_SRC = "/landing/landing.png";
-const HERO_IMAGE_SIZE: [number, number] = [1200, 800]; // landing.png natural pixel size
 
 export function Hero() {
   return (
@@ -29,9 +19,10 @@ export function Hero() {
         className="object-cover"
         onError={(e) => { e.currentTarget.style.display = "none"; }}
       />
-      {/* Mouse flowmap distortion canvas — transparent until its texture loads,
-          then visually covers the static image above with the same crop. */}
-      {/* <FlowmapHero src={HERO_IMAGE_SRC} imgSize={HERO_IMAGE_SIZE} className="absolute inset-0" /> */}
+      
+      {/* Mouse flowmap distortion canvas — Now auto-detects real aspect ratio safely */}
+      <FlowmapHero src={HERO_IMAGE_SRC} className="absolute inset-0 z-0" />
+      
       <div className="absolute inset-0 bg-landing-ink/25" aria-hidden="true" />
 
       {/* Headline */}

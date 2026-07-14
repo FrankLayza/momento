@@ -1,220 +1,161 @@
 "use client";
 
-/**
- * src/components/landing/FlowmapHero.tsx
- * Mouse-driven fluid image distortion, ported from robin-dela/flowmap-effect
- * (https://github.com/robin-dela/flowmap-effect, Codrops) onto OGL's npm
- * package instead of the demo's bundled build. Renders a full-bleed <canvas>
- * that reacts to cursor/touch movement; the underlying image is otherwise
- * static, so this degrades to nothing (parent's own background shows through)
- * if WebGL is unavailable or the user prefers reduced motion.
- */
+import React, { useEffect, useRef } from "react";
+import { Renderer, Program, Mesh, Triangle, Texture, Flowmap } from "ogl";
 
-import { useEffect, useRef } from "react";
-import { Renderer, Geometry, Program, Mesh, Texture, Vec2, Vec4, Flowmap } from "ogl";
-
-interface Props {
+interface FlowmapHeroProps {
   src: string;
-  /** Natural pixel dimensions of `src`, used to letterbox like object-cover without stretching. */
-  imgSize: [number, number];
   className?: string;
 }
 
-export function FlowmapHero({ src, imgSize, className }: Props) {
+export function FlowmapHero({ src, className = "" }: FlowmapHeroProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
     const container = containerRef.current;
-    if (!container) return;
+    const canvas = canvasRef.current;
+    if (!container || !canvas) return;
 
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      return;
-    }
-
-    let renderer: Renderer;
-    try {
-      renderer = new Renderer({ dpr: Math.min(2, window.devicePixelRatio || 1), alpha: true });
-    } catch {
-      // WebGL unavailable — leave the static background in place.
-      return;
-    }
-
+    const renderer = new Renderer({ canvas, dpr: Math.min(window.devicePixelRatio, 2), alpha: true });
     const gl = renderer.gl;
-    gl.clearColor(0, 0, 0, 0);
-    container.appendChild(gl.canvas);
-    gl.canvas.style.position = "absolute";
-    gl.canvas.style.inset = "0";
-    gl.canvas.style.width = "100%";
-    gl.canvas.style.height = "100%";
 
-    let destroyed = false;
-    let aspect = 1;
-    const mouse = new Vec2(-1);
-    const velocity = new Vec2();
-
-    const flowmap = new Flowmap(gl);
-
-    // Triangle that includes -1 to 1 range for 'position', and 0 to 1 range for 'uv'.
-    const geometry = new Geometry(gl, {
-      position: { size: 2, data: new Float32Array([-1, -1, 3, -1, -1, 3]) },
-      uv: { size: 2, data: new Float32Array([0, 0, 2, 0, 0, 2]) },
+    const flowmap = new Flowmap(gl, {
+      falloff: 0.25,
+      dissipation: 0.94,
     });
 
-    const texture = new Texture(gl, { minFilter: gl.LINEAR, magFilter: gl.LINEAR });
+    const texture = new Texture(gl, { minFilter: gl.LINEAR });
     const img = new Image();
-    img.crossOrigin = "anonymous";
+    
+    let aspectDimensions = { width: 1, height: 1 };
+
+    img.src = src;
     img.onload = () => {
       texture.image = img;
+      aspectDimensions = {
+        width: img.naturalWidth || 1,
+        height: img.naturalHeight || 1
+      };
+      if (canvas) canvas.style.opacity = "1";
+      resize();
     };
-    img.src = src;
-
-    function computeAspectCorrection(): [number, number] {
-      const imageAspect = imgSize[1] / imgSize[0];
-      if (window.innerHeight / window.innerWidth < imageAspect) {
-        return [1, window.innerHeight / window.innerWidth / imageAspect];
-      }
-      return [(window.innerWidth / window.innerHeight) * imageAspect, 1];
-    }
-
-    const [a1Init, a2Init] = computeAspectCorrection();
 
     const program = new Program(gl, {
-      vertex,
-      fragment,
+      vertex: `
+        attribute vec2 position;
+        attribute vec2 uv;
+        varying vec2 vUv;
+        void main() {
+          vUv = uv;
+          gl_Position = vec4(position, 0.0, 1.0);
+        }
+      `,
+      fragment: `
+        precision highp float;
+        uniform sampler2D tMap;
+        uniform sampler2D tFlow;
+        uniform vec2 uMeshScale;
+        uniform vec2 uTextureScale;
+        uniform float uIntensity; // THE LOCK: Defaults to 0
+        varying vec2 vUv;
+
+        void main() {
+          vec2 uv = (vUv - 0.5) * uMeshScale / uTextureScale + 0.5;
+          vec3 flow = texture2D(tFlow, vUv).rgb;
+          
+          // Multiply the flow effect by uIntensity. 
+          // If uIntensity is 0, displacedUv is exactly equal to uv (perfect image).
+          vec2 displacedUv = uv + (flow.rg * 0.04 * uIntensity);
+          
+          gl_FragColor = texture2D(tMap, displacedUv);
+        }
+      `,
       uniforms: {
-        uTime: { value: 0 },
-        tWater: { value: texture },
-        res: { value: new Vec4(window.innerWidth, window.innerHeight, a1Init, a2Init) },
-        tFlow: flowmap.uniform,
+        tMap: { value: texture },
+        tFlow: { value: flowmap.uniform },
+        uMeshScale: { value: [1, 1] },
+        uTextureScale: { value: [1, 1] },
+        uIntensity: { value: 0.0 }, // Initialize lock to 0
       },
     });
+
+    const geometry = new Triangle(gl);
     const mesh = new Mesh(gl, { geometry, program });
 
-    function resize() {
-      if (!container) return;
-      const { clientWidth: w, clientHeight: h } = container;
-      const [a1, a2] = computeAspectCorrection();
-      program.uniforms.res.value = new Vec4(w, h, a1, a2);
-      renderer.setSize(w, h);
-      aspect = w / h;
-    }
-    window.addEventListener("resize", resize, false);
-    resize();
+    const mouse = { x: 0, y: 0, targetX: 0, targetY: 0 };
+    let hasMoved = false; 
+    
+    const handleMouseMove = (e: MouseEvent) => {
+      const rect = container.getBoundingClientRect();
+      const currentTargetX = (e.clientX - rect.left) / rect.width;
+      const currentTargetY = 1.0 - (e.clientY - rect.top) / rect.height;
 
-    const lastMouse = new Vec2();
-    let lastTime: number | undefined;
+      if (!hasMoved) {
+        mouse.x = currentTargetX;
+        mouse.y = currentTargetY;
+        hasMoved = true;
+      }
 
-    function updateMouse(e: MouseEvent | TouchEvent) {
-      let x: number, y: number;
-      if ("changedTouches" in e && e.changedTouches.length) {
-        x = e.changedTouches[0]!.pageX;
-        y = e.changedTouches[0]!.pageY;
+      mouse.targetX = currentTargetX;
+      mouse.targetY = currentTargetY;
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+
+    const resize = () => {
+      const width = container.clientWidth;
+      const height = container.clientHeight;
+      
+      renderer.setSize(width, height);
+
+      const imageAspect = aspectDimensions.width / aspectDimensions.height;
+      const containerAspect = width / height;
+
+      if (containerAspect > imageAspect) {
+        program.uniforms.uMeshScale.value = [1, 1 / containerAspect];
+        program.uniforms.uTextureScale.value = [1, 1 / imageAspect];
       } else {
-        x = (e as MouseEvent).pageX;
-        y = (e as MouseEvent).pageY;
+        program.uniforms.uMeshScale.value = [containerAspect, 1];
+        program.uniforms.uTextureScale.value = [imageAspect, 1];
+      }
+    };
+
+    const resizeObserver = new ResizeObserver(resize);
+    resizeObserver.observe(container);
+
+    let animationFrameId: number;
+    const update = () => {
+      animationFrameId = requestAnimationFrame(update);
+
+      if (hasMoved) {
+        // Linearly interpolate the tracking variables
+        mouse.x += (mouse.targetX - mouse.x) * 0.1;
+        mouse.y += (mouse.targetY - mouse.y) * 0.1;
+        flowmap.mouse.set(mouse.x, mouse.y);
+        
+        // Smoothly fade in the distortion multiplier so it doesn't just snap on
+        program.uniforms.uIntensity.value += (1.0 - program.uniforms.uIntensity.value) * 0.05;
+      } else {
+        flowmap.mouse.set(-1, -1);
       }
 
-      const rect = container!.getBoundingClientRect();
-      const localX = x - rect.left;
-      const localY = y - rect.top;
-
-      mouse.set(localX / gl.renderer.width, 1 - localY / gl.renderer.height);
-
-      if (!lastTime) {
-        lastTime = performance.now();
-        lastMouse.set(x, y);
-      }
-
-      const deltaX = x - lastMouse.x;
-      const deltaY = y - lastMouse.y;
-      lastMouse.set(x, y);
-
-      const time = performance.now();
-      const delta = Math.max(10.4, time - lastTime);
-      lastTime = time;
-
-      velocity.x = deltaX / delta;
-      velocity.y = deltaY / delta;
-      // @ts-expect-error — flag used to detect idle frames, not part of Vec2's type
-      velocity.needsUpdate = true;
-    }
-
-    const isTouchCapable = "ontouchstart" in window;
-    if (isTouchCapable) {
-      container.addEventListener("touchstart", updateMouse, false);
-      container.addEventListener("touchmove", updateMouse, { passive: true });
-    } else {
-      container.addEventListener("mousemove", updateMouse, false);
-    }
-
-    let rafId: number;
-    function update(t: number) {
-      rafId = requestAnimationFrame(update);
-      // @ts-expect-error — see updateMouse
-      if (!velocity.needsUpdate) {
-        mouse.set(-1);
-        velocity.set(0, 0);
-      }
-      // @ts-expect-error — see updateMouse
-      velocity.needsUpdate = false;
-
-      flowmap.aspect = aspect;
-      flowmap.mouse.copy(mouse);
-      // @ts-expect-error — len is a getter on ogl's Vec2
-      flowmap.velocity.lerp(velocity, velocity.len ? 0.15 : 0.1);
       flowmap.update();
-
-      program.uniforms.uTime.value = t * 0.01;
       renderer.render({ scene: mesh });
-    }
-    rafId = requestAnimationFrame(update);
+    };
+    animationFrameId = requestAnimationFrame(update);
 
     return () => {
-      destroyed = true;
-      cancelAnimationFrame(rafId);
-      window.removeEventListener("resize", resize);
-      container.removeEventListener("touchstart", updateMouse);
-      container.removeEventListener("touchmove", updateMouse);
-      container.removeEventListener("mousemove", updateMouse);
+      window.removeEventListener("mousemove", handleMouseMove);
+      resizeObserver.disconnect();
+      cancelAnimationFrame(animationFrameId);
       gl.getExtension("WEBGL_lose_context")?.loseContext();
-      if (gl.canvas.parentNode === container) container.removeChild(gl.canvas);
-      void destroyed;
     };
-  }, [src, imgSize]);
+  }, [src]);
 
-  return <div ref={containerRef} className={className} aria-hidden="true" />;
+  return (
+    <div ref={containerRef} className={`pointer-events-none ${className}`}>
+      <canvas ref={canvasRef} className="w-full h-full block opacity-0 transition-opacity duration-300" />
+    </div>
+  );
 }
-
-const vertex = /* glsl */ `
-  attribute vec2 uv;
-  attribute vec2 position;
-  varying vec2 vUv;
-  void main() {
-    vUv = uv;
-    gl_Position = vec4(position, 0, 1);
-  }
-`;
-
-const fragment = /* glsl */ `
-  precision highp float;
-  precision highp int;
-  uniform sampler2D tWater;
-  uniform sampler2D tFlow;
-  uniform float uTime;
-  varying vec2 vUv;
-  uniform vec4 res;
-
-  void main() {
-    // R and G values are velocity in the x and y direction
-    // B value is the velocity length
-    vec3 flow = texture2D(tFlow, vUv).rgb;
-
-    vec2 uv = .5 * gl_FragCoord.xy / res.xy;
-    vec2 myUV = (uv - vec2(0.5)) * res.zw + vec2(0.5);
-    myUV -= flow.xy * (0.15 * 0.7);
-
-    vec3 tex = texture2D(tWater, myUV).rgb;
-
-    gl_FragColor = vec4(tex.r, tex.g, tex.b, 1.0);
-  }
-`;

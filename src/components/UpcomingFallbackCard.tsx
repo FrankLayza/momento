@@ -1,0 +1,47 @@
+// Implements FR-1.1 — fallback for the live-ticket slot when no match is live
+'use client'
+
+import { flagUrl } from '@/lib/teamFlags'
+import { copy } from '@/lib/copy'
+import type { NormalisedMatch } from '@/server/txline/types'
+
+export function UpcomingFallbackCard({ match }: { match: NormalisedMatch }) {
+  const kickoff = new Date(match.kickoffUtc)
+  const time = kickoff.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
+  const date = kickoff.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
+
+  return (
+    <div className="flex rounded-2xl overflow-hidden border border-cream-border opacity-[0.85]">
+      <div className="flex-1 bg-cream-surface p-7">
+        <p className="text-[10px] font-medium tracking-[0.14em] text-ink-ghost uppercase mb-4">
+          {match.competition ?? copy.fixtures.fifaWorldCup2026}
+        </p>
+        <div className="flex items-center gap-3 mb-3">
+          <div className="flex items-center gap-2">
+            <img src={flagUrl(match.home, 40)} alt={match.home} className="w-7 h-5 rounded-sm object-cover" />
+            <span className="font-display text-lg font-bold text-ink-secondary">{match.home}</span>
+          </div>
+          <span className="text-sm text-ink-ghost">vs</span>
+          <div className="flex items-center gap-2">
+            <img src={flagUrl(match.away, 40)} alt={match.away} className="w-7 h-5 rounded-sm object-cover" />
+            <span className="font-display text-lg font-bold text-ink-secondary">{match.away}</span>
+          </div>
+        </div>
+        <div className="font-display text-[52px] font-bold text-cream-muted leading-none tracking-tight">
+          – –
+        </div>
+        <p className="text-[12px] text-ink-ghost mt-2">{copy.fixtures.kicksOffAt(time)} · {date}</p>
+      </div>
+      <div className="w-36 flex-shrink-0 bg-cream border-l-2 border-dashed border-cream-muted p-5 flex flex-col justify-between">
+        <div>
+          <p className="text-[10px] font-medium tracking-[0.14em] text-ink-ghost uppercase mb-1">{copy.fixtures.kickoff}</p>
+          <p className="font-display text-2xl font-bold text-ink">{time}</p>
+          <p className="text-[10px] text-ink-ghost mt-0.5">{date}</p>
+        </div>
+        <div className="w-full bg-cream-muted/40 text-ink-ghost rounded-lg py-2.5 text-[11px] font-display font-bold tracking-[0.06em] uppercase text-center">
+          {copy.fixtures.notYetLive}
+        </div>
+      </div>
+    </div>
+  )
+}

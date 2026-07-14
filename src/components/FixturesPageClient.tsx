@@ -6,7 +6,9 @@ import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { Navbar } from '@/components/Navbar'
 import { LiveTicketCard } from '@/components/LiveTicketCard'
+import { UpcomingFallbackCard } from '@/components/UpcomingFallbackCard'
 import { UpcomingMatchRow } from '@/components/UpcomingMatchRow'
+import { FixturesEmptyState } from '@/components/FixturesEmptyState'
 import { copy } from '@/lib/copy'
 import type { NormalisedMatch, NormalisedOddsTick } from '@/server/txline/types'
 
@@ -38,6 +40,13 @@ export function FixturesPageClient({
   userId,
 }: FixturesPageClientProps) {
   const router = useRouter()
+
+  // When nothing is live, the ticket slot falls back to the soonest upcoming
+  // fixture — that match is then dropped from the list below it.
+  const fallbackMatch = !initialLiveMatch ? upcomingMatches[0] ?? null : null
+  const listedMatches = fallbackMatch
+    ? upcomingMatches.filter(m => m.id !== fallbackMatch.id)
+    : upcomingMatches
 
   // Keep the live card (score, minute, probability bar) current while a match
   // is in progress — the server component only re-fetches on navigation or
@@ -93,8 +102,8 @@ export function FixturesPageClient({
             {copy.fixtures.upcoming}
           </span>
         </div>
-        <div className="bg-cream-surface rounded-2xl border border-cream-border overflow-hidden">
-          {upcomingMatches.length > 0 ? (
+        {upcomingMatches.length > 0 ? (
+          <div className="bg-cream-surface rounded-2xl border border-cream-border overflow-hidden">
             <motion.div variants={container} initial="hidden" animate="show">
               {upcomingMatches.map((match, i) => (
                 <motion.div key={match.id} variants={rowVariant}>
@@ -105,14 +114,10 @@ export function FixturesPageClient({
                 </motion.div>
               ))}
             </motion.div>
-          ) : (
-            <div className="text-center py-16">
-              <p className="text-xs text-ink-ghost">
-                {copy.fixtures.noFixtures}
-              </p>
-            </div>
-          )}
-        </div>
+          </div>
+        ) : (
+          <FixturesEmptyState />
+        )}
       </main>
     </div>
   )
