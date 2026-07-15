@@ -130,6 +130,38 @@ const MetaLineSchema = z.object({
   home:     z.string(),
   away:     z.string(),
   startUtc: z.string(),
+  scoreHome: z.number().optional(),
+  scoreAway: z.number().optional(),
+  minute:    z.number().optional(),
+});
+
+// Optional richer stat snapshots. A file MAY interleave `stat` lines to drive
+// the Stats tab (possession, shots, corners, momentum, …) — otherwise replay
+// falls back to crude goal-derived stats (see hasStatLines below). Each line
+// carries the CUMULATIVE team stats at `minute` plus one momentum sample
+// (positive = home dominance, negative = away).
+const TeamStatsSchema = z.object({
+  possession:  z.number(),
+  shots:       z.number(),
+  corners:     z.number(),
+  freeKicks:   z.number(),
+  throwIns:    z.number(),
+  offsides:    z.number(),
+  yellowCards: z.number(),
+  redCards:    z.number(),
+  penalties:   z.number(),
+});
+
+const StatLineSchema = z.object({
+  type: z.literal("stat"),
+  data: z.object({
+    matchId:  z.string(),
+    atUtc:    z.string(),
+    minute:   z.number(),
+    home:     TeamStatsSchema,
+    away:     TeamStatsSchema,
+    momentum: z.number(),
+  }),
 });
 
 // ── Per-match replay state ────────────────────────────────────────────────────
@@ -183,9 +215,9 @@ export async function listWorldCupMatches(): Promise<NormalisedMatch[]> {
           away:       meta.data.away,
           kickoffUtc: meta.data.startUtc,
           status:     replayState ? replayState.status : (completedMatches.has(mId) ? "finished" : "live"),
-          minute:     replayState ? replayState.minute : null,
-          score:      replayState ? replayState.score : { home: 0, away: 0 },
-          phase:      replayState ? replayState.phase : null,
+          minute:     replayState ? replayState.minute : (meta.data.minute ?? null),
+          score:      replayState ? replayState.score : { home: meta.data.scoreHome ?? 0, away: meta.data.scoreAway ?? 0 },
+          phase:      replayState ? replayState.phase : (meta.data.minute ? (meta.data.minute > 90 ? "ET1" : meta.data.minute > 45 ? "H2" : "H1") : null),
         });
         break; // only need meta line per file
       }
@@ -246,11 +278,33 @@ export function subscribeMatch(
       return;
     }
 
-    // Initialize replay match state in the file
+    const lines = await readAllLines(filePath);
+
+    // Initialize replay match state in the file, parsing initial score/minute from the meta line
+    let initialScore = { home: 0, away: 0 };
+    let initialMinute: number | null = 1;
+    let initialPhase: ReplayMatchState["phase"] = "H1";
+
+    const metaLine = lines.map(l => {
+      try { return JSON.parse(l); } catch { return null; }
+    }).find(p => p && p.type === "meta");
+
+    if (metaLine) {
+      const parsedMeta = MetaLineSchema.safeParse(metaLine);
+      if (parsedMeta.success) {
+        if (parsedMeta.data.scoreHome !== undefined) initialScore.home = parsedMeta.data.scoreHome;
+        if (parsedMeta.data.scoreAway !== undefined) initialScore.away = parsedMeta.data.scoreAway;
+        if (parsedMeta.data.minute !== undefined) {
+          initialMinute = parsedMeta.data.minute;
+          initialPhase = initialMinute > 90 ? "ET1" : initialMinute > 45 ? "H2" : "H1";
+        }
+      }
+    }
+
     writeReplayState(matchId, {
-      minute: 1,
-      phase: "H1",
-      score: { home: 0, away: 0 },
+      minute: initialMinute,
+      phase: initialPhase,
+      score: initialScore,
       status: "live",
       timeline: [],
       stats: {
@@ -262,7 +316,16 @@ export function subscribeMatch(
 
     console.log(`[replay] Streaming ${path.basename(filePath)} at ${speedMultiplier}× speed`);
 
-    const lines = await readAllLines(filePath);
+    // If the file carries its own `stat` lines, they are authoritative for the
+    // Stats tab and momentum — so the goal handler below must not also bump
+    // shots / push crude momentum (that would double-count and fight the
+    // snapshots). Files without stat lines keep the goal-derived fallback.
+    const hasStatLines = lines.some(l => {
+      try { return (JSON.parse(l) as { type?: string }).type === "stat"; }
+      catch { return false; }
+    });
+
+    const processedEvents = new Set<string>();
     let prevTimestamp: number | null = null;
 
     for (const line of lines) {
@@ -300,9 +363,33 @@ export function subscribeMatch(
         continue;
       }
 
+      // Rich stat snapshot — overwrite the Stats tab data and append a
+      // momentum sample. Also advances the displayed clock between events.
+      const stat = StatLineSchema.safeParse(parsed);
+      if (stat.success) {
+        const sd = stat.data.data;
+        const currentState = readReplayState(matchId);
+        const momentum = [...(currentState?.stats?.momentum ?? [])];
+        momentum.push({ minute: sd.minute, value: sd.momentum });
+        writeReplayState(matchId, {
+          minute: sd.minute,
+          phase: sd.minute > 90 ? "ET1" : sd.minute > 45 ? "H2" : "H1",
+          stats: { home: sd.home, away: sd.away, momentum },
+        });
+        continue;
+      }
+
       const event = EventLineSchema.safeParse(parsed);
       if (event.success) {
         const ev = event.data.data;
+
+        // Deduplicate events to prevent double counting if the stream has duplicate records
+        const eventKey = `${ev.kind}:${ev.minute}:${ev.team}`;
+        if (processedEvents.has(eventKey)) {
+          continue;
+        }
+        processedEvents.add(eventKey);
+
         onEvent(ev as NormalisedEvent);
 
         const currentState = readReplayState(matchId);
@@ -322,10 +409,10 @@ export function subscribeMatch(
         } else if (ev.kind === "goal") {
           if (ev.team === "home") {
             currentScore.home++;
-            currentStats.home.shots++;
+            if (!hasStatLines) currentStats.home.shots++;
           } else if (ev.team === "away") {
             currentScore.away++;
-            currentStats.away.shots++;
+            if (!hasStatLines) currentStats.away.shots++;
           }
           currentTimeline.push({
             minute: ev.minute,
@@ -351,22 +438,24 @@ export function subscribeMatch(
           });
         }
 
-        // Compute simple momentum based on goals/events
-        const momentumValue = ev.kind === "goal" ? (ev.team === "home" ? 25 : -25) : 0;
-        const currentMomentum = [...(currentStats.momentum ?? [])];
-        currentMomentum.push({ minute: ev.minute, value: momentumValue });
-
-        writeReplayState(matchId, {
+        const statePayload: Partial<ReplayMatchState> = {
           minute: ev.minute,
           phase: newPhase,
           score: currentScore,
           status: ev.kind === "full_time" ? "finished" : "live",
           timeline: currentTimeline,
-          stats: {
-            ...currentStats,
-            momentum: currentMomentum
-          }
-        });
+        };
+
+        // Only own the stats/momentum here when the file has no `stat` lines —
+        // otherwise the stat snapshots are authoritative (see hasStatLines).
+        if (!hasStatLines) {
+          const momentumValue = ev.kind === "goal" ? (ev.team === "home" ? 25 : -25) : 0;
+          const currentMomentum = [...(currentStats.momentum ?? [])];
+          currentMomentum.push({ minute: ev.minute, value: momentumValue });
+          statePayload.stats = { ...currentStats, momentum: currentMomentum };
+        }
+
+        writeReplayState(matchId, statePayload);
       }
     }
 
@@ -408,7 +497,7 @@ async function readAllLines(filePath: string): Promise<string[]> {
 function extractTimestamp(parsed: unknown): string | null {
   if (typeof parsed !== "object" || parsed === null) return null;
   const obj = parsed as Record<string, unknown>;
-  if (obj["type"] === "tick" || obj["type"] === "event") {
+  if (obj["type"] === "tick" || obj["type"] === "event" || obj["type"] === "stat") {
     const data = obj["data"];
     if (typeof data === "object" && data !== null) {
       const d = data as Record<string, unknown>;

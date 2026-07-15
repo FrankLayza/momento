@@ -258,7 +258,22 @@ async function fireMoment(
   // For T1/T2/T3: use pHome as the primary swing marker; full score uses both
   const pBeforeScalar = draft.pBefore.home;
   const pAfterScalar  = draft.pAfter.home;
-  const pPreMatchScalar = pPreMatch.home;
+
+  // T4 (full-time upset) is scored from the *winning* team's pre-match
+  // probability (computeShockScore does 100*(1-pPreMatch)). Using pHome here
+  // regardless of who won meant an away-team upset (e.g. a 9% side winning) was
+  // scored off the home favourite's 63% → floored to 65 (Shock) instead of the
+  // deserved ~91 (Seismic). Pick the winner's pre-match probability.
+  let pPreMatchScalar = pPreMatch.home;
+  if (triggerKind === "T4") {
+    const homeWon = state.score.home > state.score.away;
+    const awayWon = state.score.away > state.score.home;
+    pPreMatchScalar = homeWon
+      ? pPreMatch.home
+      : awayWon
+      ? pPreMatch.away
+      : Math.min(pPreMatch.home, pPreMatch.away);
+  }
 
   const { shockScore, tier } = computeShockScore({
     pBefore:   pBeforeScalar,

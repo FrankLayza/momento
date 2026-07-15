@@ -1,8 +1,14 @@
-/**
- * src/server/db/queries.ts
- * Typed Supabase query helpers — no raw SQL in API routes.
- * All routes import from here.
- */
+// Mock WebSocket for Node.js environments (like Node 20) where native WebSocket is missing.
+// This prevents Supabase Realtime client from crashing on initialization.
+if (typeof global !== "undefined" && !(global as any).WebSocket) {
+  (global as any).WebSocket = class {
+    constructor() {}
+    addEventListener() {}
+    removeEventListener() {}
+    close() {}
+    send() {}
+  };
+}
 
 import { createClient } from "@supabase/supabase-js";
 import type { AppUser, Match, Moment, Edition, Witness } from "@/lib/types";
