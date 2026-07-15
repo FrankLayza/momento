@@ -200,11 +200,25 @@ function statusIdToStatus(statusId: number): NormalisedMatch["status"] {
 
 // ── Normalisation helpers ──────────────────────────────────────────────────────
 
+function statusIdToPhase(statusId: number): NormalisedMatch["phase"] {
+  switch (statusId) {
+    case 2: return "H1";
+    case 3: return "HT";
+    case 4: return "H2";
+    case 5: return "FT";
+    case 7: return "ET1";
+    case 9: return "ET2";
+    case 11: case 12: return "PEN";
+    default: return null;
+  }
+}
+
 function normaliseMatch(
   raw: z.infer<typeof RawFixtureSchema>,
   liveStatus?: NormalisedMatch["status"],
   liveScore?: { home: number; away: number },
-  liveMinute?: number | null
+  liveMinute?: number | null,
+  livePhase?: NormalisedMatch["phase"]
 ): NormalisedMatch {
   const home = raw.Participant1IsHome ? raw.Participant1 : raw.Participant2;
   const away = raw.Participant1IsHome ? raw.Participant2 : raw.Participant1;
@@ -233,6 +247,7 @@ function normaliseMatch(
     status,
     minute: liveMinute ?? null,
     score: liveScore ?? { home: 0, away: 0 },
+    phase: livePhase ?? null,
     competition: raw.Competition ?? undefined,
   };
 }
@@ -242,6 +257,7 @@ function normaliseMatch(
 interface ParsedScoreState {
   status: NormalisedMatch["status"];
   statusId: number;
+  phase: NormalisedMatch["phase"];
   score: { home: number; away: number };
   minute: number | null;
   /** All unique actions seen in the record array, with their seq numbers */
@@ -268,6 +284,7 @@ function parseScoreRecordsRaw(
     return {
       status: "scheduled",
       statusId: 1,
+      phase: null,
       score: { home: 0, away: 0 },
       minute: null,
       events: [],
@@ -353,7 +370,7 @@ function parseScoreRecordsRaw(
     }
   }
 
-  return { status, statusId, score, minute, events };
+  return { status, statusId, phase: statusIdToPhase(statusId), score, minute, events };
 }
 
 // ── Odds extraction from odds record array ───────────────────────────────────
@@ -467,7 +484,7 @@ export async function listWorldCupMatches(): Promise<NormalisedMatch[]> {
       try {
         const scoreState = await fetchScoreState(String(fixture.FixtureId), fixture.Participant1IsHome, headers);
         if (scoreState) {
-          results.push(normaliseMatch(fixture, scoreState.status, scoreState.score, scoreState.minute));
+          results.push(normaliseMatch(fixture, scoreState.status, scoreState.score, scoreState.minute, scoreState.phase));
           continue;
         }
       } catch (err) {
@@ -559,7 +576,7 @@ export async function getPrematchProbabilities(
  */
 export async function getLiveMatchState(
   matchId: string
-): Promise<{ score: { home: number; away: number }; minute: number | null; status: string } | null> {
+): Promise<{ score: { home: number; away: number }; minute: number | null; status: string; phase: NormalisedMatch["phase"] } | null> {
   const headers = await getRequestHeaders();
   // We need Participant1IsHome to map scores correctly.
   // Fetch from fixtures first.
@@ -579,21 +596,30 @@ export async function getLiveMatchState(
     score: state.score,
     minute: state.minute,
     status: state.status,
+    phase: state.phase,
   };
+}
+
+function parseSse(text: string): any[] {
+  const out: any[] = [];
+  for (const block of text.split(/\r?\n\r?\n/)) {
+    const dl = block.split(/\r?\n/).filter(l => l.startsWith("data:")).map(l => l.slice(l.indexOf(":")+1).trim());
+    if (!dl.length) continue;
+    try {
+      out.push(JSON.parse(dl.join("\n")));
+    } catch {
+      for (const line of dl) {
+        try { out.push(JSON.parse(line)); } catch {}
+      }
+    }
+  }
+  return out;
 }
 
 const scoreCache = new Map<string, { home: number; away: number }>();
 
 /**
  * Returns the final score of a completed match.
- *
- * /api/scores/historical/{id} is the authoritative, complete record for any
- * match old enough to have one (docs: available from ~6h to 2 weeks post-
- * kickoff) — /api/scores/snapshot/{id} appears to hold only a rolling/recent
- * window of events and can be missing goals for older matches (confirmed:
- * it under-reported a finished match's score by one goal). So historical is
- * tried first; the live snapshot is only a fallback for matches finished too
- * recently (<6h) for historical data to exist yet.
  */
 export async function getFinishedMatchScore(
   matchId: string
@@ -602,66 +628,33 @@ export async function getFinishedMatchScore(
   if (cached) return cached;
 
   try {
-    const baseUrl = getBaseUrl();
-    const headers = await getRequestHeaders();
-
-    // Try the historical endpoint first — the complete, authoritative record.
-    const histRes = await fetch(`${baseUrl}/api/scores/historical/${matchId}`, { headers });
-    if (histRes.ok) {
-      const text = await histRes.text();
-      const lines = text.split("\n");
-
-      // Scan backward for the last record that actually carries Stats.
-      for (let i = lines.length - 1; i >= 0; i--) {
-        const line = lines[i]!.trim();
-        if (!line.startsWith("data: ")) continue;
-
-        try {
-          const parsed = JSON.parse(line.slice(6)) as {
-            Participant1IsHome?: boolean;
-            Stats?: Record<string, number>;
-          };
-          const stats = parsed.Stats;
-          if (!stats || (stats["1"] === undefined && stats["2"] === undefined)) continue;
-
-          const isHome = parsed.Participant1IsHome ?? true;
-          const val1 = stats["1"] ?? 0;
-          const val2 = stats["2"] ?? 0;
-          const score = {
-            home: isHome ? val1 : val2,
-            away: isHome ? val2 : val1,
-          };
-
-          scoreCache.set(matchId, score);
-          return score;
-        } catch {
-          continue; // malformed line — keep scanning backward
+    const records = await fetchMatchRecords(matchId);
+    if (records.length > 0) {
+      const lastWithScore = [...records].reverse().find(
+        (r) => r.Score || (r.Stats && (r.Stats["1"] !== undefined || r.Stats["2"] !== undefined))
+      );
+      if (lastWithScore) {
+        const p1IsHome = lastWithScore.Participant1IsHome ?? true;
+        let home = 0;
+        let away = 0;
+        if (lastWithScore.Score) {
+          const g1 = lastWithScore.Score?.Participant1?.Total?.Goals ?? 0;
+          const g2 = lastWithScore.Score?.Participant2?.Total?.Goals ?? 0;
+          home = p1IsHome ? g1 : g2;
+          away = p1IsHome ? g2 : g1;
+        } else if (lastWithScore.Stats) {
+          const g1 = lastWithScore.Stats["1"] ?? 0;
+          const g2 = lastWithScore.Stats["2"] ?? 0;
+          home = p1IsHome ? g1 : g2;
+          away = p1IsHome ? g2 : g1;
         }
-      }
-    }
-
-    // Fallback: live scores snapshot (historical not populated yet — match
-    // finished less than ~6h ago per TxLINE docs).
-    const snapshotRes = await fetch(`${baseUrl}/api/scores/snapshot/${matchId}`, { headers });
-    if (snapshotRes.ok) {
-      const raw: unknown = await snapshotRes.json();
-      if (Array.isArray(raw) && raw.length > 0) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const firstWithHome = (raw as any[]).find((r: any) => typeof r.Participant1IsHome === "boolean");
-        const p1IsHome = firstWithHome?.Participant1IsHome ?? true;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const state = parseScoreRecordsRaw(raw as any[], p1IsHome);
-        if (state.score.home > 0 || state.score.away > 0) {
-          scoreCache.set(matchId, state.score);
-          return state.score;
-        }
+        const score = { home, away };
+        scoreCache.set(matchId, score);
+        return score;
       }
     }
   } catch (err) {
-    console.error(
-      `[txline/adapter] getFinishedMatchScore error for ${matchId}:`,
-      err
-    );
+    console.error(`[txline/adapter] getFinishedMatchScore error for ${matchId}:`, err);
   }
 
   return { home: 0, away: 0 };
@@ -669,52 +662,10 @@ export async function getFinishedMatchScore(
 
 /**
  * Reconstructs a match's goal/card timeline from TxLINE's scores feed.
- *
- * TxLINE has no player-level data, so this is derived purely from the numeric
- * feed and carries no player names (the Timeline UI renders team + minute +
- * running score instead). Two dedupe-safe deltas drive it:
- *   - Goals: each increase in Score.Participant{1,2}.Total.Goals is one goal.
- *     (The raw feed emits several "goal" action rows per goal — unconfirmed
- *     then confirmed/amended — so counting rows would over-report; the Score
- *     block is authoritative.)
- *   - Cards: each increase in Stats keys 3/4 (yellows P1/P2) and 5/6 (reds).
- *
- * Historical (complete SSE record) is tried first, same as getFinishedMatchScore;
- * the live snapshot is the fallback for matches too recent for historical.
  */
 export async function getMatchTimeline(matchId: string): Promise<TimelineEvent[]> {
   try {
-    const baseUrl = getBaseUrl();
-    const headers = await getRequestHeaders();
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let records: any[] = [];
-
-    // Historical first — the complete, authoritative record (SSE "data:" lines).
-    const histRes = await fetch(`${baseUrl}/api/scores/historical/${matchId}`, { headers });
-    if (histRes.ok) {
-      const text = await histRes.text();
-      for (const rawLine of text.split("\n")) {
-        const line = rawLine.trim();
-        if (!line.startsWith("data:")) continue;
-        try {
-          records.push(JSON.parse(line.slice(line.indexOf(":") + 1).trim()));
-        } catch {
-          // malformed line — skip
-        }
-      }
-    }
-
-    // Fallback: live snapshot (JSON array) for matches too recent for historical.
-    if (records.length === 0) {
-      const snapRes = await fetch(`${baseUrl}/api/scores/snapshot/${matchId}`, { headers });
-      if (snapRes.ok) {
-        const raw: unknown = await snapRes.json();
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        if (Array.isArray(raw)) records = raw as any[];
-      }
-    }
-
+    const records = await fetchMatchRecords(matchId);
     if (records.length === 0) return [];
 
     // The feed doesn't guarantee array order — sort by Seq so deltas are chronological.
@@ -736,6 +687,11 @@ export async function getMatchTimeline(matchId: string): Promise<TimelineEvent[]
       return 0;
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    function phaseOf(rec: any): NormalisedMatch["phase"] {
+      return statusIdToPhase(rec.StatusId);
+    }
+
     const events: TimelineEvent[] = [];
     let g1 = 0, g2 = 0, y1 = 0, y2 = 0, r1 = 0, r2 = 0;
 
@@ -748,20 +704,21 @@ export async function getMatchTimeline(matchId: string): Promise<TimelineEvent[]
 
     for (const rec of sorted) {
       const minute = minuteOf(rec);
+      const phase = phaseOf(rec);
 
       // Emit one event per unit increase (not per delta) so a stream gap that
       // jumps the count by >1 still yields the right number of goals/cards.
       const ng1 = rec.Score?.Participant1?.Total?.Goals;
       const ng2 = rec.Score?.Participant2?.Total?.Goals;
-      while (typeof ng1 === "number" && ng1 > g1) { g1++; events.push({ minute, kind: "goal", team: teamOf(1), ...score() }); }
-      while (typeof ng2 === "number" && ng2 > g2) { g2++; events.push({ minute, kind: "goal", team: teamOf(2), ...score() }); }
+      while (typeof ng1 === "number" && ng1 > g1) { g1++; events.push({ minute, kind: "goal", team: teamOf(1), phase, ...score() }); }
+      while (typeof ng2 === "number" && ng2 > g2) { g2++; events.push({ minute, kind: "goal", team: teamOf(2), phase, ...score() }); }
 
       const st = rec.Stats;
       if (st) {
-        while (typeof st["3"] === "number" && st["3"] > y1) { y1++; events.push({ minute, kind: "yellow_card", team: teamOf(1), ...score() }); }
-        while (typeof st["4"] === "number" && st["4"] > y2) { y2++; events.push({ minute, kind: "yellow_card", team: teamOf(2), ...score() }); }
-        while (typeof st["5"] === "number" && st["5"] > r1) { r1++; events.push({ minute, kind: "red_card", team: teamOf(1), ...score() }); }
-        while (typeof st["6"] === "number" && st["6"] > r2) { r2++; events.push({ minute, kind: "red_card", team: teamOf(2), ...score() }); }
+        while (typeof st["3"] === "number" && st["3"] > y1) { y1++; events.push({ minute, kind: "yellow_card", team: teamOf(1), phase, ...score() }); }
+        while (typeof st["4"] === "number" && st["4"] > y2) { y2++; events.push({ minute, kind: "yellow_card", team: teamOf(2), phase, ...score() }); }
+        while (typeof st["5"] === "number" && st["5"] > r1) { r1++; events.push({ minute, kind: "red_card", team: teamOf(1), phase, ...score() }); }
+        while (typeof st["6"] === "number" && st["6"] > r2) { r2++; events.push({ minute, kind: "red_card", team: teamOf(2), phase, ...score() }); }
       }
     }
 
@@ -776,7 +733,7 @@ export async function getMatchTimeline(matchId: string): Promise<TimelineEvent[]
     };
     const discreteById = new Map<
       string,
-      { kind: DiscreteKind; minute: number; participant: 1 | 2 | null; confirmed: boolean }
+      { kind: DiscreteKind; minute: number; participant: 1 | 2 | null; confirmed: boolean; phase: NormalisedMatch["phase"] }
     >();
     for (const rec of sorted) {
       const kind = ACTION_KIND[rec.Action];
@@ -789,7 +746,7 @@ export async function getMatchTimeline(matchId: string): Promise<TimelineEvent[]
       const key = `${kind}:${id}`;
       const existing = discreteById.get(key);
       if (!existing || (confirmed && !existing.confirmed)) {
-        discreteById.set(key, { kind, minute: minuteOf(rec), participant, confirmed });
+        discreteById.set(key, { kind, minute: minuteOf(rec), participant, confirmed, phase: phaseOf(rec) });
       }
     }
     // Running score at a given minute, so these rows can still show the scoreline.
@@ -798,22 +755,38 @@ export async function getMatchTimeline(matchId: string): Promise<TimelineEvent[]
       const before = goalEvents.filter((e) => e.minute <= minute);
       const last = before[before.length - 1];
       return last
-        ? { scoreHome: last.scoreHome, scoreAway: last.scoreAway }
-        : { scoreHome: 0, scoreAway: 0 };
+          ? { scoreHome: last.scoreHome, scoreAway: last.scoreAway }
+          : { scoreHome: 0, scoreAway: 0 };
     };
     for (const d of discreteById.values()) {
       events.push({
         minute: d.minute,
         kind: d.kind,
         team: d.participant ? teamOf(d.participant) : null,
+        phase: d.phase,
         ...scoreAtMinute(d.minute),
       });
     }
 
-    // Stable sort by minute (goals/cards keep insertion order within a minute).
+    const PHASE_ORDER: Record<string, number> = {
+      H1: 1,
+      HT: 2,
+      H2: 3,
+      FT: 4,
+      ET1: 5,
+      ET2: 6,
+      PEN: 7,
+    };
+
+    // Stable sort: sort first by phase chronology, then by minute within the phase, keeping insertion order as fallback.
     return events
       .map((e, i) => ({ e, i }))
-      .sort((a, b) => a.e.minute - b.e.minute || a.i - b.i)
+      .sort((a, b) => {
+        const orderA = a.e.phase ? (PHASE_ORDER[a.e.phase] ?? 99) : 99;
+        const orderB = b.e.phase ? (PHASE_ORDER[b.e.phase] ?? 99) : 99;
+        if (orderA !== orderB) return orderA - orderB;
+        return a.e.minute - b.e.minute || a.i - b.i;
+      })
       .map(({ e }) => e);
   } catch (err) {
     console.error(`[txline/adapter] getMatchTimeline error for ${matchId}:`, err);
@@ -952,30 +925,46 @@ async function fetchMatchRecords(matchId: string): Promise<any[]> {
   const baseUrl = getBaseUrl();
   const headers = await getRequestHeaders();
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const records: any[] = [];
-  const histRes = await fetch(`${baseUrl}/api/scores/historical/${matchId}`, { headers });
-  if (histRes.ok) {
-    const text = await histRes.text();
-    for (const rawLine of text.split("\n")) {
-      const line = rawLine.trim();
-      if (!line.startsWith("data:")) continue;
-      try {
-        records.push(JSON.parse(line.slice(line.indexOf(":") + 1).trim()));
-      } catch {
-        // skip malformed line
+  // 1. Try historical endpoint first (for older finished matches)
+  try {
+    const histRes = await fetch(`${baseUrl}/api/scores/historical/${matchId}`, { headers });
+    if (histRes.ok) {
+      const text = await histRes.text();
+      if (text.trim().length > 0) {
+        const records = parseSse(text);
+        if (records.length > 0) return records;
       }
     }
+  } catch (e) {
+    console.warn(`[txline/adapter] historical fetch failed for ${matchId}:`, e);
   }
-  if (records.length === 0) {
+
+  // 2. Try updates endpoint (SSE updates stream) for live matches
+  try {
+    const updatesRes = await fetch(`${baseUrl}/api/scores/updates/${matchId}`, { headers });
+    if (updatesRes.ok) {
+      const text = await updatesRes.text();
+      if (text.trim().length > 0) {
+        const records = parseSse(text);
+        if (records.length > 0) return records;
+      }
+    }
+  } catch (e) {
+    console.warn(`[txline/adapter] updates fetch failed for ${matchId}:`, e);
+  }
+
+  // 3. Fallback: Try snapshot endpoint
+  try {
     const snapRes = await fetch(`${baseUrl}/api/scores/snapshot/${matchId}`, { headers });
     if (snapRes.ok) {
-      const raw: unknown = await snapRes.json();
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      if (Array.isArray(raw)) records.push(...(raw as any[]));
+      const raw = await snapRes.json();
+      if (Array.isArray(raw)) return raw;
     }
+  } catch (e) {
+    console.warn(`[txline/adapter] snapshot fetch failed for ${matchId}:`, e);
   }
-  return records;
+
+  return [];
 }
 
 const EMPTY_TEAM_STATS: TeamStats = {
@@ -1036,9 +1025,16 @@ export async function getMatchStats(matchId: string): Promise<MatchStats | null>
     function getMinute(rec: any): number {
       const secs = rec.Clock?.Seconds;
       if (typeof secs === "number" && secs > 0) return Math.ceil(secs / 60);
-      if (rec.StatusId === 3) return 45;
-      if (rec.StatusId === 5) return 90;
-      if (rec.StatusId === 10) return 120;
+      // Phase-derived fallbacks: use the StatusId to infer which half the event
+      // belongs to rather than dropping to 0 (which silently discards the event
+      // from the momentum chart).
+      if (rec.StatusId === 2) return 22;  // H1 → mid first-half estimate
+      if (rec.StatusId === 3) return 45;  // HT
+      if (rec.StatusId === 4) return 67;  // H2 → mid second-half estimate
+      if (rec.StatusId === 5) return 90;  // FT
+      if (rec.StatusId === 7) return 97;  // ET H1
+      if (rec.StatusId === 9) return 112; // ET H2
+      if (rec.StatusId === 10) return 120; // AET
       return 0;
     }
 

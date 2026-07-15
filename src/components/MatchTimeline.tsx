@@ -7,6 +7,7 @@
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import type { TimelineEvent } from '@/server/txline/types'
+import { formatMatchMinute } from '@/lib/matchUtils'
 
 interface Props {
   matchId: string
@@ -30,20 +31,56 @@ type Row =
   | { type: 'half'; label: string }
 
 function buildRows(events: TimelineEvent[], status: Props['status']): Row[] {
-  const sorted = [...events].sort((a, b) => a.minute - b.minute)
+  const PHASE_ORDER: Record<string, number> = {
+    H1: 1,
+    HT: 2,
+    H2: 3,
+    FT: 4,
+    ET1: 5,
+    ET2: 6,
+    PEN: 7,
+  }
+
+  const sorted = [...events].sort((a, b) => {
+    const orderA = a.phase ? (PHASE_ORDER[a.phase] ?? 99) : 99
+    const orderB = b.phase ? (PHASE_ORDER[b.phase] ?? 99) : 99
+    if (orderA !== orderB) return orderA - orderB
+    return a.minute - b.minute
+  })
+
   const rows: Row[] = [{ type: 'half', label: 'Kick-off' }]
 
   let htInserted = false
+  let et1Inserted = false
+  let et2Inserted = false
+  let penInserted = false
+
   sorted.forEach((event, index) => {
-    if (!htInserted && event.minute > 45) {
+    if (!htInserted && (event.phase === "H2" || event.phase === "HT" || (event.minute > 45 && event.phase !== "H1"))) {
       rows.push({ type: 'half', label: 'Half time' })
       htInserted = true
+    }
+    if (!et1Inserted && (event.phase === "ET1" || event.phase === "ET2")) {
+      rows.push({ type: 'half', label: 'Full time' })
+      et1Inserted = true
+    }
+    if (!penInserted && event.phase === "PEN") {
+      rows.push({ type: 'half', label: 'Penalties' })
+      penInserted = true
     }
     // VAR (and any side-less event) sits centred on the spine, not left/right.
     rows.push({ type: event.team === null ? 'neutral' : 'event', event, index })
   })
 
-  if (status === 'finished') rows.push({ type: 'half', label: 'Full time' })
+  if (status === 'finished' && !et1Inserted && !penInserted) {
+    if (!htInserted) {
+      rows.push({ type: 'half', label: 'Half time' })
+    }
+    rows.push({ type: 'half', label: 'Full time' })
+  } else if (status === 'finished' && (et1Inserted || et2Inserted) && !penInserted) {
+    rows.push({ type: 'half', label: 'End of extra time' })
+  }
+
   return rows
 }
 
@@ -161,7 +198,7 @@ export function MatchTimeline({ matchId, status, home, away }: Props) {
                   <span className="relative z-10 flex items-center gap-1.5 bg-cream-surface text-ink-secondary text-[11px] font-medium rounded-full border border-cream-border px-3 py-1 shadow-sm transition-transform hover:scale-105 cursor-default">
                     <span className="text-[12px] leading-none">{meta.icon}</span>
                     {meta.label}
-                    <span className="text-ink-ghost font-display font-bold">{row.event.minute}&apos;</span>
+                    <span className="text-ink-ghost font-display font-bold">{formatMatchMinute(row.event.minute, row.event.phase)}&apos;</span>
                   </span>
                 </div>
               )
@@ -195,7 +232,7 @@ export function MatchTimeline({ matchId, status, home, away }: Props) {
                       ? 'bg-ink text-cream border-ink shadow-md'
                       : 'bg-cream-surface text-ink-secondary border-cream-border'
                   }`}>
-                    {ev.minute}&apos;
+                    {formatMatchMinute(ev.minute, ev.phase)}&apos;
                   </div>
                 </div>
 

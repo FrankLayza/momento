@@ -2,22 +2,28 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { MatchPageClient } from '@/components/MatchPageClient'
 import { listMatches, getUserById } from '@/server/db/queries'
-import { getLiveMatchState, getFinishedMatchScore, listWorldCupMatches } from '@/server/txline/adapter'
-import type { NormalisedMatch } from '@/server/txline/types'
+import { getLiveMatchState, getFinishedMatchScore, listWorldCupMatches, getPrematchProbabilities } from '@/server/txline/resolve'
+import type { NormalisedMatch, NormalisedOddsTick } from '@/server/txline/types'
 
 async function getMatch(id: string) {
-  const matches = await listMatches().catch(() => [])
-  let match: NormalisedMatch | null = matches.find((m) => m.id === id) || null
+  // The DB is only populated by the worker's fixture sync, which advances
+  // matches.status (scheduled → live → finished) at most every 60s. The live
+  // TxLINE feed is the fresher source, so fetch both and let the feed's status
+  // win — otherwise the detail page would trust a stale DB 'scheduled' row and
+  // render "Upcoming / Kick off soon" for a match the Fixtures list already
+  // shows as LIVE (the two pages must not disagree).
+  const [matches, feed] = await Promise.all([
+    listMatches().catch(() => [] as NormalisedMatch[]),
+    listWorldCupMatches().catch(() => [] as NormalisedMatch[]),
+  ])
 
-  // The DB is only populated by the worker's fixture sync. Fixtures that exist
-  // in the live TxLINE feed but haven't been synced yet (any friendly, or the
-  // World Cup fixtures before the worker's first run) would otherwise redirect
-  // home. Fall back to the feed so every fixture the home page links to opens.
-  if (!match) {
-    const feed = await listWorldCupMatches().catch(() => [])
-    match = feed.find((m) => m.id === id) || null
-  }
+  const dbMatch = matches.find((m) => m.id === id) || null
+  const feedMatch = feed.find((m) => m.id === id) || null
+  let match: NormalisedMatch | null = dbMatch ?? feedMatch
   if (!match) return null
+
+  // Reconcile status from the live feed (fresher than the DB).
+  if (feedMatch) match = { ...match, status: feedMatch.status }
 
   // listMatches() reads from the DB, which never stores live score/minute
   // (see queries.ts) — merge in the real-time state from TxLINE so live and
@@ -43,6 +49,23 @@ async function getMatch(id: string) {
   return match
 }
 
+async function getMatchOdds(id: string): Promise<NormalisedOddsTick | null> {
+  try {
+    const probs = await getPrematchProbabilities(id)
+    if (!probs) return null
+    return {
+      matchId: id,
+      atUtc: new Date().toISOString(),
+      pHome: probs.pHome,
+      pDraw: probs.pDraw,
+      pAway: probs.pAway,
+    }
+  } catch (err) {
+    console.error('[MatchPage] Failed to fetch odds:', err)
+    return null
+  }
+}
+
 export default async function MatchPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const supabase = await createClient()
@@ -50,6 +73,8 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
 
   const match = await getMatch(id)
   if (!match) redirect('/')
+
+  const odds = await getMatchOdds(id)
 
   const checkin = user
     ? await supabase
@@ -70,12 +95,16 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
     }
   }
 
+  const isReplay = process.env.REPLAY_MODE === 'true'
+
   return (
     <MatchPageClient
       match={match}
+      odds={odds ?? undefined}
       initialCheckedIn={!!checkin?.data}
       userId={user?.id ?? null}
       displayName={displayName}
+      isReplay={isReplay}
     />
   )
 }

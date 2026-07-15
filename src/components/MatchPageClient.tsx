@@ -9,6 +9,7 @@ import { MatchStats } from '@/components/MatchStats'
 import { Navbar } from '@/components/Navbar'
 import { WitnessNotifications } from '@/components/WitnessNotifications'
 import type { NormalisedMatch, NormalisedOddsTick } from '@/server/txline/types'
+import { formatMatchMinute, getPeriodLabel } from '@/lib/matchUtils'
 
 type Tab = 'timeline' | 'lineups' | 'stats'
 
@@ -18,9 +19,10 @@ interface Props {
   initialCheckedIn: boolean
   userId: string | null
   displayName: string
+  isReplay?: boolean
 }
 
-export function MatchPageClient({ match, odds, initialCheckedIn, userId, displayName }: Props) {
+export function MatchPageClient({ match, odds, initialCheckedIn, userId, displayName, isReplay = false }: Props) {
   const [tab, setTab] = useState<Tab>('timeline')
   const { isCheckedIn, loading, checkIn } = useCheckIn(match.id, initialCheckedIn)
   const router = useRouter()
@@ -51,6 +53,11 @@ export function MatchPageClient({ match, odds, initialCheckedIn, userId, display
         <div className="bg-cream-surface rounded-2xl border border-cream-border p-6 mb-6">
           <p className="text-[10px] font-medium tracking-[0.14em] text-ink-ghost uppercase mb-4">
             {match.competition ?? 'FIFA World Cup 2026'} · {match.status === 'live' ? 'Live' : match.status === 'finished' ? 'Finished' : 'Upcoming'}
+            {isReplay && (
+              <span className="ml-2 text-[10px] font-bold tracking-wider uppercase bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">
+                Replay
+              </span>
+            )}
           </p>
           <div className="flex items-center justify-between mb-4">
             <div className="flex flex-col items-center gap-2">
@@ -67,7 +74,7 @@ export function MatchPageClient({ match, odds, initialCheckedIn, userId, display
                 {match.status === 'finished'
                   ? 'Full time'
                   : match.minute
-                    ? `${match.minute}' · ${match.minute > 45 ? 'Second half' : 'First half'}`
+                    ? `${formatMatchMinute(match.minute, match.phase)}' · ${getPeriodLabel(match.minute, match.phase)}`
                     : 'Kick off soon'}
               </p>
             </div>
@@ -129,7 +136,7 @@ export function MatchPageClient({ match, odds, initialCheckedIn, userId, display
         {/* Tab content */}
         {tab === 'timeline' && <MatchTimeline matchId={match.id} status={match.status} home={match.home} away={match.away} />}
         {tab === 'lineups' && <MatchLineups matchId={match.id} home={match.home} away={match.away} />}
-        {tab === 'stats' && <MatchStats matchId={match.id} status={match.status} home={match.home} away={match.away} />}
+        {tab === 'stats' && <MatchStats matchId={match.id} status={match.status} home={match.home} away={match.away} currentMinute={match.minute} />}
 
         {/* Live Moment notifications */}
         <WitnessNotifications matchId={match.id} isWitness={isCheckedIn} />

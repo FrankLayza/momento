@@ -20,6 +20,7 @@ interface FixturesPageClientProps {
   checkedInMatchIds?: string[]
   displayName: string
   userId: string | null
+  isReplay?: boolean
 }
 
 const container = {
@@ -40,6 +41,7 @@ export function FixturesPageClient({
   checkedInMatchIds = [],
   displayName,
   userId,
+  isReplay = false,
 }: FixturesPageClientProps) {
   const router = useRouter()
 
@@ -86,6 +88,11 @@ export function FixturesPageClient({
               <span className="text-[11px] font-medium tracking-[0.12em] text-ink-secondary uppercase">
                 {copy.fixtures.liveNow}
               </span>
+              {isReplay && (
+                <span className="text-[10px] font-bold tracking-wider uppercase bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">
+                  {copy.fixtures.replayBadge}
+                </span>
+              )}
             </div>
             <LiveTicketCard
               match={initialLiveMatch}

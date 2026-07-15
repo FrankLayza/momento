@@ -13,6 +13,8 @@ interface Props {
   status: 'scheduled' | 'live' | 'finished'
   home: string
   away: string
+  /** Current match minute — drives the momentum chart's X-axis range for live matches */
+  currentMinute?: number | null
 }
 
 const ROWS: Array<{ key: keyof TeamStats; label: string; isPercent?: boolean }> = [
@@ -67,79 +69,168 @@ function StatRow({ label, home, away, isPercent }: { label: string; home: number
   )
 }
 
-function MomentumChart({ data }: { data: MatchStats['momentum'] }) {
+/**
+ * Applies a rolling window average to smooth the raw per-minute momentum
+ * values into a FotMob-style flowing chart instead of isolated spiky bars.
+ */
+function smoothMomentum(
+  data: Array<{ minute: number; value: number }>,
+  windowSize: number = 3
+): Array<{ minute: number; value: number }> {
+  if (data.length === 0) return data;
+  const half = Math.floor(windowSize / 2);
+  return data.map((d, i) => {
+    let sum = 0;
+    let count = 0;
+    for (let j = Math.max(0, i - half); j <= Math.min(data.length - 1, i + half); j++) {
+      sum += data[j]!.value;
+      count++;
+    }
+    return { minute: d.minute, value: sum / count };
+  });
+}
+
+function MomentumChart({ data, currentMinute }: { data: MatchStats['momentum']; currentMinute?: number | null }) {
   if (!data || data.length === 0) return null
+
+  // Smooth with a 3-minute rolling window for a flowing, FotMob-style look
+  const smoothed = smoothMomentum(data, 3);
   
-  // Find max absolute value to scale height (minimum 50 to avoid tiny spikes looking huge)
-  const maxVal = Math.max(50, ...data.map(d => Math.abs(d.value)))
+  // Find max absolute value to scale height (minimum 20 to avoid tiny spikes looking huge)
+  const maxVal = Math.max(20, ...smoothed.map(d => Math.abs(d.value)))
   
   // SVG dimensions
   const width = 1000
   const height = 120
   
-  // Scale X-axis exactly to the actual match length (minimum 90)
-  const chartMaxMinute = Math.max(90, ...data.map(d => d.minute))
+  // Dynamic X-axis: for live matches scale to the current minute (floor 20 for
+  // very early matches); for finished matches use the actual data extent or 90.
+  const dataMaxMinute = data.length > 0 ? Math.max(...data.map(d => d.minute)) : 0;
+  let chartMaxMinute: number;
+  if (currentMinute && currentMinute > 0) {
+    // Live: axis extends ~5' past the current minute for breathing room, minimum 20
+    chartMaxMinute = Math.max(20, currentMinute + 5);
+  } else {
+    // Finished or unknown: fit to data, minimum 90
+    chartMaxMinute = Math.max(90, dataMaxMinute);
+  }
   const barWidth = width / chartMaxMinute
   
-  // Demarcation points (only add ET markers if the match actually went that long)
-  const markers = [45, 90]
-  if (chartMaxMinute > 100) markers.push(105)
-  if (chartMaxMinute >= 120) markers.push(120)
+  // Demarcation points — only show markers that fall within the visible range
+  const allMarkers = [45, 90, 105, 120]
+  const markers = allMarkers.filter(m => m <= chartMaxMinute)
   
-  return (
-    <div className="py-4 border-b border-cream-border mb-4">
-      <div className="flex items-center justify-between text-[11px] font-medium text-ink-ghost uppercase tracking-[0.12em] mb-4">
-        <span>Attack Momentum</span>
-      </div>
-      <div className="relative w-full h-[120px] bg-cream-base/50 rounded-md overflow-hidden">
-        {/* Center line */}
-        <div className="absolute top-1/2 left-0 w-full h-px bg-cream-border z-10" />
-         
-        <motion.svg 
-          viewBox={`0 0 ${width} ${height}`} 
-          className="w-full h-full preserve-3d relative z-0 origin-center" 
-          preserveAspectRatio="none"
-          initial={{ scaleY: 0, opacity: 0 }}
-          animate={{ scaleY: 1, opacity: 1 }}
-          transition={{ type: 'spring', stiffness: 200, damping: 25 }}
-        >
-          {/* Vertical Demarcation Lines */}
-          {markers.map(m => (
-            <line 
-              key={`marker-${m}`}
-              x1={m * barWidth} 
-              y1={0} 
-              x2={m * barWidth} 
-              y2={height} 
-              stroke="currentColor" 
-              strokeWidth={2} 
-              strokeDasharray="4 4" 
-              className="text-cream-border"
-            />
-          ))}
-          
-          {/* Momentum Bars */}
-          {data.map((d, i) => {
-            if (d.value === 0) return null
-            const isHome = d.value > 0
-            const normalizedHeight = (Math.abs(d.value) / maxVal) * (height / 2)
-            const x = (d.minute - 1) * barWidth
-            const y = isHome ? (height / 2) - normalizedHeight : (height / 2)
-              
-            return (
-              <rect 
-                key={i} 
-                x={x} 
-                y={y} 
-                width={Math.max(1.5, barWidth - 1.5)} 
-                height={normalizedHeight} 
-                className={isHome ? "fill-ink" : "fill-live"}
-                rx="2"
+    const centerY = height / 2; // 60
+    
+    // Build Home and Away area paths
+    let homePath = `M 0 ${centerY}`;
+    let awayPath = `M 0 ${centerY}`;
+    let homeEnvelope = "";
+    let awayEnvelope = "";
+    
+    let inHome = false;
+    let inAway = false;
+    let lastX = 0;
+    
+    smoothed.forEach((d) => {
+      if (d.minute > chartMaxMinute) return;
+      const x = (d.minute - 1) * barWidth;
+      lastX = x;
+      
+      // Home (above center)
+      if (d.value > 0) {
+        const y = centerY - (d.value / maxVal) * (centerY - 6);
+        homePath += ` L ${x} ${y}`;
+        if (!inHome) {
+          homeEnvelope += ` M ${x} ${centerY} L ${x} ${y}`;
+          inHome = true;
+        } else {
+          homeEnvelope += ` L ${x} ${y}`;
+        }
+      } else {
+        homePath += ` L ${x} ${centerY}`;
+        if (inHome) {
+          homeEnvelope += ` L ${x} ${centerY}`;
+          inHome = false;
+        }
+      }
+      
+      // Away (below center)
+      if (d.value < 0) {
+        const y = centerY + (Math.abs(d.value) / maxVal) * (centerY - 6);
+        awayPath += ` L ${x} ${y}`;
+        if (!inAway) {
+          awayEnvelope += ` M ${x} ${centerY} L ${x} ${y}`;
+          inAway = true;
+        } else {
+          awayEnvelope += ` L ${x} ${y}`;
+        }
+      } else {
+        awayPath += ` L ${x} ${centerY}`;
+        if (inAway) {
+          awayEnvelope += ` L ${x} ${centerY}`;
+          inAway = false;
+        }
+      }
+    });
+    
+    // Close the shapes to the center line
+    homePath += ` L ${lastX} ${centerY} Z`;
+    awayPath += ` L ${lastX} ${centerY} Z`;
+
+    return (
+      <div className="py-4 border-b border-cream-border mb-4">
+        <div className="flex items-center justify-between text-[11px] font-medium text-ink-ghost uppercase tracking-[0.12em] mb-4">
+          <span>Attack Momentum</span>
+        </div>
+        <div className="relative w-full h-[120px] bg-cream-base/50 rounded-md overflow-hidden">
+          {/* Center line */}
+          <div className="absolute top-1/2 left-0 w-full h-px bg-cream-border z-10" />
+           
+          <motion.svg 
+            viewBox={`0 0 ${width} ${height}`} 
+            className="w-full h-full preserve-3d relative z-0 origin-center" 
+            preserveAspectRatio="none"
+            initial={{ scaleY: 0, opacity: 0 }}
+            animate={{ scaleY: 1, opacity: 1 }}
+            transition={{ type: 'spring', stiffness: 200, damping: 25 }}
+          >
+            {/* SVG Gradients */}
+            <defs>
+              <linearGradient id="home-grad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="var(--color-ink)" stopOpacity="0.22" />
+                <stop offset="100%" stopColor="var(--color-ink)" stopOpacity="0" />
+              </linearGradient>
+              <linearGradient id="away-grad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="var(--color-live)" stopOpacity="0" />
+                <stop offset="100%" stopColor="var(--color-live)" stopOpacity="0.22" />
+              </linearGradient>
+            </defs>
+
+            {/* Vertical Demarcation Lines */}
+            {markers.map(m => (
+              <line 
+                key={`marker-${m}`}
+                x1={m * barWidth} 
+                y1={0} 
+                x2={m * barWidth} 
+                y2={height} 
+                stroke="currentColor" 
+                strokeWidth={2} 
+                strokeDasharray="4 4" 
+                className="text-cream-border"
               />
-            )
-          })}
-        </motion.svg>
-      </div>
+            ))}
+            
+            {/* Home momentum area and stroke */}
+            <path d={homePath} fill="url(#home-grad)" />
+            {homeEnvelope && <path d={homeEnvelope} fill="none" stroke="var(--color-ink)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />}
+            
+            {/* Away momentum area and stroke */}
+            <path d={awayPath} fill="url(#away-grad)" />
+            {awayEnvelope && <path d={awayEnvelope} fill="none" stroke="var(--color-live)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />}
+          </motion.svg>
+        </div>
       
       {/* Precisely aligned X-axis labels */}
       <div className="relative w-full h-4 mt-2 text-[10px] text-ink-ghost font-medium tabular-nums">
@@ -150,15 +241,24 @@ function MomentumChart({ data }: { data: MatchStats['momentum'] }) {
             className="absolute -translate-x-1/2 bg-cream-surface px-1" 
             style={{ left: `${(m / chartMaxMinute) * 100}%` }}
           >
-            {m === 45 ? 'HT' : m === chartMaxMinute ? 'FT' : `${m}'`}
+            {m === 45 ? 'HT' : m === 90 && chartMaxMinute <= 95 ? 'FT' : `${m}'`}
           </span>
         ))}
+        {/* Show current minute marker for live matches */}
+        {currentMinute && currentMinute > 0 && (
+          <span 
+            className="absolute -translate-x-1/2 text-live font-bold" 
+            style={{ left: `${(currentMinute / chartMaxMinute) * 100}%` }}
+          >
+            {currentMinute}&apos;
+          </span>
+        )}
       </div>
     </div>
   )
 }
 
-export function MatchStats({ matchId, status, home, away }: Props) {
+export function MatchStats({ matchId, status, home, away, currentMinute }: Props) {
   const [stats, setStats] = useState<MatchStats | null>(null)
   const [loaded, setLoaded] = useState(false)
 
@@ -238,7 +338,7 @@ export function MatchStats({ matchId, status, home, away }: Props) {
         </span>
       </div>
 
-      <MomentumChart data={stats.momentum} />
+      <MomentumChart data={stats.momentum} currentMinute={status === 'live' ? currentMinute : undefined} />
 
       <div className="divide-y divide-cream-border">
         {ROWS.map((r) => (

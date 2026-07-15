@@ -7,7 +7,7 @@
 
 import type { Metadata } from "next"
 import { listMatches, getUserCheckins, getUserById } from "@/server/db/queries"
-import { listWorldCupMatches, getPrematchProbabilities } from "@/server/txline/adapter"
+import { listWorldCupMatches, getPrematchProbabilities } from "@/server/txline/resolve"
 import { createClient } from "@/lib/supabase/server"
 import { FixturesPageClient } from "@/components/FixturesPageClient"
 import type { NormalisedMatch, NormalisedOddsTick } from "@/server/txline/types"
@@ -113,6 +113,7 @@ export default async function Page() {
   )
 
   const isCheckedIn = liveMatch ? userCheckins.has(liveMatch.id) : false
+  const isReplay = process.env.REPLAY_MODE === "true"
 
   return (
     <FixturesPageClient
@@ -123,6 +124,7 @@ export default async function Page() {
       checkedInMatchIds={[...userCheckins]}
       displayName={displayName}
       userId={sessionUser?.id ?? null}
+      isReplay={isReplay}
     />
   )
 }

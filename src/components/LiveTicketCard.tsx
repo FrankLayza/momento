@@ -7,6 +7,7 @@ import { flagUrl } from '@/lib/teamFlags'
 import { copy } from '@/lib/copy'
 import { CheckinButton } from '@/components/CheckinButton'
 import type { NormalisedMatch, NormalisedOddsTick } from '@/server/txline/types'
+import { formatMatchMinute } from '@/lib/matchUtils'
 
 interface LiveTicketCardProps {
   match: NormalisedMatch
@@ -81,7 +82,7 @@ export function LiveTicketCard({
 
           {/* Minute + status */}
           <div className="text-xs text-ink-secondary font-medium">
-            {match.minute != null && <>{match.minute}&apos; · </>}
+            {match.minute != null && <>{formatMatchMinute(match.minute, match.phase)}&apos; · </>}
             {copy.fixtures.liveNow}
           </div>
         </div>
@@ -109,7 +110,7 @@ export function LiveTicketCard({
             {copy.checkin.matchNo}
           </div>
           <div className="flex items-baseline font-display text-3xl font-bold text-ink leading-none mt-1">
-            <span>{match.minute ?? "–"}</span>
+            <span>{match.minute != null ? formatMatchMinute(match.minute, match.phase) : "–"}</span>
             {match.minute != null && (
               <span className="text-base text-ink-ghost font-normal">&apos;</span>
             )}
