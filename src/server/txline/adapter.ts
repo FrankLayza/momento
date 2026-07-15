@@ -37,6 +37,12 @@ import type {
   NormalisedMatch,
   NormalisedOddsTick,
   NormalisedEvent,
+  TimelineEvent,
+  MatchLineups,
+  LineupPlayer,
+  TeamLineup,
+  MatchStats,
+  TeamStats,
   OddsTickCallback,
   MatchEventCallback,
   UnsubscribeFn,
@@ -437,9 +443,15 @@ export async function listWorldCupMatches(): Promise<NormalisedMatch[]> {
   // Filter for World Cup matches only (NG-5, PRD) — the free tier subscription
   // bundles International Friendlies too, but the product must only surface
   // the 2026 World Cup's 104 matches.
+  //
+  // INCLUDE_FRIENDLIES=true opts the friendlies bundle back in. Off by default
+  // to stay NG-5 compliant; useful when no World Cup fixture is live/upcoming
+  // and you need real feed data to exercise the loop.
+  const includeFriendlies = process.env.INCLUDE_FRIENDLIES === "true";
   const worldCupFixtures = list.data.filter((fixture) => {
     const comp = (fixture.Competition || "").toLowerCase();
-    return comp.includes("world cup");
+    if (comp.includes("world cup")) return true;
+    return includeFriendlies && comp.includes("friendlies");
   });
 
   // For fixtures that may have kicked off, fetch scores to get real status
@@ -653,6 +665,405 @@ export async function getFinishedMatchScore(
   }
 
   return { home: 0, away: 0 };
+}
+
+/**
+ * Reconstructs a match's goal/card timeline from TxLINE's scores feed.
+ *
+ * TxLINE has no player-level data, so this is derived purely from the numeric
+ * feed and carries no player names (the Timeline UI renders team + minute +
+ * running score instead). Two dedupe-safe deltas drive it:
+ *   - Goals: each increase in Score.Participant{1,2}.Total.Goals is one goal.
+ *     (The raw feed emits several "goal" action rows per goal — unconfirmed
+ *     then confirmed/amended — so counting rows would over-report; the Score
+ *     block is authoritative.)
+ *   - Cards: each increase in Stats keys 3/4 (yellows P1/P2) and 5/6 (reds).
+ *
+ * Historical (complete SSE record) is tried first, same as getFinishedMatchScore;
+ * the live snapshot is the fallback for matches too recent for historical.
+ */
+export async function getMatchTimeline(matchId: string): Promise<TimelineEvent[]> {
+  try {
+    const baseUrl = getBaseUrl();
+    const headers = await getRequestHeaders();
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let records: any[] = [];
+
+    // Historical first — the complete, authoritative record (SSE "data:" lines).
+    const histRes = await fetch(`${baseUrl}/api/scores/historical/${matchId}`, { headers });
+    if (histRes.ok) {
+      const text = await histRes.text();
+      for (const rawLine of text.split("\n")) {
+        const line = rawLine.trim();
+        if (!line.startsWith("data:")) continue;
+        try {
+          records.push(JSON.parse(line.slice(line.indexOf(":") + 1).trim()));
+        } catch {
+          // malformed line — skip
+        }
+      }
+    }
+
+    // Fallback: live snapshot (JSON array) for matches too recent for historical.
+    if (records.length === 0) {
+      const snapRes = await fetch(`${baseUrl}/api/scores/snapshot/${matchId}`, { headers });
+      if (snapRes.ok) {
+        const raw: unknown = await snapRes.json();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        if (Array.isArray(raw)) records = raw as any[];
+      }
+    }
+
+    if (records.length === 0) return [];
+
+    // The feed doesn't guarantee array order — sort by Seq so deltas are chronological.
+    const sorted = records
+      .filter((r) => r && (typeof r.StatusId === "number" || r.Score || r.Stats))
+      .sort((a, b) => (typeof a.Seq === "number" ? a.Seq : 0) - (typeof b.Seq === "number" ? b.Seq : 0));
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const homeRec = sorted.find((r) => typeof r.Participant1IsHome === "boolean");
+    const p1IsHome: boolean = homeRec?.Participant1IsHome ?? true;
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    function minuteOf(rec: any): number {
+      const secs = rec.Clock?.Seconds;
+      if (typeof secs === "number" && secs > 0) return Math.ceil(secs / 60);
+      if (rec.StatusId === 3) return 45;
+      if (rec.StatusId === 5) return 90;
+      if (rec.StatusId === 10) return 120;
+      return 0;
+    }
+
+    const events: TimelineEvent[] = [];
+    let g1 = 0, g2 = 0, y1 = 0, y2 = 0, r1 = 0, r2 = 0;
+
+    const teamOf = (participant: 1 | 2): "home" | "away" =>
+      (participant === 1) === p1IsHome ? "home" : "away";
+    const score = () => ({
+      scoreHome: p1IsHome ? g1 : g2,
+      scoreAway: p1IsHome ? g2 : g1,
+    });
+
+    for (const rec of sorted) {
+      const minute = minuteOf(rec);
+
+      // Emit one event per unit increase (not per delta) so a stream gap that
+      // jumps the count by >1 still yields the right number of goals/cards.
+      const ng1 = rec.Score?.Participant1?.Total?.Goals;
+      const ng2 = rec.Score?.Participant2?.Total?.Goals;
+      while (typeof ng1 === "number" && ng1 > g1) { g1++; events.push({ minute, kind: "goal", team: teamOf(1), ...score() }); }
+      while (typeof ng2 === "number" && ng2 > g2) { g2++; events.push({ minute, kind: "goal", team: teamOf(2), ...score() }); }
+
+      const st = rec.Stats;
+      if (st) {
+        while (typeof st["3"] === "number" && st["3"] > y1) { y1++; events.push({ minute, kind: "yellow_card", team: teamOf(1), ...score() }); }
+        while (typeof st["4"] === "number" && st["4"] > y2) { y2++; events.push({ minute, kind: "yellow_card", team: teamOf(2), ...score() }); }
+        while (typeof st["5"] === "number" && st["5"] > r1) { r1++; events.push({ minute, kind: "red_card", team: teamOf(1), ...score() }); }
+        while (typeof st["6"] === "number" && st["6"] > r2) { r2++; events.push({ minute, kind: "red_card", team: teamOf(2), ...score() }); }
+      }
+    }
+
+    // Discrete action rows (substitutions, penalties, VAR) carry no cumulative
+    // stat. The feed emits each one several times (unconfirmed then confirmed),
+    // so dedupe by the stable per-event Id, preferring a confirmed copy.
+    type DiscreteKind = "substitution" | "penalty" | "var";
+    const ACTION_KIND: Record<string, DiscreteKind> = {
+      substitution: "substitution",
+      penalty: "penalty",
+      var: "var",
+    };
+    const discreteById = new Map<
+      string,
+      { kind: DiscreteKind; minute: number; participant: 1 | 2 | null; confirmed: boolean }
+    >();
+    for (const rec of sorted) {
+      const kind = ACTION_KIND[rec.Action];
+      if (!kind) continue;
+      const id = typeof rec.Id === "number" ? rec.Id : null;
+      if (id === null) continue;
+      const rawP = rec.Data?.Participant ?? rec.Participant;
+      const participant = rawP === 1 || rawP === 2 ? (rawP as 1 | 2) : null;
+      const confirmed = rec.Confirmed === true;
+      const key = `${kind}:${id}`;
+      const existing = discreteById.get(key);
+      if (!existing || (confirmed && !existing.confirmed)) {
+        discreteById.set(key, { kind, minute: minuteOf(rec), participant, confirmed });
+      }
+    }
+    // Running score at a given minute, so these rows can still show the scoreline.
+    const goalEvents = events.filter((e) => e.kind === "goal");
+    const scoreAtMinute = (minute: number) => {
+      const before = goalEvents.filter((e) => e.minute <= minute);
+      const last = before[before.length - 1];
+      return last
+        ? { scoreHome: last.scoreHome, scoreAway: last.scoreAway }
+        : { scoreHome: 0, scoreAway: 0 };
+    };
+    for (const d of discreteById.values()) {
+      events.push({
+        minute: d.minute,
+        kind: d.kind,
+        team: d.participant ? teamOf(d.participant) : null,
+        ...scoreAtMinute(d.minute),
+      });
+    }
+
+    // Stable sort by minute (goals/cards keep insertion order within a minute).
+    return events
+      .map((e, i) => ({ e, i }))
+      .sort((a, b) => a.e.minute - b.e.minute || a.i - b.i)
+      .map(({ e }) => e);
+  } catch (err) {
+    console.error(`[txline/adapter] getMatchTimeline error for ${matchId}:`, err);
+    return [];
+  }
+}
+
+// ── Lineups ───────────────────────────────────────────────────────────────────
+
+const POSITION_MAP: Record<number, LineupPlayer["position"]> = {
+  34: "G",
+  35: "D",
+  36: "M",
+  37: "F",
+};
+
+/** TxLINE names are "Last, First" — render as "First Last". */
+function formatPlayerName(raw: string): string {
+  const parts = raw.split(",").map((s) => s.trim());
+  if (parts.length === 2 && parts[1]) return `${parts[1]} ${parts[0]}`;
+  return raw.trim();
+}
+
+function deriveFormation(startXI: LineupPlayer[]): string | null {
+  const def = startXI.filter((p) => p.position === "D").length;
+  const mid = startXI.filter((p) => p.position === "M").length;
+  const fwd = startXI.filter((p) => p.position === "F").length;
+  if (def + mid + fwd === 0) return null;
+  return `${def}-${mid}-${fwd}`;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function normaliseTeamLineup(raw: any): TeamLineup {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const players: LineupPlayer[] = (raw?.lineups ?? []).map((entry: any) => ({
+    number: parseInt(entry.rosterNumber, 10) || 0,
+    name: formatPlayerName(entry.player?.preferredName ?? ""),
+    position: POSITION_MAP[entry.positionId as number] ?? null,
+    starter: entry.starter === true,
+  }));
+  const startXI = players.filter((p) => p.starter);
+  const bench = players.filter((p) => !p.starter);
+  return {
+    teamName: raw?.preferredName ?? "",
+    formation: deriveFormation(startXI),
+    startXI,
+    bench,
+  };
+}
+
+/**
+ * Returns the confirmed starting XIs + bench for a match, parsed from TxLINE's
+ * `lineups` action record. Availability depends on coverage (CoverageType
+ * "TV/Stream" carries it) — returns null when the fixture has no lineup record.
+ */
+export async function getMatchLineups(matchId: string): Promise<MatchLineups | null> {
+  try {
+    const baseUrl = getBaseUrl();
+    const headers = await getRequestHeaders();
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let lineupRec: any = null;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let anyRec: any = null;
+
+    // Historical first — the complete record carries the lineups action.
+    const histRes = await fetch(`${baseUrl}/api/scores/historical/${matchId}`, { headers });
+    if (histRes.ok) {
+      const text = await histRes.text();
+      for (const rawLine of text.split("\n")) {
+        const line = rawLine.trim();
+        if (!line.startsWith("data:")) continue;
+        try {
+          const rec = JSON.parse(line.slice(line.indexOf(":") + 1).trim());
+          anyRec = rec;
+          // Keep the last lineups record (rosters can be amended pre-kickoff).
+          if (rec.Action === "lineups" && Array.isArray(rec.Lineups) && rec.Lineups.length >= 2) {
+            lineupRec = rec;
+          }
+        } catch {
+          // skip malformed line
+        }
+      }
+    }
+
+    // Fallback: live snapshot for matches too recent for historical.
+    if (!lineupRec) {
+      const snapRes = await fetch(`${baseUrl}/api/scores/snapshot/${matchId}`, { headers });
+      if (snapRes.ok) {
+        const raw: unknown = await snapRes.json();
+        if (Array.isArray(raw)) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          for (const rec of raw as any[]) {
+            anyRec = rec;
+            if (rec.Action === "lineups" && Array.isArray(rec.Lineups) && rec.Lineups.length >= 2) {
+              lineupRec = rec;
+            }
+          }
+        }
+      }
+    }
+
+    if (!lineupRec) return null;
+
+    const p1IsHome: boolean =
+      typeof lineupRec.Participant1IsHome === "boolean"
+        ? lineupRec.Participant1IsHome
+        : anyRec?.Participant1IsHome ?? true;
+    const p1Id: number | undefined = lineupRec.Participant1Id;
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const teams = lineupRec.Lineups as any[];
+    const team1 = teams.find((t) => t.normativeId === p1Id) ?? teams[0];
+    const team2 = teams.find((t) => t !== team1) ?? teams[1];
+
+    const lineup1 = normaliseTeamLineup(team1);
+    const lineup2 = normaliseTeamLineup(team2);
+
+    return p1IsHome
+      ? { home: lineup1, away: lineup2 }
+      : { home: lineup2, away: lineup1 };
+  } catch (err) {
+    console.error(`[txline/adapter] getMatchLineups error for ${matchId}:`, err);
+    return null;
+  }
+}
+
+// ── Match stats ───────────────────────────────────────────────────────────────
+
+/**
+ * Fetches a match's raw score records (historical SSE first, snapshot fallback).
+ * Shared by the stats/timeline readers.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function fetchMatchRecords(matchId: string): Promise<any[]> {
+  const baseUrl = getBaseUrl();
+  const headers = await getRequestHeaders();
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const records: any[] = [];
+  const histRes = await fetch(`${baseUrl}/api/scores/historical/${matchId}`, { headers });
+  if (histRes.ok) {
+    const text = await histRes.text();
+    for (const rawLine of text.split("\n")) {
+      const line = rawLine.trim();
+      if (!line.startsWith("data:")) continue;
+      try {
+        records.push(JSON.parse(line.slice(line.indexOf(":") + 1).trim()));
+      } catch {
+        // skip malformed line
+      }
+    }
+  }
+  if (records.length === 0) {
+    const snapRes = await fetch(`${baseUrl}/api/scores/snapshot/${matchId}`, { headers });
+    if (snapRes.ok) {
+      const raw: unknown = await snapRes.json();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      if (Array.isArray(raw)) records.push(...(raw as any[]));
+    }
+  }
+  return records;
+}
+
+const EMPTY_TEAM_STATS: TeamStats = {
+  possession: 0, shots: 0, corners: 0, freeKicks: 0,
+  throwIns: 0, offsides: 0, yellowCards: 0, redCards: 0, penalties: 0,
+};
+
+/**
+ * Counts team-level match stats from TxLINE's scores feed:
+ *   - corners + cards from the cumulative Stats block (keys 3–8),
+ *   - shots / free kicks / throw-ins / offsides / penalties from deduped action
+ *     rows (each event is emitted several times; dedupe by Id),
+ *   - possession as each side's share of possession-phase events.
+ * Returns null when the fixture has no usable records.
+ */
+export async function getMatchStats(matchId: string): Promise<MatchStats | null> {
+  try {
+    const records = await fetchMatchRecords(matchId);
+    if (records.length === 0) return null;
+
+    const home = { ...EMPTY_TEAM_STATS };
+    const away = { ...EMPTY_TEAM_STATS };
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const homeRec = records.find((r) => typeof r.Participant1IsHome === "boolean");
+    const p1IsHome: boolean = homeRec?.Participant1IsHome ?? true;
+    const sideOf = (participant: 1 | 2) =>
+      (participant === 1) === p1IsHome ? home : away;
+
+    // Deduped discrete-action counts (shots, free kicks, throw-ins, offsides, penalties).
+    const countedIds = new Set<string>();
+    const bump = (
+      participant: unknown,
+      field: keyof TeamStats,
+      id: unknown,
+      action: string
+    ) => {
+      if ((participant !== 1 && participant !== 2) || typeof id !== "number") return;
+      const key = `${action}:${id}`;
+      if (countedIds.has(key)) return;
+      countedIds.add(key);
+      sideOf(participant)[field] += 1;
+    };
+
+    // Possession share from all possession-phase events.
+    let posHome = 0, posAway = 0;
+    const POSSESSION_ACTIONS = new Set([
+      "possession", "safe_possession", "attack_possession",
+      "danger_possession", "high_danger_possession",
+    ]);
+
+    for (const rec of records) {
+      const action: string = rec.Action;
+      const p = rec.Data?.Participant ?? rec.Participant;
+
+      if (action === "shot") bump(p, "shots", rec.Id, action);
+      else if (action === "free_kick") bump(p, "freeKicks", rec.Id, action);
+      else if (action === "throw_in") bump(p, "throwIns", rec.Id, action);
+      else if (action === "offside") bump(p, "offsides", rec.Id, action);
+      else if (action === "penalty") bump(p, "penalties", rec.Id, action);
+      else if (POSSESSION_ACTIONS.has(action)) {
+        if (p === 1) (p1IsHome ? posHome++ : posAway++);
+        else if (p === 2) (p1IsHome ? posAway++ : posHome++);
+      }
+    }
+
+    // Corners + cards from the last record carrying the cumulative Stats block.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const lastStats = [...records].reverse().find((r) => r.Stats && r.Stats["7"] !== undefined);
+    if (lastStats) {
+      const s = lastStats.Stats;
+      const p1 = { yellowCards: s["3"] ?? 0, redCards: s["5"] ?? 0, corners: s["7"] ?? 0 };
+      const p2 = { yellowCards: s["4"] ?? 0, redCards: s["6"] ?? 0, corners: s["8"] ?? 0 };
+      Object.assign(p1IsHome ? home : away, p1);
+      Object.assign(p1IsHome ? away : home, p2);
+    }
+
+    const posTotal = posHome + posAway;
+    if (posTotal > 0) {
+      home.possession = Math.round((posHome / posTotal) * 100);
+      away.possession = 100 - home.possession;
+    }
+
+    return { home, away };
+  } catch (err) {
+    console.error(`[txline/adapter] getMatchStats error for ${matchId}:`, err);
+    return null;
+  }
 }
 
 /**

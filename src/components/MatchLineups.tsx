@@ -1,12 +1,12 @@
 'use client'
 // Implements FR-1.2
-// Real player names/formations come from API-Football (src/server/football/adapter.ts)
-// via /api/matches/[id]/lineups — TxLINE has no roster data. Falls back to an
-// unnamed jersey-number mock if lineups aren't available yet (pre-kickoff, or
-// no API-Football key configured).
+// Real starting XIs, bench, numbers and formations come from TxLINE's `lineups`
+// action record (src/server/txline/adapter.ts → getMatchLineups) via
+// /api/matches/[id]/lineups. Coverage varies by fixture, so when no lineup
+// record exists this falls back to a clearly-labelled formation preview.
 
 import { useEffect, useState } from 'react'
-import type { FootballLineupPlayer, FootballLineups } from '@/server/football/types'
+import type { LineupPlayer, MatchLineups } from '@/server/txline/types'
 
 interface Props {
   matchId: string
@@ -14,30 +14,28 @@ interface Props {
   away: string
 }
 
-const MOCK_AWAY_NUMBERS: number[][] = [[1], [2, 4, 5, 3], [6, 8, 10], [7, 9, 11]]
-const MOCK_HOME_NUMBERS: number[][] = [[9], [7, 10, 11], [4, 8], [2, 5, 6, 3], [1]]
+// Generic 4-3-3 used for the preview pitch when a fixture has no lineup data.
+const PREVIEW_AWAY: number[][] = [[1], [2, 5, 4, 3], [6, 8, 10], [7, 9, 11]]
+const PREVIEW_HOME: number[][] = [[9, 11, 7], [10, 8, 6], [3, 4, 5, 2], [1]]
 
-function groupByPosition(players: FootballLineupPlayer[]) {
-  return {
-    gk: players.filter((p) => p.position === 'G'),
-    def: players.filter((p) => p.position === 'D'),
-    mid: players.filter((p) => p.position === 'M'),
-    fwd: players.filter((p) => p.position === 'F'),
-  }
+function pitchRows(startXI: LineupPlayer[], order: Array<LineupPlayer['position']>) {
+  return order
+    .map((pos) => startXI.filter((p) => p.position === pos))
+    .filter((row) => row.length > 0)
 }
 
 function PlayerToken({ number, name, dark }: { number: number; name?: string; dark: boolean }) {
   return (
     <div className="flex flex-col items-center gap-1.5 flex-1 min-w-0">
       <div
-        className={`w-9 h-9 rounded-full flex items-center justify-center font-display text-[12px] font-bold border-2 border-white/30 shadow-sm ${
+        className={`w-9 h-9 rounded-full flex items-center justify-center font-display text-[12px] font-bold border-2 border-white/40 shadow-[0_2px_6px_rgba(0,0,0,0.25)] ${
           dark ? 'bg-ink text-cream' : 'bg-live text-cream'
         }`}
       >
         {number || '·'}
       </div>
       {name && (
-        <span className="text-[9px] text-[#3A5C2A] font-medium text-center leading-tight max-w-[64px] truncate">
+        <span className="text-[9px] text-white font-semibold text-center leading-tight max-w-[76px] line-clamp-2 drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]">
           {name}
         </span>
       )}
@@ -45,98 +43,128 @@ function PlayerToken({ number, name, dark }: { number: number; name?: string; da
   )
 }
 
+function BenchList({ label, players, dark }: { label: string; players: LineupPlayer[]; dark: boolean }) {
+  if (players.length === 0) return null
+  return (
+    <div className="flex-1 min-w-0">
+      <div className="flex items-center gap-1.5 mb-2">
+        <span className={`w-2 h-2 rounded-full ${dark ? 'bg-ink' : 'bg-live'}`} />
+        <span className="text-[10px] font-display font-bold uppercase tracking-[0.08em] text-ink-secondary">{label}</span>
+      </div>
+      <ul className="space-y-1">
+        {players.map((p, i) => (
+          <li key={i} className="flex items-baseline gap-2 text-[12px] text-ink-secondary">
+            <span className="font-display font-bold text-ink-ghost w-5 text-right tabular-nums">{p.number || '·'}</span>
+            <span className="truncate">{p.name}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+}
+
 export function MatchLineups({ matchId, home, away }: Props) {
-  const [lineups, setLineups] = useState<FootballLineups | null>(null)
+  const [lineups, setLineups] = useState<MatchLineups | null>(null)
   const [loaded, setLoaded] = useState(false)
 
   useEffect(() => {
     let cancelled = false
-
     fetch(`/api/matches/${matchId}/lineups`)
       .then((res) => res.json())
       .then((data) => { if (!cancelled) setLineups(data.lineups ?? null) })
       .catch(() => { if (!cancelled) setLineups(null) })
       .finally(() => { if (!cancelled) setLoaded(true) })
-
     return () => { cancelled = true }
   }, [matchId])
 
-  const awayRows = lineups
-    ? (() => {
-        const g = groupByPosition(lineups.away.startXI)
-        return [g.gk, g.def, g.mid, g.fwd].filter((r) => r.length > 0)
-      })()
-    : null
+  const isPreview = loaded && !lineups
 
+  // Home plays top-down (GK at very top), away plays bottom-up (GK at very bottom).
   const homeRows = lineups
-    ? (() => {
-        const g = groupByPosition(lineups.home.startXI)
-        return [g.fwd, g.mid, g.def, g.gk].filter((r) => r.length > 0)
-      })()
-    : null
+    ? pitchRows(lineups.home.startXI, ['G', 'D', 'M', 'F'])
+    : PREVIEW_AWAY.map((row) => row.map((number) => ({ number, name: '', position: null, starter: true } as LineupPlayer)))
 
-  const homeFormation = lineups?.home.formation ?? '—'
-  const awayFormation = lineups?.away.formation ?? '—'
+  const awayRows = lineups
+    ? pitchRows(lineups.away.startXI, ['F', 'M', 'D', 'G'])
+    : PREVIEW_HOME.map((row) => row.map((number) => ({ number, name: '', position: null, starter: true } as LineupPlayer)))
+
+  const homeFormation = lineups?.home.formation ?? '4-3-3'
+  const awayFormation = lineups?.away.formation ?? '4-3-3'
 
   return (
     <div className="bg-cream-surface rounded-2xl border border-cream-border p-5">
-      <div className="flex gap-4 mb-4 text-[11px] text-ink-ghost font-medium">
-        <span>{home} <strong className="text-ink font-display">{homeFormation}</strong></span>
-        <span>·</span>
-        <span>{away} <strong className="text-ink font-display">{awayFormation}</strong></span>
+      {/* Header: teams + formations + status */}
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex gap-3 text-[11px] text-ink-ghost font-medium">
+          <span className="flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-ink" />
+            {home} <strong className="text-ink font-display">{homeFormation}</strong>
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-live" />
+            {away} <strong className="text-ink font-display">{awayFormation}</strong>
+          </span>
+        </div>
+        {isPreview && (
+          <span className="text-[9px] font-display font-bold tracking-[0.1em] uppercase text-ink-ghost bg-cream-muted rounded-full px-2.5 py-1">
+            Preview
+          </span>
+        )}
       </div>
 
+      {/* Pitch */}
       <div
-        className="bg-[#C8DDB8] rounded-xl p-6 flex flex-col justify-between gap-8 relative overflow-hidden"
-        style={{ minHeight: 560 }}
+        className="rounded-xl p-6 flex flex-col justify-between gap-8 relative overflow-hidden"
+        style={{ minHeight: 560, background: 'linear-gradient(170deg, #4a8c4e 0%, #3f7d43 100%)' }}
       >
+        {/* Grass stripes */}
+        <div className="absolute inset-0 bg-[repeating-linear-gradient(180deg,rgba(255,255,255,0.04)_0px,rgba(255,255,255,0.04)_48px,transparent_48px,transparent_96px)] pointer-events-none" />
         {/* Pitch markings */}
-        <div className="absolute inset-x-0 top-1/2 h-px bg-white/20 -translate-y-1/2" />
-        <div className="absolute top-1/2 left-1/2 w-20 h-20 border border-white/20 rounded-full -translate-x-1/2 -translate-y-1/2" />
+        <div className="absolute inset-x-6 top-1/2 h-px bg-white/25 -translate-y-1/2" />
+        <div className="absolute top-1/2 left-1/2 w-24 h-24 border border-white/25 rounded-full -translate-x-1/2 -translate-y-1/2" />
+        <div className="absolute top-1/2 left-1/2 w-1.5 h-1.5 bg-white/40 rounded-full -translate-x-1/2 -translate-y-1/2" />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-40 h-14 border border-t-0 border-white/20 rounded-b-md" />
+        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-40 h-14 border border-b-0 border-white/20 rounded-t-md" />
 
-        {/* Away Team (Top Half) */}
+        {/* Home Team (Top Half) */}
         <div className="flex flex-col justify-start gap-6 z-10">
-          {(awayRows ?? MOCK_AWAY_NUMBERS.map((row) => row.map((number) => ({ number, name: '', position: null })))).map(
-            (row, ri) => (
-              <div key={`away-${ri}`} className="flex justify-center gap-2">
-                {row.map((p, pi) => (
-                  <PlayerToken key={`away-${ri}-${pi}`} number={p.number} name={p.name} dark={false} />
-                ))}
-              </div>
-            )
-          )}
+          {homeRows.map((row, ri) => (
+            <div key={`home-${ri}`} className="flex justify-center gap-2">
+              {row.map((p, pi) => (
+                <PlayerToken key={`home-${ri}-${pi}`} number={p.number} name={lineups ? p.name : ''} dark />
+              ))}
+            </div>
+          ))}
         </div>
 
-        {/* Home Team (Bottom Half) */}
+        {/* Away Team (Bottom Half) */}
         <div className="flex flex-col justify-end gap-6 z-10">
-          {(homeRows ?? MOCK_HOME_NUMBERS.map((row) => row.map((number) => ({ number, name: '', position: null })))).map(
-            (row, ri) => (
-              <div key={`home-${ri}`} className="flex justify-center gap-2">
-                {row.map((p, pi) => (
-                  <PlayerToken key={`home-${ri}-${pi}`} number={p.number} name={p.name} dark />
-                ))}
-              </div>
-            )
-          )}
+          {awayRows.map((row, ri) => (
+            <div key={`away-${ri}`} className="flex justify-center gap-2">
+              {row.map((p, pi) => (
+                <PlayerToken key={`away-${ri}-${pi}`} number={p.number} name={lineups ? p.name : ''} dark={false} />
+              ))}
+            </div>
+          ))}
         </div>
       </div>
 
-      {loaded && !lineups && (
-        <p className="text-center text-[11px] text-ink-ghost mt-3">
-          Lineups not available yet.
-        </p>
+      {/* Bench (only with real data) */}
+      {lineups && (lineups.home.bench.length > 0 || lineups.away.bench.length > 0) && (
+        <div className="flex gap-6 mt-5">
+          <BenchList label={`${home} bench`} players={lineups.home.bench} dark />
+          <BenchList label={`${away} bench`} players={lineups.away.bench} dark={false} />
+        </div>
       )}
 
-      <div className="flex items-center gap-4 mt-3">
-        <div className="flex items-center gap-1.5">
-          <div className="w-3 h-3 rounded-full bg-ink" />
-          <span className="text-[11px] text-ink-secondary">{home}</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <div className="w-3 h-3 rounded-full bg-live" />
-          <span className="text-[11px] text-ink-secondary">{away}</span>
-        </div>
-      </div>
+      {/* Caption */}
+      <p className="text-center text-[11px] text-ink-ghost mt-4">
+        {!loaded
+          ? 'Loading line-ups…'
+          : isPreview
+            ? 'Confirmed line-ups appear about an hour before kick-off.'
+            : `${home} v ${away} starting XI`}
+      </p>
     </div>
   )
 }

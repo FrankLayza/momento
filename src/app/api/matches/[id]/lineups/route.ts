@@ -1,23 +1,18 @@
 /**
  * src/app/api/matches/[id]/lineups/route.ts
- * GET /api/matches/{id}/lineups — starting XI + formation for the Match
- * page's Lineups tab. Backed by API-Football, not TxLINE — see
- * src/server/football/adapter.ts for why.
+ * GET /api/matches/{id}/lineups — starting XI + bench + formation for the Match
+ * page's Lineups tab, parsed from TxLINE's `lineups` action record (real player
+ * names, numbers, positions). See getMatchLineups() in the TxLINE adapter.
+ *
+ * Availability depends on the fixture's coverage level, so this may return
+ * { lineups: null } — the UI falls back to a formation preview.
  */
 
 import { NextResponse } from "next/server";
-import { listMatches } from "@/server/db/queries";
-import { getMatchLineups } from "@/server/football/adapter";
+import { getMatchLineups } from "@/server/txline/adapter";
 
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-
-  const matches = await listMatches().catch(() => []);
-  const match = matches.find((m) => m.id === id);
-  if (!match) {
-    return NextResponse.json({ error: "Match not found" }, { status: 404 });
-  }
-
-  const lineups = await getMatchLineups(match.id, match.home, match.away, match.kickoffUtc);
+  const lineups = await getMatchLineups(id);
   return NextResponse.json({ lineups });
 }

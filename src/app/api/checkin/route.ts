@@ -10,7 +10,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
-import { recordCheckin, listMatches } from "@/server/db/queries";
+import { recordCheckin, listMatches, upsertMatch } from "@/server/db/queries";
+import { listWorldCupMatches } from "@/server/txline/adapter";
 
 // ── Request schema ────────────────────────────────────────────────────────────
 
@@ -46,7 +47,21 @@ export async function POST(req: Request) {
 
   // Verify the match is not already finished (FR-2.1: can't check in after full-time)
   const matches = await listMatches().catch(() => []);
-  const match   = matches.find(m => m.id === matchId);
+  let match: { id: string; status: string } | undefined = matches.find(m => m.id === matchId);
+
+  // The DB is only seeded by the worker's fixture sync. A fixture the fan can
+  // see on the home page but that hasn't synced yet (any friendly, or a World
+  // Cup fixture before the worker's first run) would 404 here — and even if it
+  // didn't, checkins.match_id has a FK to matches, so recordCheckin would fail
+  // with no matching row. Resolve it from the live feed and seed the row first.
+  if (!match) {
+    const feed = await listWorldCupMatches().catch(() => []);
+    const feedMatch = feed.find(m => m.id === matchId);
+    if (feedMatch) {
+      await upsertMatch({ ...feedMatch, pPreMatch: null });
+      match = feedMatch;
+    }
+  }
 
   if (!match) {
     return NextResponse.json({ error: "Match not found." }, { status: 404 });

@@ -55,7 +55,9 @@ export default async function Page() {
     console.error("[FixturesPage] Failed to load live matches from TxLINE:", err)
   }
 
-  const liveMatch = liveTxMatches[0] || null
+  // Only a match TxLINE reports as actually in play may occupy the LIVE slot —
+  // liveTxMatches contains every World Cup fixture regardless of status.
+  const liveMatch = liveTxMatches.find(m => m.status === "live") ?? null
 
   // 4. Fetch odds snapshot for live match
   let liveOdds: NormalisedOddsTick | null = null
@@ -81,10 +83,15 @@ export default async function Page() {
     }
   }
 
-  // 5. Build list of upcoming/scheduled matches
-  const upcomingMatches: NormalisedMatch[] = dbMatches
-    .filter(m => m.status === "scheduled")
-    .map(m => ({
+  // 5. Build list of upcoming/scheduled matches.
+  // Merge the DB (populated by the worker) with the live TxLINE feed so fixtures
+  // appear even before the worker has synced them — the feed is the fresher
+  // source and carries the real competition label. Feed wins on conflicts; the
+  // current live match is excluded (it owns the LIVE slot above).
+  const upcomingById = new Map<string, NormalisedMatch>()
+  for (const m of dbMatches) {
+    if (m.status !== "scheduled") continue
+    upcomingById.set(m.id, {
       id: m.id,
       home: m.home,
       away: m.away,
@@ -92,7 +99,18 @@ export default async function Page() {
       status: "scheduled",
       minute: null,
       score: { home: 0, away: 0 },
-    }))
+      competition: m.competition ?? undefined,
+    })
+  }
+  for (const m of liveTxMatches) {
+    if (m.status !== "scheduled") continue
+    upcomingById.set(m.id, m)
+  }
+  if (liveMatch) upcomingById.delete(liveMatch.id)
+
+  const upcomingMatches: NormalisedMatch[] = [...upcomingById.values()].sort(
+    (a, b) => new Date(a.kickoffUtc).getTime() - new Date(b.kickoffUtc).getTime()
+  )
 
   const isCheckedIn = liveMatch ? userCheckins.has(liveMatch.id) : false
 
@@ -102,6 +120,7 @@ export default async function Page() {
       initialLiveOdds={liveOdds}
       upcomingMatches={upcomingMatches}
       initialCheckedIn={isCheckedIn}
+      checkedInMatchIds={[...userCheckins]}
       displayName={displayName}
       userId={sessionUser?.id ?? null}
     />

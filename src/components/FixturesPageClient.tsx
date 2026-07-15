@@ -17,6 +17,7 @@ interface FixturesPageClientProps {
   initialLiveOdds: NormalisedOddsTick | null
   upcomingMatches: NormalisedMatch[]
   initialCheckedIn: boolean
+  checkedInMatchIds?: string[]
   displayName: string
   userId: string | null
 }
@@ -36,6 +37,7 @@ export function FixturesPageClient({
   initialLiveOdds,
   upcomingMatches,
   initialCheckedIn,
+  checkedInMatchIds = [],
   displayName,
   userId,
 }: FixturesPageClientProps) {
@@ -89,7 +91,7 @@ export function FixturesPageClient({
               match={initialLiveMatch}
               odds={initialLiveOdds}
               initialCheckedIn={initialCheckedIn}
-              competition="FIFA World Cup 2026"
+              competition={initialLiveMatch.competition ?? 'FIFA World Cup 2026'}
             />
             {/* Divider */}
             <div className="h-px bg-cream-border my-8" />
@@ -103,7 +105,10 @@ export function FixturesPageClient({
                 {copy.fixtures.upNext}
               </span>
             </div>
-            <UpcomingFallbackCard match={fallbackMatch} />
+            <UpcomingFallbackCard
+              match={fallbackMatch}
+              initialCheckedIn={checkedInMatchIds.includes(fallbackMatch.id)}
+            />
             {/* Divider */}
             <div className="h-px bg-cream-border my-8" />
           </>

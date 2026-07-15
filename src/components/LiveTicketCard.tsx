@@ -81,7 +81,8 @@ export function LiveTicketCard({
 
           {/* Minute + status */}
           <div className="text-xs text-ink-secondary font-medium">
-            {match.minute}&apos; · {copy.fixtures.liveNow}
+            {match.minute != null && <>{match.minute}&apos; · </>}
+            {copy.fixtures.liveNow}
           </div>
         </div>
 
@@ -108,8 +109,10 @@ export function LiveTicketCard({
             {copy.checkin.matchNo}
           </div>
           <div className="flex items-baseline font-display text-3xl font-bold text-ink leading-none mt-1">
-            <span>{match.minute}</span>
-            <span className="text-base text-ink-ghost font-normal">&apos;</span>
+            <span>{match.minute ?? "–"}</span>
+            {match.minute != null && (
+              <span className="text-base text-ink-ghost font-normal">&apos;</span>
+            )}
           </div>
           <div className="text-[10px] text-ink-ghost mt-0.5">
             {copy.checkin.minuteCaption}

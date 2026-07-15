@@ -5,11 +5,12 @@ import { flagUrl } from '@/lib/teamFlags'
 import { useCheckIn } from '@/hooks/useCheckIn'
 import { MatchTimeline } from '@/components/MatchTimeline'
 import { MatchLineups } from '@/components/MatchLineups'
+import { MatchStats } from '@/components/MatchStats'
 import { Navbar } from '@/components/Navbar'
 import { WitnessNotifications } from '@/components/WitnessNotifications'
 import type { NormalisedMatch, NormalisedOddsTick } from '@/server/txline/types'
 
-type Tab = 'timeline' | 'lineups'
+type Tab = 'timeline' | 'lineups' | 'stats'
 
 interface Props {
   match: NormalisedMatch
@@ -49,7 +50,7 @@ export function MatchPageClient({ match, odds, initialCheckedIn, userId, display
         {/* Match header */}
         <div className="bg-cream-surface rounded-2xl border border-cream-border p-6 mb-6">
           <p className="text-[10px] font-medium tracking-[0.14em] text-ink-ghost uppercase mb-4">
-            {match.competition ?? 'FIFA World Cup 2026'} · {match.status === 'live' ? 'Live' : 'Finished'}
+            {match.competition ?? 'FIFA World Cup 2026'} · {match.status === 'live' ? 'Live' : match.status === 'finished' ? 'Finished' : 'Upcoming'}
           </p>
           <div className="flex items-center justify-between mb-4">
             <div className="flex flex-col items-center gap-2">
@@ -92,8 +93,8 @@ export function MatchPageClient({ match, odds, initialCheckedIn, userId, display
             </div>
           )}
 
-          {/* Check in button */}
-          {match.status === 'live' && (
+          {/* Check in button — open before kick-off and while live (FR-2.1) */}
+          {match.status !== 'finished' && (
             <button
               onClick={checkIn}
               disabled={isCheckedIn || loading}
@@ -109,7 +110,7 @@ export function MatchPageClient({ match, odds, initialCheckedIn, userId, display
 
           {/* Tabs */}
           <div className="flex border-b border-cream-border mt-5">
-            {(['timeline', 'lineups'] as Tab[]).map((t) => (
+            {(['timeline', 'lineups', 'stats'] as Tab[]).map((t) => (
               <button
                 key={t}
                 onClick={() => setTab(t)}
@@ -126,8 +127,9 @@ export function MatchPageClient({ match, odds, initialCheckedIn, userId, display
         </div>
 
         {/* Tab content */}
-        {tab === 'timeline' && <MatchTimeline matchId={match.id} status={match.status} />}
+        {tab === 'timeline' && <MatchTimeline matchId={match.id} status={match.status} home={match.home} away={match.away} />}
         {tab === 'lineups' && <MatchLineups matchId={match.id} home={match.home} away={match.away} />}
+        {tab === 'stats' && <MatchStats matchId={match.id} status={match.status} home={match.home} away={match.away} />}
 
         {/* Live Moment notifications */}
         <WitnessNotifications matchId={match.id} isWitness={isCheckedIn} />

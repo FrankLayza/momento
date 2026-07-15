@@ -43,6 +43,67 @@ export interface NormalisedOddsTick {
   pAway: number;
 }
 
+// ── Match timeline event (for the Match page Timeline tab) ────────────────────
+// Derived entirely from TxLINE's scores feed (goals from Score deltas, cards
+// from Stats deltas). TxLINE carries no player names, so this has none — the
+// Timeline UI renders team + event + minute + running score instead.
+
+export interface TimelineEvent {
+  minute: number;
+  kind: "goal" | "yellow_card" | "red_card" | "substitution" | "penalty" | "var";
+  /** null for neutral events (VAR review) with no attributed side */
+  team: "home" | "away" | null;
+  /** Running scoreline immediately after this event */
+  scoreHome: number;
+  scoreAway: number;
+}
+
+// ── Match stats (for the Match page Stats tab) ────────────────────────────────
+// Counted from TxLINE's scores feed: cumulative counters from the Stats block
+// (corners, cards) and deduped action rows (shots, free kicks, throw-ins,
+// penalties, offsides). Possession is a share of possession-phase events.
+
+export interface TeamStats {
+  possession: number;   // percentage 0..100
+  shots: number;
+  corners: number;
+  freeKicks: number;
+  throwIns: number;
+  offsides: number;
+  yellowCards: number;
+  redCards: number;
+  penalties: number;
+}
+
+export interface MatchStats {
+  home: TeamStats;
+  away: TeamStats;
+}
+
+// ── Match lineups (for the Match page Lineups tab) ────────────────────────────
+// Parsed from TxLINE's `lineups` action record. Availability depends on the
+// fixture's coverage level (CoverageType "TV/Stream" carries it) — not every
+// match has one, so callers must handle null.
+
+export interface LineupPlayer {
+  number: number;
+  name: string;                       // display name, "First Last"
+  position: "G" | "D" | "M" | "F" | null;
+  starter: boolean;
+}
+
+export interface TeamLineup {
+  teamName: string;
+  formation: string | null;           // derived from starter position counts, e.g. "4-3-3"
+  startXI: LineupPlayer[];
+  bench: LineupPlayer[];
+}
+
+export interface MatchLineups {
+  home: TeamLineup;
+  away: TeamLineup;
+}
+
 // ── Normalised match event ────────────────────────────────────────────────────
 
 export interface NormalisedEvent {
