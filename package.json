@@ -13,6 +13,7 @@
     "activate:txline": "tsx scripts/activate-txline.ts",
     "create:tree": "tsx scripts/create-tree.ts",
     "record:match": "tsx scripts/record-match.ts",
+    "synthesize:replay": "tsx scripts/synthesize-replay.ts",
     "worker": "tsx src/server/engine/worker.ts",
     "typecheck": "tsc --noEmit"
   },

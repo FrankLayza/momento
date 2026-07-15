@@ -24,10 +24,8 @@ import dns from "node:dns";
 dns.setDefaultResultOrder("ipv4first");
 
 
-import { listWorldCupMatches } from "@/server/txline/adapter";
 import { trackMatch, untrackMatch } from "@/server/engine/momentEngine";
 import { mintEdition } from "@/server/chain/mintEdition";
-import { getPrematchProbabilities } from "@/server/txline/adapter";
 import {
   listMatches,
   getWitnessesForMatch,
@@ -54,7 +52,11 @@ const activeMatches = new Set<string>();
 
 async function syncFixtures(): Promise<void> {
   try {
-    const fixtures = await listWorldCupMatches();
+    // Use the replay adapter's listWorldCupMatches when in replay mode —
+    // previously this always hit the live TxLINE API, meaning replay fixtures
+    // were never seen by the worker.
+    const adapter = await getAdapter();
+    const fixtures = await adapter.listWorldCupMatches();
     console.log(`[worker] syncFixtures: ${fixtures.length} fixtures (${fixtures.filter(f => f.status === "live").length} live, ${fixtures.filter(f => f.status === "finished").length} finished, ${fixtures.filter(f => f.status === "scheduled").length} scheduled)`);
 
     for (const match of fixtures) {
@@ -81,7 +83,7 @@ async function syncFixtures(): Promise<void> {
         const witnesses = await getWitnessesForMatch(match.id);
         console.log(`[worker] Live match ${match.home} v ${match.away} (${match.id}) — ${witnesses.length} witnesses, score ${match.score.home}-${match.score.away}, min ${match.minute}`);
 
-        const rawProb = await getPrematchProbabilities(match.id);
+        const rawProb = await adapter.getPrematchProbabilities(match.id);
         const pPreMatch = rawProb
           ? { home: rawProb.pHome, draw: rawProb.pDraw, away: rawProb.pAway }
           : null;
@@ -92,8 +94,7 @@ async function syncFixtures(): Promise<void> {
           console.warn(`[worker] No pre-match odds available for ${match.id}`);
         }
 
-        // Import adapter dynamically to allow REPLAY_MODE env override
-        const adapter = await getAdapter();
+        // adapter already resolved above via getAdapter()
 
         trackMatch(match.id, match.home, match.away, pPreMatch, adapter, match.score);
         activeMatches.add(match.id);

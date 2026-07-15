@@ -11,7 +11,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { recordCheckin, listMatches, upsertMatch } from "@/server/db/queries";
-import { listWorldCupMatches } from "@/server/txline/adapter";
+import { listWorldCupMatches } from "@/server/txline/resolve";
 
 // ── Request schema ────────────────────────────────────────────────────────────
 

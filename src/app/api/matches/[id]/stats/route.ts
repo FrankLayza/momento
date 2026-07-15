@@ -6,7 +6,7 @@
  */
 
 import { NextResponse } from "next/server";
-import { getMatchStats } from "@/server/txline/adapter";
+import { getMatchStats } from "@/server/txline/resolve";
 
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;

@@ -17,6 +17,11 @@ export interface NormalisedMatch {
   minute: number | null;
   score: { home: number; away: number };
   /**
+   * Match period derived from TxLINE's StatusId. Used by the UI to format
+   * added time correctly (e.g. "45+2'" instead of raw "47'" when still in H1).
+   */
+  phase?: "H1" | "HT" | "H2" | "FT" | "ET1" | "ET2" | "PEN" | null;
+  /**
    * Whatever TxLINE's fixture `Competition` field returns, verbatim — or
    * undefined if absent. Do NOT guess a "Group A · Matchday 2"-style format;
    * TxLINE's real string shape is documented in TXLINE-NOTES.md §5. Callers
@@ -56,6 +61,7 @@ export interface TimelineEvent {
   /** Running scoreline immediately after this event */
   scoreHome: number;
   scoreAway: number;
+  phase?: "H1" | "HT" | "H2" | "FT" | "ET1" | "ET2" | "PEN" | null;
 }
 
 // ── Match stats (for the Match page Stats tab) ────────────────────────────────

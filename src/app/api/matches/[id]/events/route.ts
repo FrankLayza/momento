@@ -9,7 +9,7 @@
  */
 
 import { NextResponse } from "next/server";
-import { getMatchTimeline } from "@/server/txline/adapter";
+import { getMatchTimeline } from "@/server/txline/resolve";
 
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
