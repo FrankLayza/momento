@@ -100,6 +100,33 @@ export async function listMatches(): Promise<Match[]> {
 }
 
 /**
+ * Reads the cached API-Football fixture id for a match, if already resolved.
+ * API-Football uses its own fixture ids, distinct from TxLINE's — resolving
+ * one requires a team-name/date lookup, so we cache the result here instead
+ * of re-resolving on every request.
+ */
+export async function getApiFootballFixtureId(matchId: string): Promise<number | null> {
+  const db = getServiceClient();
+  const { data, error } = await db
+    .from("matches")
+    .select("api_football_fixture_id")
+    .eq("id", matchId)
+    .single();
+
+  if (error || !data) return null;
+  return (data.api_football_fixture_id as number | null) ?? null;
+}
+
+export async function setApiFootballFixtureId(matchId: string, fixtureId: number): Promise<void> {
+  const db = getServiceClient();
+  const { error } = await db
+    .from("matches")
+    .update({ api_football_fixture_id: fixtureId })
+    .eq("id", matchId);
+  if (error) throw new Error(`setApiFootballFixtureId failed: ${error.message}`);
+}
+
+/**
  * Stamps a match's full-time timestamp exactly once (FR-5.2 anchor).
  * `finished_at is null` guard means repeated 60s worker polls after full-time
  * don't keep pushing the 24h seal window forward. `upsertMatch` never touches

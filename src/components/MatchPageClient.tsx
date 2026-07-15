@@ -1,10 +1,12 @@
 'use client'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { flagUrl } from '@/lib/teamFlags'
 import { useCheckIn } from '@/hooks/useCheckIn'
 import { MatchTimeline } from '@/components/MatchTimeline'
 import { MatchLineups } from '@/components/MatchLineups'
 import { Navbar } from '@/components/Navbar'
+import { WitnessNotifications } from '@/components/WitnessNotifications'
 import type { NormalisedMatch, NormalisedOddsTick } from '@/server/txline/types'
 
 type Tab = 'timeline' | 'lineups'
@@ -20,6 +22,20 @@ interface Props {
 export function MatchPageClient({ match, odds, initialCheckedIn, userId, displayName }: Props) {
   const [tab, setTab] = useState<Tab>('timeline')
   const { isCheckedIn, loading, checkIn } = useCheckIn(match.id, initialCheckedIn)
+  const router = useRouter()
+
+  // The server component only re-fetches on navigation or router.refresh() —
+  // without this the score/minute freeze at whatever they were on page load
+  // (same staleness fix as FixturesPageClient's live ticket card).
+  useEffect(() => {
+    if (match.status !== 'live') return
+
+    const interval = setInterval(() => {
+      router.refresh()
+    }, 12_000)
+
+    return () => clearInterval(interval)
+  }, [match.status, router])
 
   const pHome = odds ? Math.round(odds.pHome * 100) : 33
   const pDraw = odds ? Math.round(odds.pDraw * 100) : 34
@@ -47,7 +63,11 @@ export function MatchPageClient({ match, odds, initialCheckedIn, userId, display
                 <span className="text-live">{match.score.away}</span>
               </div>
               <p className="text-[12px] text-ink-secondary mt-1">
-                {match.minute ? `${match.minute}' · Second half` : 'Full time'}
+                {match.status === 'finished'
+                  ? 'Full time'
+                  : match.minute
+                    ? `${match.minute}' · ${match.minute > 45 ? 'Second half' : 'First half'}`
+                    : 'Kick off soon'}
               </p>
             </div>
             <div className="flex flex-col items-center gap-2">
@@ -106,8 +126,11 @@ export function MatchPageClient({ match, odds, initialCheckedIn, userId, display
         </div>
 
         {/* Tab content */}
-        {tab === 'timeline' && <MatchTimeline matchId={match.id} />}
+        {tab === 'timeline' && <MatchTimeline matchId={match.id} status={match.status} />}
         {tab === 'lineups' && <MatchLineups matchId={match.id} home={match.home} away={match.away} />}
+
+        {/* Live Moment notifications */}
+        <WitnessNotifications matchId={match.id} isWitness={isCheckedIn} />
       </div>
     </div>
   )

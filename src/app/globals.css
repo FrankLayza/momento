@@ -85,7 +85,7 @@
 
   /* Toast */
   .claim-toast {
-    @apply fixed bottom-6 inset-x-4 mx-auto max-w-sm z-50;
+    @apply fixed bottom-6 inset-x-4 mx-auto max-w-sm md:left-auto md:right-6 md:mx-0 md:w-96 z-50;
     @apply rounded-2xl border border-cream-border bg-cream-surface/95;
     @apply backdrop-blur-md p-4 shadow-xl;
     animation: toast-in 0.25s ease-out;

@@ -25,17 +25,19 @@ create table if not exists users (
 -- Populated by the Moment Engine when a new fixture is first seen (FR-1.1).
 
 create table if not exists matches (
-  id           text        primary key,   -- TxLINE match id verbatim
-  home         text,
-  away         text,
-  kickoff_utc  timestamptz,
-  status       text,                       -- "scheduled" | "live" | "finished"
-  p_prematch   jsonb,                      -- { home, draw, away } implied probs
-  finished_at  timestamptz                 -- stamped once at full-time; anchors the 24h seal window (FR-5.2)
+  id                      text        primary key,   -- TxLINE match id verbatim
+  home                    text,
+  away                    text,
+  kickoff_utc             timestamptz,
+  status                  text,                       -- "scheduled" | "live" | "finished"
+  p_prematch              jsonb,                      -- { home, draw, away } implied probs
+  finished_at             timestamptz,                -- stamped once at full-time; anchors the 24h seal window (FR-5.2)
+  api_football_fixture_id int                         -- resolved once, cached (API-Football uses its own fixture ids, distinct from TxLINE's)
 );
 
--- Additive migration for existing installs (safe to re-run).
+-- Additive migrations for existing installs (safe to re-run).
 alter table matches add column if not exists finished_at timestamptz;
+alter table matches add column if not exists api_football_fixture_id int;
 
 -- ── checkins ──────────────────────────────────────────────────────────────────
 -- Records when a user became a Witness for a match (FR-2.1, FR-2.2).
