@@ -2,7 +2,8 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { VaultGrid } from '@/components/VaultGrid'
 import { Navbar } from '@/components/Navbar'
-import { getUserById } from '@/server/db/queries'
+import { getUserById, listMatches } from '@/server/db/queries'
+import type { Moment } from '@/lib/types'
 
 interface DbEdition {
   id: string
@@ -11,11 +12,15 @@ interface DbEdition {
   claimed_at: string
   moments: {
     id: string
-    tier: string
+    tier: Moment["tier"]
     score_home: number
     score_away: number
     minute: number
     match_id: string
+    trigger: Moment["trigger"]
+    p_before: Moment["pBefore"]
+    shock_score: number
+    witness_count: number
   } | null
 }
 
@@ -32,20 +37,30 @@ export default async function VaultPage() {
 
   const rawEditions = (data as unknown as DbEdition[] | null) ?? []
 
+  const matches = await listMatches().catch(() => [])
+
   // Ensure moments is not null before passing to VaultGrid to satisfy strict typing
   const editions = rawEditions
     .filter((e): e is DbEdition & { moments: NonNullable<DbEdition['moments']> } => e.moments !== null)
-    .map((e) => ({
-      id: e.id,
-      moments: {
-        id: e.moments.id,
-        tier: e.moments.tier,
-        score_home: e.moments.score_home,
-        score_away: e.moments.score_away,
-        minute: e.moments.minute,
-        match_id: e.moments.match_id,
-      },
-    }))
+    .map((e) => {
+      const match = matches.find(m => m.id === e.moments.match_id)
+      return {
+        id: e.id,
+        moment: {
+          id: e.moments.id,
+          tier: e.moments.tier,
+          scoreHome: e.moments.score_home,
+          scoreAway: e.moments.score_away,
+          minute: e.moments.minute,
+          matchId: e.moments.match_id,
+          trigger: e.moments.trigger,
+          pBefore: e.moments.p_before,
+          shockScore: e.moments.shock_score,
+          witnessCount: e.moments.witness_count,
+        } as Moment,
+        matchDetails: match ? { home: match.home, away: match.away } : undefined
+      }
+    })
 
   let displayName = 'Fan'
   try {

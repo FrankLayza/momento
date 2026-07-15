@@ -78,6 +78,7 @@ export interface TeamStats {
 export interface MatchStats {
   home: TeamStats;
   away: TeamStats;
+  momentum: Array<{ minute: number; value: number }>;
 }
 
 // ── Match lineups (for the Match page Lineups tab) ────────────────────────────

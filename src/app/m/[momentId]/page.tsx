@@ -27,7 +27,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!moment) return { title: "Moment not found" };
 
   const ogImageUrl = `/api/og/${momentId}`;
-  const title      = `Shock rating: ${moment.shockScore}/100 — ${moment.tier}`;
+  const title = `Shock rating: ${moment.shockScore}/100 — ${moment.tier}`;
   const description = copy.moment.witnessCount(moment.witnessCount);
 
   return {
@@ -50,7 +50,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function PublicMomentPage({ params }: Props) {
   const { momentId } = await params;
-  const moment  = await getMomentById(momentId).catch(() => null as Moment | null);
+  const moment = await getMomentById(momentId).catch(() => null as Moment | null);
   const matches = await listMatches().catch(() => [] as Match[]);
 
   const supabase = await createClient();
@@ -74,64 +74,84 @@ export default async function PublicMomentPage({ params }: Props) {
     );
   }
 
-  const match       = matches.find(m => m.id === moment.matchId);
+  const match = matches.find(m => m.id === moment.matchId);
   const upcomingMatches = matches.filter(m => m.status !== "finished").slice(0, 3);
 
   return (
-    <>
-      <Navbar displayName={displayName} userId={user?.id ?? null} />
-      <main className="mx-auto max-w-lg px-4 py-12">
-      {/* Moment card — centred, full display */}
-      <div className="w-56 mx-auto mb-8">
-        <MomentCard moment={moment} />
+    <div className="min-h-screen bg-[#0a0a0a] text-cream relative overflow-hidden font-body selection:bg-cyan/30">
+      {/* Immersive radial spotlight */}
+      <div
+        className="absolute top-[-10%] left-1/2 -translate-x-1/2 w-[1000px] h-[800px] pointer-events-none opacity-60"
+        style={{
+          background: moment.tier === 'Seismic' ? 'radial-gradient(ellipse at center, rgba(225,29,72,0.15), transparent 60%)' :
+            moment.tier === 'Shock' ? 'radial-gradient(ellipse at center, rgba(217,119,6,0.15), transparent 60%)' :
+              'radial-gradient(ellipse at center, rgba(255,255,255,0.05), transparent 60%)'
+        }}
+      />
+
+      <div className="relative z-10 mix-blend-difference">
+        <Navbar displayName={displayName} userId={user?.id ?? null} />
       </div>
 
-      {/* Tier badge */}
-      <div className="flex justify-center mb-4">
-        <TierBadge tier={moment.tier} />
-      </div>
+      <main className="relative z-10 mx-auto max-w-lg px-4 py-16 flex flex-col items-center">
+        {/* Moment card — floating animation */}
+        <div className="w-64 mx-auto mb-10 animate-float" style={{ animationDuration: '4s', animationTimingFunction: 'ease-in-out', animationIterationCount: 'infinite' }}>
+          <style>{`
+          @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+          }
+          .animate-float { animation-name: float; }
+        `}</style>
+          <MomentCard moment={moment} featured matchDetails={match ? { home: match.home, away: match.away } : undefined} />
+        </div>
 
-      {/* Headline */}
-      <h1 className="font-display text-center text-2xl font-bold mb-2 text-ink">
-        {copy.moment.marketChance(Math.round((1 - moment.pBefore.home) * 100))}
-      </h1>
-      <p className="text-center text-sm text-ink-secondary mb-6">
-        {copy.moment.witnessCount(moment.witnessCount)}
-      </p>
+        {/* Tier badge */}
+        <div className="flex justify-center mb-6">
+          <TierBadge tier={moment.tier} size="md" />
+        </div>
 
-      {/* FOMO line for non-witnesses (FR-6.3) */}
-      <div className="rounded-2xl border border-cream-border bg-cream-surface p-6 text-center mb-8 shadow-sm">
-        <p className="text-sm text-ink-secondary mb-1">
-          {copy.publicMoment.notWitness}
+        {/* Headline */}
+        <h1 className="font-display text-center text-3xl font-extrabold mb-2 text-white drop-shadow-sm tracking-tight">
+          {copy.moment.marketChance(Math.round((1 - moment.pBefore.home) * 100))}
+        </h1>
+        <p className="text-center text-[13px] font-medium text-white/50 mb-10 uppercase tracking-[0.2em]">
+          {copy.moment.witnessCount(moment.witnessCount)}
         </p>
-        <p className="text-xs text-ink-secondary">
-          {copy.publicMoment.fomoLine}
-        </p>
-      </div>
 
-      {/* Next fixtures CTA */}
-      {upcomingMatches.length > 0 && (
-        <section>
-          <p className="text-xs font-semibold uppercase tracking-widest text-ink-secondary mb-3 text-center">
-            {copy.publicMoment.joinNext}
+        {/* FOMO line for non-witnesses (FR-6.3) */}
+        <div className="w-full rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md p-8 text-center mb-10 shadow-xl">
+          <p className="text-[15px] font-semibold text-white mb-2 leading-snug">
+            {copy.publicMoment.notWitness}
           </p>
-          <div className="space-y-2">
-            {upcomingMatches.map(m => (
-              <Link
-                key={m.id}
-                href={`/match/${m.id}`}
-                className="flex items-center justify-between rounded-xl border border-cream-border bg-cream-surface px-4 py-3 hover:bg-cream-surface/80 transition-colors"
-              >
-                <span className="font-display text-sm font-semibold text-ink">
-                  {m.home} <span className="text-ink-secondary font-normal">v</span> {m.away}
-                </span>
-                <span className="text-xs text-ink-secondary">{copy.checkin.action} →</span>
-              </Link>
-            ))}
-          </div>
-        </section>
-      )}
-    </main>
-  </>
+          <p className="text-[13px] text-white/60 leading-relaxed max-w-[280px] mx-auto">
+            {copy.publicMoment.fomoLine}
+          </p>
+        </div>
+
+        {/* Next fixtures CTA */}
+        {upcomingMatches.length > 0 && (
+          <section className="w-full">
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/40 mb-4 text-center">
+              {copy.publicMoment.joinNext}
+            </p>
+            <div className="space-y-3">
+              {upcomingMatches.map(m => (
+                <Link
+                  key={m.id}
+                  href={`/match/${m.id}`}
+                  className="group flex items-center justify-between rounded-xl border border-white/10 bg-white/5 px-5 py-4 hover:bg-white/10 hover:border-white/20 transition-all cursor-pointer"
+                >
+                  <span className="font-display text-[15px] font-bold text-white group-hover:scale-105 transition-transform origin-left">
+                    {m.home} <span className="text-white/40 font-normal mx-1">v</span> {m.away}
+                  </span>
+                  <span className="text-[11px] font-semibold text-cyan uppercase tracking-wider">{copy.checkin.action} →</span>
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
+      </main>
+    </div>
   );
 }

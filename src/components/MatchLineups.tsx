@@ -6,6 +6,7 @@
 // record exists this falls back to a clearly-labelled formation preview.
 
 import { useEffect, useState } from 'react'
+import { motion } from 'framer-motion'
 import type { LineupPlayer, MatchLineups } from '@/server/txline/types'
 
 interface Props {
@@ -24,18 +25,26 @@ function pitchRows(startXI: LineupPlayer[], order: Array<LineupPlayer['position'
     .filter((row) => row.length > 0)
 }
 
-function PlayerToken({ number, name, dark }: { number: number; name?: string; dark: boolean }) {
+function PlayerToken({ number, name, dark, isLoading }: { number: number; name?: string; dark: boolean; isLoading?: boolean }) {
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center gap-1.5 flex-1 min-w-0">
+        <div className="w-9 h-9 rounded-full border-2 border-white/20 bg-white/10 animate-pulse shadow-sm" />
+        <div className="w-12 h-2 bg-white/10 rounded-full animate-pulse mt-1" />
+      </div>
+    )
+  }
   return (
-    <div className="flex flex-col items-center gap-1.5 flex-1 min-w-0">
+    <div className="flex flex-col items-center gap-1.5 flex-1 min-w-0 group cursor-default relative">
       <div
-        className={`w-9 h-9 rounded-full flex items-center justify-center font-display text-[12px] font-bold border-2 border-white/40 shadow-[0_2px_6px_rgba(0,0,0,0.25)] ${
+        className={`w-9 h-9 rounded-full flex items-center justify-center font-display text-[12px] font-bold border-2 border-white/40 shadow-[0_2px_6px_rgba(0,0,0,0.25)] transition-all duration-300 group-hover:scale-110 group-hover:shadow-lg group-hover:-translate-y-0.5 group-hover:border-white/70 ${
           dark ? 'bg-ink text-cream' : 'bg-live text-cream'
         }`}
       >
         {number || '·'}
       </div>
       {name && (
-        <span className="text-[9px] text-white font-semibold text-center leading-tight max-w-[76px] line-clamp-2 drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]">
+        <span className="text-[9px] text-white font-semibold text-center leading-tight max-w-[76px] line-clamp-2 drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)] transition-all group-hover:drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
           {name}
         </span>
       )}
@@ -77,6 +86,7 @@ export function MatchLineups({ matchId, home, away }: Props) {
     return () => { cancelled = true }
   }, [matchId])
 
+  const isLoading = !loaded
   const isPreview = loaded && !lineups
 
   // Home plays top-down (GK at very top), away plays bottom-up (GK at very bottom).
@@ -88,13 +98,13 @@ export function MatchLineups({ matchId, home, away }: Props) {
     ? pitchRows(lineups.away.startXI, ['F', 'M', 'D', 'G'])
     : PREVIEW_HOME.map((row) => row.map((number) => ({ number, name: '', position: null, starter: true } as LineupPlayer)))
 
-  const homeFormation = lineups?.home.formation ?? '4-3-3'
-  const awayFormation = lineups?.away.formation ?? '4-3-3'
+  const homeFormation = lineups?.home.formation ?? (isLoading ? '···' : '4-3-3')
+  const awayFormation = lineups?.away.formation ?? (isLoading ? '···' : '4-3-3')
 
   return (
     <div className="bg-cream-surface rounded-2xl border border-cream-border p-5">
       {/* Header: teams + formations + status */}
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-4 h-6">
         <div className="flex gap-3 text-[11px] text-ink-ghost font-medium">
           <span className="flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-ink" />
@@ -114,8 +124,8 @@ export function MatchLineups({ matchId, home, away }: Props) {
 
       {/* Pitch */}
       <div
-        className="rounded-xl p-6 flex flex-col justify-between gap-8 relative overflow-hidden"
-        style={{ minHeight: 560, background: 'linear-gradient(170deg, #4a8c4e 0%, #3f7d43 100%)' }}
+        className="rounded-xl p-6 flex flex-col justify-between gap-8 relative overflow-hidden shadow-[inset_0_0_40px_rgba(0,0,0,0.3)]"
+        style={{ minHeight: 560, background: 'radial-gradient(ellipse at center, #4f9653 0%, #3f7d43 100%)' }}
       >
         {/* Grass stripes */}
         <div className="absolute inset-0 bg-[repeating-linear-gradient(180deg,rgba(255,255,255,0.04)_0px,rgba(255,255,255,0.04)_48px,transparent_48px,transparent_96px)] pointer-events-none" />
@@ -129,22 +139,34 @@ export function MatchLineups({ matchId, home, away }: Props) {
         {/* Home Team (Top Half) */}
         <div className="flex flex-col justify-start gap-6 z-10">
           {homeRows.map((row, ri) => (
-            <div key={`home-${ri}`} className="flex justify-center gap-2">
+            <motion.div 
+              key={`home-${ri}`} 
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 25, delay: ri * 0.1 }}
+              className="flex justify-center gap-2"
+            >
               {row.map((p, pi) => (
-                <PlayerToken key={`home-${ri}-${pi}`} number={p.number} name={lineups ? p.name : ''} dark />
+                <PlayerToken key={`home-${ri}-${pi}`} number={p.number} name={lineups ? p.name : ''} dark isLoading={isLoading} />
               ))}
-            </div>
+            </motion.div>
           ))}
         </div>
 
         {/* Away Team (Bottom Half) */}
         <div className="flex flex-col justify-end gap-6 z-10">
           {awayRows.map((row, ri) => (
-            <div key={`away-${ri}`} className="flex justify-center gap-2">
+            <motion.div 
+              key={`away-${ri}`} 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 25, delay: (homeRows.length + ri) * 0.1 }}
+              className="flex justify-center gap-2"
+            >
               {row.map((p, pi) => (
-                <PlayerToken key={`away-${ri}-${pi}`} number={p.number} name={lineups ? p.name : ''} dark={false} />
+                <PlayerToken key={`away-${ri}-${pi}`} number={p.number} name={lineups ? p.name : ''} dark={false} isLoading={isLoading} />
               ))}
-            </div>
+            </motion.div>
           ))}
         </div>
       </div>

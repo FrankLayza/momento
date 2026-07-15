@@ -94,8 +94,30 @@ export function MatchTimeline({ matchId, status, home, away }: Props) {
 
   if (!loaded) {
     return (
-      <div className="bg-cream-surface rounded-2xl border border-cream-border py-14 text-center text-[13px] text-ink-ghost">
-        Loading timeline…
+      <div className="bg-cream-surface rounded-2xl border border-cream-border p-5">
+        <div className="flex items-center justify-between mb-5 h-4">
+          <div className="w-16 h-3 bg-cream-border rounded-full animate-pulse" />
+          <div className="w-20 h-3 bg-cream-border rounded-full animate-pulse" />
+          <div className="w-16 h-3 bg-cream-border rounded-full animate-pulse" />
+        </div>
+        <div className="relative mt-2">
+          <div className="absolute top-0 bottom-0 left-1/2 w-px bg-cream-border -translate-x-1/2" />
+          <div className="flex flex-col gap-6 py-4">
+            {[1, 2, 3].map(i => (
+              <div key={i} className="relative flex items-center opacity-50">
+                <div className={`flex-1 flex ${i % 2 === 0 ? 'justify-end pr-4' : ''}`}>
+                  {i % 2 === 0 && <div className="w-[140px] h-10 bg-cream-border/60 rounded-xl animate-pulse" />}
+                </div>
+                <div className="relative z-10 shrink-0">
+                  <div className="w-11 h-6 rounded-full bg-cream-border/60 animate-pulse border border-cream-border" />
+                </div>
+                <div className={`flex-1 flex ${i % 2 !== 0 ? 'justify-start pl-4' : ''}`}>
+                  {i % 2 !== 0 && <div className="w-[140px] h-10 bg-cream-border/60 rounded-xl animate-pulse" />}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     )
   }
@@ -118,7 +140,7 @@ export function MatchTimeline({ matchId, status, home, away }: Props) {
       {/* Center-spine timeline */}
       <div className="relative">
         {/* Vertical spine */}
-        <div className="absolute top-0 bottom-0 left-1/2 w-px bg-cream-border -translate-x-1/2" />
+        <div className="absolute top-0 bottom-0 left-1/2 w-[2px] bg-gradient-to-b from-transparent via-cream-border to-transparent -translate-x-1/2" />
 
         <div className="flex flex-col gap-3">
           {rows.map((row, i) => {
@@ -136,7 +158,7 @@ export function MatchTimeline({ matchId, status, home, away }: Props) {
               const meta = KIND[row.event.kind]
               return (
                 <div key={`neutral-${row.index}`} className="relative flex justify-center py-0.5">
-                  <span className="relative z-10 flex items-center gap-1.5 bg-cream text-ink-secondary text-[11px] font-medium rounded-full border border-cream-border px-3 py-1">
+                  <span className="relative z-10 flex items-center gap-1.5 bg-cream-surface text-ink-secondary text-[11px] font-medium rounded-full border border-cream-border px-3 py-1 shadow-sm transition-transform hover:scale-105 cursor-default">
                     <span className="text-[12px] leading-none">{meta.icon}</span>
                     {meta.label}
                     <span className="text-ink-ghost font-display font-bold">{row.event.minute}&apos;</span>
@@ -153,10 +175,10 @@ export function MatchTimeline({ matchId, status, home, away }: Props) {
             return (
               <motion.div
                 key={`ev-${row.index}`}
-                initial={{ opacity: 0, y: 6 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3, delay: Math.min(row.index * 0.04, 0.4) }}
-                className="relative flex items-center"
+                initial={{ opacity: 0, y: 15, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{ type: 'spring', stiffness: 350, damping: 25, delay: Math.min(row.index * 0.05, 0.5) }}
+                className="relative flex items-center group"
               >
                 {/* Home side (left) */}
                 <div className={`flex-1 flex ${isHome ? 'justify-end pr-4' : ''}`}>
@@ -167,11 +189,11 @@ export function MatchTimeline({ matchId, status, home, away }: Props) {
                 </div>
 
                 {/* Minute node on the spine */}
-                <div className="relative z-10 shrink-0">
-                  <div className={`w-11 h-6 rounded-full flex items-center justify-center font-display text-[11px] font-bold border ${
+                <div className="relative z-10 shrink-0 transition-transform group-hover:scale-110">
+                  <div className={`w-11 h-6 rounded-full flex items-center justify-center font-display text-[11px] font-bold border shadow-sm ${
                     isGoal
-                      ? 'bg-ink text-cream border-ink'
-                      : 'bg-cream text-ink-secondary border-cream-border'
+                      ? 'bg-ink text-cream border-ink shadow-md'
+                      : 'bg-cream-surface text-ink-secondary border-cream-border'
                   }`}>
                     {ev.minute}&apos;
                   </div>
@@ -208,7 +230,7 @@ function EventCard({
 }) {
   return (
     <div
-      className={`flex items-center gap-2 rounded-xl border px-3 py-2 max-w-[180px] ${
+      className={`flex items-center gap-2 rounded-xl border px-3 py-2 max-w-[180px] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md cursor-default ${
         isGoal ? 'bg-cream border-ink/15 shadow-sm' : 'bg-cream border-cream-border'
       } ${align === 'right' ? 'flex-row-reverse text-right' : ''}`}
     >

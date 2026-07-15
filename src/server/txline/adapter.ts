@@ -1020,12 +1020,27 @@ export async function getMatchStats(matchId: string): Promise<MatchStats | null>
       sideOf(participant)[field] += 1;
     };
 
-    // Possession share from all possession-phase events.
+    // Possession share and attack momentum over time.
     let posHome = 0, posAway = 0;
-    const POSSESSION_ACTIONS = new Set([
-      "possession", "safe_possession", "attack_possession",
-      "danger_possession", "high_danger_possession",
-    ]);
+    const POSSESSION_WEIGHTS: Record<string, number> = {
+      possession: 10,
+      safe_possession: 10,
+      attack_possession: 20,
+      danger_possession: 30,
+      high_danger_possession: 50,
+    };
+
+    const momentumByMinute = new Map<number, { home: number, away: number }>();
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    function getMinute(rec: any): number {
+      const secs = rec.Clock?.Seconds;
+      if (typeof secs === "number" && secs > 0) return Math.ceil(secs / 60);
+      if (rec.StatusId === 3) return 45;
+      if (rec.StatusId === 5) return 90;
+      if (rec.StatusId === 10) return 120;
+      return 0;
+    }
 
     for (const rec of records) {
       const action: string = rec.Action;
@@ -1036,9 +1051,21 @@ export async function getMatchStats(matchId: string): Promise<MatchStats | null>
       else if (action === "throw_in") bump(p, "throwIns", rec.Id, action);
       else if (action === "offside") bump(p, "offsides", rec.Id, action);
       else if (action === "penalty") bump(p, "penalties", rec.Id, action);
-      else if (POSSESSION_ACTIONS.has(action)) {
+      else if (action in POSSESSION_WEIGHTS) {
         if (p === 1) (p1IsHome ? posHome++ : posAway++);
         else if (p === 2) (p1IsHome ? posAway++ : posHome++);
+        
+        const weight = POSSESSION_WEIGHTS[action]!;
+        const minute = getMinute(rec);
+        if (minute > 0 && (p === 1 || p === 2)) {
+           const existing = momentumByMinute.get(minute) ?? { home: 0, away: 0 };
+           if (p === 1) {
+             p1IsHome ? existing.home += weight : existing.away += weight;
+           } else {
+             p1IsHome ? existing.away += weight : existing.home += weight;
+           }
+           momentumByMinute.set(minute, existing);
+        }
       }
     }
 
@@ -1059,7 +1086,21 @@ export async function getMatchStats(matchId: string): Promise<MatchStats | null>
       away.possession = 100 - home.possession;
     }
 
-    return { home, away };
+    const momentum: MatchStats["momentum"] = [];
+    if (momentumByMinute.size > 0) {
+      const maxMinute = Math.max(...Array.from(momentumByMinute.keys()), 90);
+      for (let m = 1; m <= maxMinute; m++) {
+         const vals = momentumByMinute.get(m);
+         if (!vals) {
+            momentum.push({ minute: m, value: 0 });
+         } else {
+            // positive value means home dominance, negative means away dominance
+            momentum.push({ minute: m, value: vals.home - vals.away });
+         }
+      }
+    }
+
+    return { home, away, momentum };
   } catch (err) {
     console.error(`[txline/adapter] getMatchStats error for ${matchId}:`, err);
     return null;

@@ -26,6 +26,7 @@ defined in Implementation Guide §4.
 | `INCLUDE_FRIENDLIES` env flag (`src/server/txline/adapter.ts`, `.env.example`) | Off by default to stay World Cup-only (NG-5). When `true`, the fixtures filter also admits the International Friendlies bundle — a testing aid for exercising the loop when no World Cup fixture is live/upcoming. | 2026-07-15 |
 
 | `src/app/api/matches/[id]/stats/route.ts` + `src/components/MatchStats.tsx` + Stats tab | Added: a third Match-page tab surfacing team stats counted from TxLINE's feed (`getMatchStats`): possession (share of possession-phase events), shots / free kicks / throw-ins / offsides / penalties (deduped action rows), corners + cards (cumulative `Stats` keys 3–8). Timeline also gained penalty + VAR markers (`penalty`/`var` action rows; VAR renders neutral/centred). Lineups reworked: home team on top, full player names, faithful GK/DEF/MID/FWD tiers (TxLINE's `positionId` only has 4 buckets, so derived formations reflect that — e.g. France reads 4-2-4). | 2026-07-15 |
+| Attack Momentum Chart (in `MatchStats.tsx`) | Added: A visual SVG chart in the Stats tab plotting "Attack Momentum" over time. Derived natively in `adapter.ts` from TxLINE `*_possession` events (weighted by danger level: safe, attack, danger, high danger). The momentum value is the net difference between home and away possession weights per minute. | 2026-07-15 |
 
 > Rules: if a new file is genuinely needed, add it under the closest
 > existing folder and document it here (Implementation Guide §0, rule 6).

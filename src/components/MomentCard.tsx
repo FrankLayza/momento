@@ -17,29 +17,31 @@ import { TierBadge } from "./TierBadge";
 
 interface Props {
   moment: Moment;
+  /** Optional match details to display team names (e.g., in the Vault) */
+  matchDetails?: { home: string; away: string };
   /** If true, renders as a larger centred display card */
   featured?: boolean;
 }
 
-const TIER_ACCENT_CLASS: Record<string, string> = {
-  Common:  "border-tier-common/30",
-  Notable: "border-tier-notable/40",
-  Shock:   "border-tier-shock/50",
-  Seismic: "border-tier-seismic/60",
+const TIER_BG_CLASS: Record<string, string> = {
+  Common:  "bg-gradient-to-br from-[#1a1a1a] to-[#262626] border-[#404040]",
+  Notable: "bg-gradient-to-br from-[#0f171a] to-[#162f36] border-[#224853]",
+  Shock:   "bg-gradient-to-br from-[#1c160f] to-[#3d2a13] border-[#7d5627]",
+  Seismic: "bg-gradient-to-br from-[#1a0f14] to-[#3d1a25] border-[#8b1f3f]",
 };
 
 const SCORE_COLOR: Record<string, string> = {
-  Common:  "text-tier-common",
-  Notable: "text-tier-notable",
-  Shock:   "text-tier-shock",
-  Seismic: "text-tier-seismic",
+  Common:  "text-[#a3a3a3]",
+  Notable: "text-[#4fd1c5]",
+  Shock:   "text-[#fbbf24]",
+  Seismic: "text-[#fb7185]",
 };
 
-export function MomentCard({ moment, featured = false }: Props) {
-  const accentBorder = TIER_ACCENT_CLASS[moment.tier] ?? "";
-  const scoreColor   = SCORE_COLOR[moment.tier] ?? "text-ink";
-  const hasFoil      = moment.tier === "Shock" || moment.tier === "Seismic";
-  const pct          = Math.round((1 - moment.pBefore.home) * 100);
+export function MomentCard({ moment, matchDetails, featured = false }: Props) {
+  const bgClass    = TIER_BG_CLASS[moment.tier] ?? TIER_BG_CLASS.Common;
+  const scoreColor = SCORE_COLOR[moment.tier] ?? SCORE_COLOR.Common;
+  const hasFoil    = moment.tier === "Shock" || moment.tier === "Seismic";
+  const pct        = Math.round((1 - moment.pBefore.home) * 100);
 
   const eventLabel =
     moment.trigger === "T1" ? `Goal · ${moment.minute}'`
@@ -51,43 +53,59 @@ export function MomentCard({ moment, featured = false }: Props) {
     <Link
       href={`/m/${moment.id}`}
       className={`
-        relative flex flex-col rounded-2xl overflow-hidden border border-cream-border
-        bg-cream-surface transition-transform hover:-translate-y-0.5 shadow-sm
-        ${accentBorder}
+        group relative flex flex-col rounded-2xl overflow-hidden border-2
+        transition-all duration-300 hover:-translate-y-1 shadow-lg hover:shadow-2xl
+        ${bgClass}
         ${hasFoil ? "foil-sheen" : ""}
         ${featured ? "w-full" : "aspect-card"}
       `}
     >
+      {/* Inner glass reflection */}
+      <div className="absolute inset-0 rounded-2xl border border-white/10 pointer-events-none z-10" />
+
       {/* Top section: tier badge + event */}
-      <div className="flex items-start justify-between p-3 pb-0">
+      <div className="flex items-start justify-between p-3 pb-0 relative z-20">
         <TierBadge tier={moment.tier} size="sm" />
-        <span className="text-[10px] text-ink-secondary font-semibold">{eventLabel}</span>
+        <span className="text-[10px] text-white/60 font-semibold">{eventLabel}</span>
       </div>
 
-      {/* Score — the hero number */}
-      <div className="flex-1 flex flex-col items-center justify-center px-3 py-4">
-        <div className={`font-display text-5xl font-extrabold leading-none ${scoreColor}`}>
+      {/* Center: Teams (if provided) + Score */}
+      <div className="flex-1 flex flex-col items-center justify-center px-3 py-4 relative z-20">
+        {matchDetails && (
+          <div className="text-[11px] font-medium text-white/70 mb-2 uppercase tracking-widest text-center">
+            {matchDetails.home} <span className="text-white/40">v</span> {matchDetails.away}
+          </div>
+        )}
+        <div className={`font-display ${featured ? 'text-7xl' : 'text-5xl'} font-extrabold leading-none tracking-tight drop-shadow-md ${scoreColor} transition-transform duration-300 group-hover:scale-110`}>
           {moment.shockScore}
         </div>
-        <div className="text-[10px] text-ink-secondary mt-1 uppercase tracking-widest">
+        <div className="text-[10px] text-white/60 mt-2 uppercase tracking-[0.2em] font-medium">
           {copy.moment.shockRating}
         </div>
       </div>
 
       {/* Bottom: probability + witness count */}
-      <div className="px-3 pb-3 space-y-1">
-        <p className="text-[10px] text-ink-secondary leading-snug">
-          {copy.moment.marketChance(pct)}
-        </p>
-        <p className="text-[10px] text-ink-secondary">
-          {copy.moment.witnessCount(moment.witnessCount)}
-        </p>
+      <div className="px-3 pb-3 space-y-1 relative z-20">
+        <div className="flex justify-between items-end">
+          <div>
+            <p className="text-[9px] text-white/50 uppercase tracking-widest mb-0.5">Market Chance</p>
+            <p className="text-[11px] text-white/90 font-semibold leading-snug">
+              {pct}%
+            </p>
+          </div>
+          <div className="text-right">
+            <p className="text-[9px] text-white/50 uppercase tracking-widest mb-0.5">Witnesses</p>
+            <p className="text-[11px] text-white/90 font-semibold">
+              {moment.witnessCount.toLocaleString()}
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* Seismic: gradient overlay accent at bottom */}
       {moment.tier === "Seismic" && (
         <div
-          className="absolute inset-x-0 bottom-0 h-1 bg-seismic-gradient"
+          className="absolute inset-x-0 bottom-0 h-2 bg-gradient-to-r from-transparent via-[#fb7185] to-transparent opacity-50 blur-[2px]"
           aria-hidden="true"
         />
       )}
