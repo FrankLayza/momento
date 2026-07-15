@@ -53,7 +53,7 @@ export default async function AdvancedPage() {
 
       {/* Wallet info */}
       <section className="rounded-2xl border border-cream-border bg-cream-surface p-6 mb-6 shadow-sm">
-        <h2 className="text-xs font-semibold uppercase tracking-widest text-ink-secondary mb-5 border-b border-cream-border/60 pb-2">
+        <h2 className="text-[10px] font-medium tracking-[0.14em] text-ink-ghost uppercase mb-5 border-b border-cream-border/60 pb-2">
           Your Embedded Wallet
         </h2>
         <ExportWalletSection pubkey={pubkey} />
@@ -61,7 +61,7 @@ export default async function AdvancedPage() {
 
       {/* On-chain records */}
       <section className="rounded-2xl border border-cream-border bg-cream-surface p-6 shadow-sm">
-        <h2 className="text-xs font-semibold uppercase tracking-widest text-ink-secondary mb-4 border-b border-cream-border/60 pb-2">
+        <h2 className="text-[10px] font-medium tracking-[0.14em] text-ink-ghost uppercase mb-4 border-b border-cream-border/60 pb-2">
           On-Chain Records
         </h2>
         <p className="text-xs text-ink-secondary leading-relaxed">

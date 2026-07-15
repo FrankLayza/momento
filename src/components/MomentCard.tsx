@@ -24,10 +24,10 @@ interface Props {
 }
 
 const TIER_BG_CLASS: Record<string, string> = {
-  Common:  "bg-gradient-to-br from-[#1a1a1a] to-[#262626] border-[#404040]",
-  Notable: "bg-gradient-to-br from-[#0f171a] to-[#162f36] border-[#224853]",
-  Shock:   "bg-gradient-to-br from-[#1c160f] to-[#3d2a13] border-[#7d5627]",
-  Seismic: "bg-gradient-to-br from-[#1a0f14] to-[#3d1a25] border-[#8b1f3f]",
+  Common:  "bg-[#EDE8DC] border-cream-border",
+  Notable: "bg-[#E4F6F7] border-cream-border",
+  Shock:   "bg-[#FBF4E4] border-cream-border",
+  Seismic: "bg-[#FDE8E8] border-cream-border",
 };
 
 const SCORE_COLOR: Record<string, string> = {
@@ -66,36 +66,36 @@ export function MomentCard({ moment, matchDetails, featured = false }: Props) {
       {/* Top section: tier badge + event */}
       <div className="flex items-start justify-between p-3 pb-0 relative z-20">
         <TierBadge tier={moment.tier} size="sm" />
-        <span className="text-[10px] text-white/60 font-semibold">{eventLabel}</span>
+        <span className="text-[10px] text-ink-secondary font-semibold">{eventLabel}</span>
       </div>
 
       {/* Center: Teams (if provided) + Score */}
       <div className="flex-1 flex flex-col items-center justify-center px-3 py-4 relative z-20">
         {matchDetails && (
-          <div className="text-[11px] font-medium text-white/70 mb-2 uppercase tracking-widest text-center">
-            {matchDetails.home} <span className="text-white/40">v</span> {matchDetails.away}
+          <div className="text-[11px] font-medium text-ink-secondary mb-2 uppercase tracking-widest text-center">
+            {matchDetails.home} <span className="text-ink-ghost">v</span> {matchDetails.away}
           </div>
         )}
         <div className={`font-display ${featured ? 'text-7xl' : 'text-5xl'} font-extrabold leading-none tracking-tight drop-shadow-md ${scoreColor} transition-transform duration-300 group-hover:scale-110`}>
           {moment.shockScore}
         </div>
-        <div className="text-[10px] text-white/60 mt-2 uppercase tracking-[0.2em] font-medium">
+        <div className="text-[10px] text-ink-secondary mt-2 uppercase tracking-[0.2em] font-medium">
           {copy.moment.shockRating}
         </div>
       </div>
 
       {/* Bottom: probability + witness count */}
-      <div className="px-3 pb-3 space-y-1 relative z-20">
+      <div className="bg-ink text-cream px-3 py-3 mt-auto relative z-20">
         <div className="flex justify-between items-end">
           <div>
-            <p className="text-[9px] text-white/50 uppercase tracking-widest mb-0.5">Market Chance</p>
-            <p className="text-[11px] text-white/90 font-semibold leading-snug">
+            <p className="text-[9px] text-cream-muted uppercase tracking-widest mb-0.5">Market Chance</p>
+            <p className="text-[11px] text-cream font-semibold leading-snug">
               {pct}%
             </p>
           </div>
           <div className="text-right">
-            <p className="text-[9px] text-white/50 uppercase tracking-widest mb-0.5">Witnesses</p>
-            <p className="text-[11px] text-white/90 font-semibold">
+            <p className="text-[9px] text-cream-muted uppercase tracking-widest mb-0.5">Witnesses</p>
+            <p className="text-[11px] text-cream font-semibold">
               {moment.witnessCount.toLocaleString()}
             </p>
           </div>

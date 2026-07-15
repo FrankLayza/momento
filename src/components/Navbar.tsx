@@ -38,8 +38,8 @@ export function Navbar({
           <Link
             key={l.href}
             href={l.href}
-            className={`text-[13px] font-medium tracking-wide transition-colors ${
-              pathname === l.href ? 'text-ink' : 'text-ink-secondary hover:text-ink'
+            className={`text-[13px] tracking-wide transition-colors ${
+              pathname === l.href ? 'text-ink font-semibold' : 'text-ink-ghost hover:text-ink-secondary'
             }`}
           >
             {l.label}

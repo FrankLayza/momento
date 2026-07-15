@@ -72,7 +72,7 @@ export function ExportWalletSection({ pubkey }: Props) {
     <div className="space-y-6">
       {/* Public Key Display */}
       <div>
-        <label className="block text-xs font-semibold text-ink-secondary uppercase tracking-wider mb-2">
+        <label className="block text-[10px] font-medium tracking-[0.14em] text-ink-ghost uppercase mb-2">
           Public key
         </label>
         <div className="flex gap-2">
@@ -90,7 +90,7 @@ export function ExportWalletSection({ pubkey }: Props) {
 
       {/* Private Key Reveal */}
       <div>
-        <label className="block text-xs font-semibold text-ink-muted uppercase tracking-wider mb-2">
+        <label className="block text-[10px] font-medium tracking-[0.14em] text-ink-ghost uppercase mb-2">
           Export private key
         </label>
         <p className="text-xs text-ink-muted mb-4 leading-relaxed">
@@ -101,12 +101,12 @@ export function ExportWalletSection({ pubkey }: Props) {
         {revealed && privateKey ? (
           <div className="space-y-3">
             <div className="flex gap-2">
-              <div className="flex-1 font-display text-xs break-all text-tier-shock bg-cream border border-tier-shock/30 rounded-lg p-3">
+              <div className="flex-1 font-display text-xs break-all text-ink-secondary bg-cream border border-cream-border rounded-lg p-3">
                 {privateKey}
               </div>
               <button
                 onClick={() => { void handleCopyPriv(); }}
-                className="px-4 rounded-lg border border-tier-shock/40 bg-tier-shock/10 text-xs font-semibold text-tier-shock hover:bg-tier-shock/20 transition-colors cursor-pointer"
+                className="px-4 rounded-lg border border-cream-border bg-cream text-xs font-semibold text-ink hover:bg-cream-surface transition-colors cursor-pointer"
               >
                 {copiedPriv ? "Copied" : "Copy"}
               </button>
@@ -149,7 +149,7 @@ export function ExportWalletSection({ pubkey }: Props) {
         ) : (
           <button
             onClick={() => setShowWarning(true)}
-            className="w-full rounded-lg border border-cream-border bg-cream px-4 py-2.5 text-xs font-semibold text-ink-secondary hover:border-tier-shock/50 hover:text-ink transition-colors cursor-pointer"
+            className="w-full rounded-lg border border-cream-border bg-cream text-ink px-4 py-2.5 text-xs font-semibold hover:bg-cream-surface transition-colors cursor-pointer"
           >
             Reveal private key
           </button>

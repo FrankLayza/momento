@@ -12,7 +12,7 @@ interface Edition {
 export function VaultGrid({ editions }: { editions: Edition[] }) {
   if (editions.length === 0) {
     return (
-      <div className="text-center py-24 px-4 bg-cream-surface rounded-2xl border border-cream-border/50 shadow-sm">
+      <div className="text-center py-24 px-4 bg-cream-surface rounded-2xl border border-cream-border shadow-sm">
         <p className="font-display text-2xl font-bold text-ink mb-3">Nothing here yet.</p>
         <p className="text-[15px] text-ink-secondary max-w-sm mx-auto leading-relaxed">
           Check in to a live match to start witnessing Moments and building your collection.
