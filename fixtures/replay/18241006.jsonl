@@ -50,3 +50,13 @@
 {"type":"tick","data":{"matchId":"18241006","atUtc":"2026-07-15T20:53:13.352Z","pHome":0.1857,"pDraw":0.56402,"pAway":0.25013}}
 {"type":"tick","data":{"matchId":"18241006","atUtc":"2026-07-15T20:53:40.320Z","pHome":0.1857,"pDraw":0.56402,"pAway":0.25013}}
 {"type":"tick","data":{"matchId":"18241006","atUtc":"2026-07-15T20:54:16.187Z","pHome":0.1857,"pDraw":0.56402,"pAway":0.25013}}
+{"type":"tick","data":{"matchId":"18241006","atUtc":"2026-07-15T20:54:39.959Z","pHome":0.1857,"pDraw":0.56402,"pAway":0.25013}}
+{"type":"event","data":{"matchId":"18241006","atUtc":"2026-07-15T20:54:39.959Z","minute":92,"kind":"goal","team":"away"}}
+{"type":"tick","data":{"matchId":"18241006","atUtc":"2026-07-15T20:55:10.193Z","pHome":0.01205,"pDraw":0.12226000000000001,"pAway":0.8658}}
+{"type":"tick","data":{"matchId":"18241006","atUtc":"2026-07-15T20:55:41.691Z","pHome":0.00714,"pDraw":0.11945,"pAway":0.87336}}
+{"type":"tick","data":{"matchId":"18241006","atUtc":"2026-07-15T20:56:10.091Z","pHome":0.008329999999999999,"pDraw":0.10890000000000001,"pAway":0.88339}}
+{"type":"tick","data":{"matchId":"18241006","atUtc":"2026-07-15T20:56:40.833Z","pHome":0.008329999999999999,"pDraw":0.1054,"pAway":0.88652}}
+{"type":"tick","data":{"matchId":"18241006","atUtc":"2026-07-15T20:57:09.862Z","pHome":0.00714,"pDraw":0.1057,"pAway":0.8873099999999999}}
+{"type":"tick","data":{"matchId":"18241006","atUtc":"2026-07-15T20:57:50.009Z","pHome":0.00769,"pDraw":0.10642,"pAway":0.88574}}
+{"type":"tick","data":{"matchId":"18241006","atUtc":"2026-07-15T20:58:39.873Z","pHome":0.005560000000000001,"pDraw":0.07937,"pAway":0.91491}}
+{"type":"tick","data":{"matchId":"18241006","atUtc":"2026-07-15T20:59:08.738Z","pHome":0.005,"pDraw":0.08065,"pAway":0.91408}}

@@ -72,6 +72,8 @@ export function WitnessNotifications({ matchId, isWitness }: Props) {
   const dismiss = (id: string) => setQueue(prev => prev.filter(m => m.id !== id));
 
   const claim = async (moment: Moment) => {
+    // Dismiss the card immediately for instant visual feedback
+    dismiss(moment.id);
     setClaimError(null);
     try {
       const res = await fetch("/api/claim", {
@@ -91,7 +93,6 @@ export function WitnessNotifications({ matchId, isWitness }: Props) {
         return;
       }
 
-      dismiss(moment.id);
       router.refresh();
     } catch {
       setClaimError(copy.errors.generic);

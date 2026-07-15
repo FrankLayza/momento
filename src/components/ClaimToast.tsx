@@ -25,19 +25,16 @@ export function ClaimToast({ moment, onClaim, onDismiss }: Props) {
   const [timeLeft, setTimeLeft] = useState(60);
 
   useEffect(() => {
-    const timer = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev <= 1) {
-          clearInterval(timer);
-          onDismiss();
-          return 0;
-        }
-        return prev - 1;
-      });
+    if (timeLeft <= 0) {
+      onDismiss();
+      return;
+    }
+    const timer = setTimeout(() => {
+      setTimeLeft((prev) => prev - 1);
     }, 1000);
 
-    return () => clearInterval(timer);
-  }, [onDismiss]);
+    return () => clearTimeout(timer);
+  }, [timeLeft, onDismiss]);
 
   const handleClaim = async () => {
     setClaiming(true);
