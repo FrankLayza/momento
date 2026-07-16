@@ -1121,6 +1121,11 @@ export function subscribeMatch(
   let lastAwayScore = 0;
   let lastSeenSeq = 0; // Track which score records we've already processed
   let hasKickoffFired = false;
+  // Full time is a terminal status (5/10/13) that persists across every
+  // subsequent poll — without a fired-once guard the recorder re-emits a
+  // full_time event on every 30s poll after the match ends (observed: 18
+  // duplicate full_time events in a single recording).
+  let hasFullTimeFired = false;
   let p1IsHome = true; // will be set from the first score record
   // Matches are often tracked mid-progress (worker restarted, or a witness
   // checks in after kickoff). Without this, the first poll would treat every
@@ -1282,8 +1287,9 @@ export function subscribeMatch(
         lastAwayScore = state.score.away;
       }
 
-      // Synthesize Full Time
-      if ([5, 10, 13].includes(state.statusId)) {
+      // Synthesize Full Time — once only (see hasFullTimeFired above).
+      if (!hasFullTimeFired && [5, 10, 13].includes(state.statusId)) {
+        hasFullTimeFired = true;
         onEvent({
           matchId,
           atUtc: new Date().toISOString(),

@@ -32,7 +32,13 @@ async function getMatch(id: string) {
     try {
       const live = await getLiveMatchState(id)
       if (live) {
-        return { ...match, score: live.score, minute: live.minute, status: live.status as typeof match.status }
+        return {
+          ...match,
+          score: live.score,
+          minute: live.minute,
+          status: live.status as typeof match.status,
+          phase: live.phase,
+        }
       }
     } catch (err) {
       console.error('[MatchPage] Failed to fetch live match state:', err)
