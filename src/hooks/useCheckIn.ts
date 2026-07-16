@@ -11,9 +11,9 @@ export function useCheckIn(matchId: string, initialCheckedIn: boolean) {
 
   async function checkIn() {
     const supabase = createClient()
-    const { data: { session } } = await supabase.auth.getSession()
+    const { data: { user } } = await supabase.auth.getUser()
 
-    if (!session) {
+    if (!user) {
       // Redirect to sign-in, return here after
       router.push(
         `/sign-in?next=${encodeURIComponent(`/match/${matchId}`)}&reason=checkin`

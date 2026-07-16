@@ -26,13 +26,13 @@ interface DbEdition {
 
 export default async function VaultPage() {
   const supabase = await createClient()
-  const { data: { session } } = await supabase.auth.getSession()
-  if (!session) redirect('/sign-in?next=/vault&reason=vault')
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/sign-in?next=/vault&reason=vault')
 
   const { data } = await supabase
     .from('editions')
     .select(`*, moments(*)`)
-    .eq('user_id', session.user.id)
+    .eq('user_id', user.id)
     .order('claimed_at', { ascending: false })
 
   const rawEditions = (data as unknown as DbEdition[] | null) ?? []
@@ -64,15 +64,15 @@ export default async function VaultPage() {
 
   let displayName = 'Fan'
   try {
-    const appUser = await getUserById(session.user.id).catch(() => null)
-    displayName = appUser?.displayName || session.user.email?.split('@')[0] || 'Fan'
+    const appUser = await getUserById(user.id).catch(() => null)
+    displayName = appUser?.displayName || user.email?.split('@')[0] || 'Fan'
   } catch (err) {
     console.error('[VaultPage] Failed to fetch user profile:', err)
   }
 
   return (
     <div className="bg-cream min-h-screen font-body">
-      <Navbar displayName={displayName} userId={session.user.id} />
+      <Navbar displayName={displayName} userId={user.id} />
       <div className="max-w-3xl mx-auto px-8 py-10">
         <p className="text-[11px] font-medium tracking-[0.12em] text-ink-ghost uppercase mb-2">Your collection</p>
         <h1 className="font-display text-[40px] font-bold text-ink leading-[1.05] mb-2">Vault</h1>

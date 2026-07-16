@@ -12,7 +12,7 @@ interface LeaderboardEntry {
 
 export default async function LeaderboardPage() {
   const supabase = await createClient()
-  const { data: { session } } = await supabase.auth.getSession()
+  const { data: { user } } = await supabase.auth.getUser()
 
   const { data: rawByMoments } = await supabase
     .from('leaderboard_view')
@@ -30,10 +30,10 @@ export default async function LeaderboardPage() {
   const byTier = (rawByTier as unknown as LeaderboardEntry[] | null) ?? []
 
   let displayName = 'Fan'
-  if (session?.user) {
+  if (user) {
     try {
-      const appUser = await getUserById(session.user.id).catch(() => null)
-      displayName = appUser?.displayName || session.user.email?.split('@')[0] || 'Fan'
+      const appUser = await getUserById(user.id).catch(() => null)
+      displayName = appUser?.displayName || user.email?.split('@')[0] || 'Fan'
     } catch (err) {
       console.error('[LeaderboardPage] Failed to fetch user profile:', err)
     }
@@ -41,15 +41,15 @@ export default async function LeaderboardPage() {
 
   return (
     <div className="bg-cream min-h-screen font-body">
-      <Navbar displayName={displayName} userId={session?.user.id ?? null} />
-      <div className="max-w-3xl mx-auto px-8 py-10">
+      <Navbar displayName={displayName} userId={user?.id ?? null} />
+      <div className="max-w-3xl mx-auto px-4 sm:px-8 py-6 sm:py-10">
         <p className="text-[11px] font-medium tracking-[0.12em] text-ink-ghost uppercase mb-2">FIFA World Cup 2026</p>
-        <h1 className="font-display text-[40px] font-bold text-ink leading-[1.05] mb-2">Leaderboard</h1>
+        <h1 className="font-display text-3xl sm:text-[40px] font-bold text-ink leading-[1.05] mb-2">Leaderboard</h1>
         <p className="text-sm text-ink-secondary mb-8">The top Witnesses across all matches.</p>
         <LeaderboardClient
           byMoments={byMoments}
           byTier={byTier}
-          currentUserId={session?.user.id ?? null}
+          currentUserId={user?.id ?? null}
         />
       </div>
     </div>

@@ -33,12 +33,12 @@ export function LeaderboardClient({ byMoments, byTier, currentUserId }: Props) {
   return (
     <div>
       {/* Pill toggle */}
-      <div className="flex bg-cream-surface border border-cream-border rounded-full p-1 w-fit mb-6">
+      <div className="flex bg-cream-surface border border-cream-border rounded-full p-1 w-full sm:w-fit mb-6">
         {(["moments", "tier"] as Tab[]).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
-            className={`px-4 py-1.5 rounded-full text-[12px] font-medium transition-colors ${
+            className={`flex-1 sm:flex-none px-4 py-1.5 rounded-full text-[12px] font-medium transition-colors ${
               tab === t
                 ? "bg-ink text-cream"
                 : "text-ink-secondary hover:text-ink"
@@ -78,14 +78,14 @@ export function LeaderboardClient({ byMoments, byTier, currentUserId }: Props) {
         </div>
       ) : (
         <div className="bg-cream-surface rounded-2xl border border-cream-border overflow-hidden">
-          <div className="px-5 py-1">
+          <div className="px-3 sm:px-5 py-1">
             {entries.slice(0, 20).map((entry, i) => {
               const isYou = entry.user_id === currentUserId;
               const initials = entry.display_name.slice(0, 2).toUpperCase();
               return (
                 <div
                   key={entry.user_id}
-                  className={`flex items-center gap-3 py-3 border-b border-cream-border last:border-none ${isYou ? "bg-cream-surface/80" : ""}`}
+                  className={`flex items-center gap-2 sm:gap-3 py-3 border-b border-cream-border last:border-none ${isYou ? "bg-cream" : ""}`}
                 >
                   <span
                     className={`font-display text-[13px] font-bold w-5 flex-shrink-0 ${i < 3 ? "text-ink" : "text-ink-ghost"}`}
@@ -93,25 +93,25 @@ export function LeaderboardClient({ byMoments, byTier, currentUserId }: Props) {
                     {i + 1}
                   </span>
                   <div
-                    className={`w-8 h-8 rounded-full flex items-center justify-center font-display text-[11px] font-bold flex-shrink-0 ${isYou ? "bg-ink text-cream" : "bg-cream-muted text-ink-secondary"}`}
+                    className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center font-display text-[10px] sm:text-[11px] font-bold flex-shrink-0 ${isYou ? "bg-ink text-cream" : "bg-cream-muted text-ink-secondary"}`}
                   >
                     {initials}
                   </div>
-                  <span className="flex-1 text-[14px] font-medium text-ink">
+                  <span className="flex-1 text-[13px] sm:text-[14px] font-medium text-ink truncate min-w-0 pr-2">
                     {entry.display_name}
                     {isYou && (
-                      <span className="text-ink-ghost text-[11px] font-normal ml-1">
+                      <span className="text-ink-ghost text-[10px] sm:text-[11px] font-normal ml-1 flex-shrink-0">
                         (you)
                       </span>
                     )}
                   </span>
                   {tab === "moments" ? (
-                    <span className="font-display text-[14px] font-bold text-ink">
+                    <span className="font-display text-[13px] sm:text-[14px] font-bold text-ink flex-shrink-0">
                       {entry.moment_count}
                     </span>
                   ) : (
                     <span
-                      className={`text-[9px] font-semibold tracking-[0.1em] uppercase px-2 py-0.5 rounded ${TIER_BADGE[entry.top_tier] ?? ""}`}
+                      className={`text-[8px] sm:text-[9px] font-semibold tracking-[0.1em] uppercase px-1.5 sm:px-2 py-0.5 rounded flex-shrink-0 ${TIER_BADGE[entry.top_tier] ?? ""}`}
                     >
                       {entry.top_tier}
                     </span>
@@ -123,27 +123,27 @@ export function LeaderboardClient({ byMoments, byTier, currentUserId }: Props) {
 
           {/* Pinned current user if outside top 20 */}
           {currentUserEntry && currentUserRank > 20 && (
-            <div className="border-t border-cream-border px-5 py-3 bg-cream">
-              <div className="flex items-center gap-3">
-                <span className="font-display text-[13px] font-bold text-ink-ghost w-5">
+            <div className="border-t border-cream-border px-3 sm:px-5 py-3 bg-cream">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <span className="font-display text-[13px] font-bold text-ink-ghost w-5 flex-shrink-0">
                   {currentUserRank}
                 </span>
-                <div className="w-8 h-8 rounded-full bg-ink text-cream flex items-center justify-center font-display text-[11px] font-bold">
+                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-ink text-cream flex items-center justify-center font-display text-[10px] sm:text-[11px] font-bold flex-shrink-0">
                   {currentUserEntry.display_name.slice(0, 2).toUpperCase()}
                 </div>
-                <span className="flex-1 text-[14px] font-medium text-ink">
+                <span className="flex-1 text-[13px] sm:text-[14px] font-medium text-ink truncate min-w-0 pr-2">
                   {currentUserEntry.display_name}{" "}
-                  <span className="text-ink-ghost text-[11px] font-normal">
+                  <span className="text-ink-ghost text-[10px] sm:text-[11px] font-normal flex-shrink-0">
                     (you)
                   </span>
                 </span>
                 {tab === "moments" ? (
-                  <span className="font-display text-[14px] font-bold text-ink">
+                  <span className="font-display text-[13px] sm:text-[14px] font-bold text-ink flex-shrink-0">
                     {currentUserEntry.moment_count}
                   </span>
                 ) : (
                   <span
-                    className={`text-[9px] font-semibold tracking-[0.1em] uppercase px-2 py-0.5 rounded ${TIER_BADGE[currentUserEntry.top_tier] ?? ""}`}
+                    className={`text-[8px] sm:text-[9px] font-semibold tracking-[0.1em] uppercase px-1.5 sm:px-2 py-0.5 rounded flex-shrink-0 ${TIER_BADGE[currentUserEntry.top_tier] ?? ""}`}
                   >
                     {currentUserEntry.top_tier}
                   </span>
