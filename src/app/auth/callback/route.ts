@@ -16,10 +16,15 @@ export async function GET(request: Request) {
       const supabase = await createClient()
       const { data: { session }, error } = await supabase.auth.exchangeCodeForSession(code)
 
-      if (session && !error) {
-        await ensureWalletForUser(session.user)
-      } else if (error) {
+      if (error) {
         console.error('[auth/callback] exchangeCodeForSession error:', error)
+      } else if (session) {
+        // Provision wallet separately — failure must not block sign-in
+        try {
+          await ensureWalletForUser(session.user)
+        } catch (walletErr) {
+          console.error('[auth/callback] wallet provisioning failed (non-fatal):', walletErr)
+        }
       }
     } catch (err) {
       console.error('[auth/callback] auth callback failed:', err)
