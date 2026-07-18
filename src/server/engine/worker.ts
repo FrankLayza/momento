@@ -20,8 +20,19 @@ loadEnv({ path: path.resolve(process.cwd(), ".env.local") });
 loadEnv({ path: path.resolve(process.cwd(), ".env") });
 
 import dns from "node:dns";
+import http from "node:http";
+
 // Force IPv4 first to prevent Node 17+ undici connection timeouts
 dns.setDefaultResultOrder("ipv4first");
+
+// Simple HTTP server to satisfy Render's web service port binding requirement on Free Tier
+const port = process.env.PORT || 8080;
+http.createServer((req, res) => {
+  res.writeHead(200, { "Content-Type": "text/plain" });
+  res.end("Momento Worker is active\n");
+}).listen(port, () => {
+  console.log(`[worker] Dummy HTTP server listening on port ${port}`);
+});
 
 
 import { trackMatch, untrackMatch } from "@/server/engine/momentEngine";
