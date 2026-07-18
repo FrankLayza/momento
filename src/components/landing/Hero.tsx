@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { copy } from "@/lib/copy";
-import { FlowmapHero } from "./FlowmapHero";
+// import { FlowmapHero } from "./FlowmapHero";
 
 const HERO_IMAGE_SRC = "/landing/landing.png";
 
@@ -21,7 +21,7 @@ export function Hero() {
       />
       
       {/* Mouse flowmap distortion canvas — Now auto-detects real aspect ratio safely */}
-      <FlowmapHero src={HERO_IMAGE_SRC} className="absolute inset-0 z-0" />
+      {/* <FlowmapHero src={HERO_IMAGE_SRC} className="absolute inset-0 z-0" /> */}
       
       <div className="absolute inset-0 bg-landing-ink/25" aria-hidden="true" />
 

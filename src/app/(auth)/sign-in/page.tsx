@@ -26,22 +26,22 @@ export default async function SignInPage({ searchParams }: Props) {
     SIGN_IN_HEADINGS.default
 
   return (
-    <div className="bg-cream min-h-screen flex flex-col">
-      <div className="px-8 py-5 flex items-center gap-2">
-        <span className="w-2.5 h-2.5 rounded-full bg-ink" />
-        <span className="font-display font-bold text-lg text-ink">Momento</span>
+    <div className="min-h-screen flex flex-col font-body pb-16 sm:pb-0" style={{ background: 'var(--color-base)' }}>
+      <div className="px-5 py-4 flex items-center gap-2">
+        <span className="w-2.5 h-2.5 rounded-full" style={{ background: 'var(--color-accent)' }} />
+        <span className="font-display text-xl tracking-wide" style={{ color: 'var(--color-fore)' }}>MOMENTO</span>
       </div>
 
       <div className="flex-1 flex items-center justify-center px-6">
         <div className="w-full max-w-[360px]">
-          <h1 className="font-display text-[32px] font-bold text-ink leading-[1.1] mb-2">
+          <h1 className="font-display text-[48px] leading-none mb-2" style={{ color: 'var(--color-fore)' }}>
             {heading.title}
           </h1>
-          <p className="text-[15px] text-ink-secondary mb-8">
+          <p className="text-[15px] mb-8 font-medium" style={{ color: 'var(--color-fore-2)' }}>
             {heading.sub}
           </p>
           <SignInForm next={resolvedSearchParams.next} />
-          <p className="text-[11px] text-ink-ghost text-center mt-6">
+          <p className="text-[11px] text-center mt-6" style={{ color: 'var(--color-fore-3)' }}>
             By continuing you agree to our Terms of Service.
           </p>
         </div>

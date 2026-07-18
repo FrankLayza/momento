@@ -14,8 +14,10 @@
 import { createUmi } from "@metaplex-foundation/umi-bundle-defaults";
 import {
   mintToCollectionV1,
+  mintV1,
   mplBubblegum,
   parseLeafFromMintToCollectionV1Transaction,
+  parseLeafFromMintV1Transaction,
 } from "@metaplex-foundation/mpl-bubblegum";
 import {
   createSignerFromKeypair,
@@ -25,6 +27,7 @@ import {
 } from "@metaplex-foundation/umi";
 import { fromWeb3JsKeypair } from "@metaplex-foundation/umi-web3js-adapters";
 import { Keypair } from "@solana/web3.js";
+import bs58 from "bs58";
 import type { Moment } from "@/lib/types";
 
 // ── Config ────────────────────────────────────────────────────────────────────
@@ -32,8 +35,6 @@ import type { Moment } from "@/lib/types";
 function getTreasuryKeypair(): Keypair {
   const raw = process.env.TREASURY_SECRET_KEY;
   if (!raw) throw new Error("Missing TREASURY_SECRET_KEY");
-  // Import bs58 dynamically to avoid issues in edge runtime
-  const bs58 = require("bs58") as { decode: (s: string) => Uint8Array };
   return Keypair.fromSecretKey(bs58.decode(raw));
 }
 
@@ -58,13 +59,26 @@ function buildMetadataUri(moment: Moment): string {
 }
 
 function buildNftName(moment: Moment, home: string, away: string): string {
+  const MAX_NAME_BYTES = 32;
   const eventLabel =
     moment.trigger === "T1" ? "Goal"
-    : moment.trigger === "T2" ? "Red card"
-    : moment.trigger === "T3" ? "Probability shift"
-    : "Full-time upset";
+    : moment.trigger === "T2" ? "Red"
+    : moment.trigger === "T3" ? "Shift"
+    : "Upset";
 
-  return `${home} v ${away} · ${moment.minute}' ${eventLabel}`;
+  // Build name and truncate to fit Bubblegum's 32-byte limit
+  let name = `${home} v ${away} · ${moment.minute}' ${eventLabel}`;
+  if (Buffer.byteLength(name, "utf8") > MAX_NAME_BYTES) {
+    // Shorten team names to first 3 chars
+    const h = home.slice(0, 3).toUpperCase();
+    const a = away.slice(0, 3).toUpperCase();
+    name = `${h} v ${a} · ${moment.minute}' ${eventLabel}`;
+  }
+  // Final safety: hard-truncate to 32 bytes
+  while (Buffer.byteLength(name, "utf8") > MAX_NAME_BYTES) {
+    name = name.slice(0, -1);
+  }
+  return name;
 }
 
 // ── Public API ────────────────────────────────────────────────────────────────
@@ -102,32 +116,52 @@ export async function mintEdition(
   const metadataUri = buildMetadataUri(moment);
   const nftName     = buildNftName(moment, home, away);
 
-  // Mint cNFT to the claimant's public key
-  // [NEEDS-HUMAN-INPUT if Bubblegum API changes between versions]
-  const { signature, result } = await mintToCollectionV1(umi, {
-    leafOwner:   umiPublicKey(toPubkey),
-    merkleTree:  umiPublicKey(treeAddress),
-    // Collection mint — [NEEDS-HUMAN-INPUT: set COLLECTION_MINT_ADDRESS env once created]
-    collectionMint: umiPublicKey(
-      process.env.COLLECTION_MINT_ADDRESS ?? treeAddress
-    ),
-    metadata: {
-      name:    nftName,
-      symbol:  "MMT",
-      uri:     metadataUri,
-      sellerFeeBasisPoints: 500,  // 5% royalty (roadmap; devnet only for now)
-      collection: {
-        key:      umiPublicKey(process.env.COLLECTION_MINT_ADDRESS ?? treeAddress),
-        verified: false,
+  const collectionAddress = process.env.COLLECTION_MINT_ADDRESS;
+  let signature: Uint8Array;
+  let assetId: string;
+
+  if (collectionAddress) {
+    // Mint to a specific collection if configured
+    const res = await mintToCollectionV1(umi, {
+      leafOwner:   umiPublicKey(toPubkey),
+      merkleTree:  umiPublicKey(treeAddress),
+      collectionMint: umiPublicKey(collectionAddress),
+      metadata: {
+        name:    nftName,
+        symbol:  "MMT",
+        uri:     metadataUri,
+        sellerFeeBasisPoints: 500,
+        collection: {
+          key:      umiPublicKey(collectionAddress),
+          verified: false,
+        },
+        creators: [],
       },
-      creators: [],
-    },
-  }).sendAndConfirm(umi);
+    }).sendAndConfirm(umi);
+    signature = res.signature;
+    
+    const leaf = await parseLeafFromMintToCollectionV1Transaction(umi, signature);
+    assetId = leaf.id.toString();
+  } else {
+    // Standalone cNFT mint if no collection is configured
+    const res = await mintV1(umi, {
+      leafOwner:   umiPublicKey(toPubkey),
+      merkleTree:  umiPublicKey(treeAddress),
+      metadata: {
+        name: nftName,
+        symbol: "MMT",
+        uri: metadataUri,
+        sellerFeeBasisPoints: 500,
+        creators: [],
+        collection: null
+      },
+    }).sendAndConfirm(umi);
+    signature = res.signature;
+    
+    const leaf = await parseLeafFromMintV1Transaction(umi, signature);
+    assetId = leaf.id.toString();
+  }
 
-  // Extract the on-chain asset id from the transaction
-  const leaf = await parseLeafFromMintToCollectionV1Transaction(umi, signature);
-  const assetId = leaf.id.toString();
-  const txSig   = Buffer.from(signature).toString("base64");
-
+  const txSig = Buffer.from(signature).toString("base64");
   return { assetId, txSig };
 }

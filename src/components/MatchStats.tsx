@@ -37,13 +37,16 @@ function StatRow({ label, home, away, isPercent }: { label: string; home: number
   const awayLeads = away > home
 
   return (
-    <div className="py-3 px-2 -mx-2 rounded-lg transition-colors hover:bg-cream-border/20 group">
+    <div className="py-3 px-2 -mx-2 rounded-lg transition-colors" style={{ '--hover-bg': 'var(--color-surface-2)' } as React.CSSProperties}
+      onMouseEnter={e => (e.currentTarget.style.background = 'var(--color-surface-2)')}
+      onMouseLeave={e => (e.currentTarget.style.background = '')}
+    >
       <div className="flex items-center justify-between text-[13px] mb-1.5">
-        <span className={`font-display font-bold tabular-nums transition-colors group-hover:text-ink ${homeLeads ? 'text-ink' : 'text-ink-secondary'}`}>
+        <span className="font-display font-bold tabular-nums" style={{ color: homeLeads ? 'var(--color-fore)' : 'var(--color-fore-3)' }}>
           {home}{isPercent ? '%' : ''}
         </span>
-        <span className="text-[11px] font-medium text-ink-ghost uppercase tracking-wide transition-colors group-hover:text-ink-secondary">{label}</span>
-        <span className={`font-display font-bold tabular-nums transition-colors group-hover:text-ink ${awayLeads ? 'text-ink' : 'text-ink-secondary'}`}>
+        <span className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-fore-3)' }}>{label}</span>
+        <span className="font-display font-bold tabular-nums" style={{ color: awayLeads ? 'var(--color-fore)' : 'var(--color-fore-3)' }}>
           {away}{isPercent ? '%' : ''}
         </span>
       </div>
@@ -53,7 +56,8 @@ function StatRow({ label, home, away, isPercent }: { label: string; home: number
             initial={{ width: 0 }}
             animate={{ width: `${homePct}%` }}
             transition={{ type: 'spring', stiffness: 100, damping: 20, delay: 0.1 }}
-            className="h-full rounded-full bg-ink" 
+            className="h-full rounded-full"
+            style={{ background: 'var(--color-blue)' }}
           />
         </div>
         <div className="flex-1">
@@ -61,7 +65,8 @@ function StatRow({ label, home, away, isPercent }: { label: string; home: number
             initial={{ width: 0 }}
             animate={{ width: `${awayPct}%` }}
             transition={{ type: 'spring', stiffness: 100, damping: 20, delay: 0.1 }}
-            className="h-full rounded-full bg-live" 
+            className="h-full rounded-full"
+            style={{ background: 'var(--color-live)' }}
           />
         </div>
       </div>
@@ -179,13 +184,13 @@ function MomentumChart({ data, currentMinute }: { data: MatchStats['momentum']; 
     awayPath += ` L ${lastX} ${centerY} Z`;
 
     return (
-      <div className="py-4 border-b border-cream-border mb-4">
-        <div className="flex items-center justify-between text-[11px] font-medium text-ink-ghost uppercase tracking-[0.12em] mb-4">
+        <div className="py-4 mb-4" style={{ borderBottom: '1px solid var(--color-border)' }}>
+        <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-[0.12em] mb-4" style={{ color: 'var(--color-fore-3)' }}>
           <span>Attack Momentum</span>
         </div>
-        <div className="relative w-full h-[120px] bg-cream-base/50 rounded-md overflow-hidden">
+        <div className="relative w-full h-[120px] rounded-md overflow-hidden" style={{ background: 'var(--color-surface-2)' }}>
           {/* Center line */}
-          <div className="absolute top-1/2 left-0 w-full h-px bg-cream-border z-10" />
+          <div className="absolute top-1/2 left-0 w-full h-px z-10" style={{ background: 'var(--color-border)' }} />
            
           <motion.svg 
             viewBox={`0 0 ${width} ${height}`} 
@@ -233,13 +238,17 @@ function MomentumChart({ data, currentMinute }: { data: MatchStats['momentum']; 
         </div>
       
       {/* Precisely aligned X-axis labels */}
-      <div className="relative w-full h-4 mt-2 text-[10px] text-ink-ghost font-medium tabular-nums">
+        <div className="relative w-full h-4 mt-2 text-[10px] font-medium tabular-nums" style={{ color: 'var(--color-fore-3)' }}>
         <span className="absolute left-0">0&apos;</span>
         {markers.map(m => (
           <span 
             key={`label-${m}`} 
-            className="absolute -translate-x-1/2 bg-cream-surface px-1" 
-            style={{ left: `${(m / chartMaxMinute) * 100}%` }}
+            className="absolute -translate-x-1/2 px-1" 
+            style={{ 
+              background: 'var(--color-surface)', 
+              color: 'var(--color-fore-3)',
+              left: `${(m / chartMaxMinute) * 100}%` 
+            }}
           >
             {m === 45 ? 'HT' : m === 90 && chartMaxMinute <= 95 ? 'FT' : `${m}'`}
           </span>
@@ -285,26 +294,24 @@ export function MatchStats({ matchId, status, home, away, currentMinute }: Props
 
   if (!loaded) {
     return (
-      <div className="bg-cream-surface rounded-2xl border border-cream-border p-5">
+      <div className="rounded-2xl p-5" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)' }}>
         <div className="flex items-center justify-between mb-4 h-4">
-          <div className="w-16 h-3 bg-cream-border rounded-full animate-pulse" />
-          <div className="w-20 h-3 bg-cream-border rounded-full animate-pulse" />
-          <div className="w-16 h-3 bg-cream-border rounded-full animate-pulse" />
+          <div className="w-16 h-3 rounded-full animate-pulse" style={{ background: 'var(--color-border)' }} />
+          <div className="w-20 h-3 rounded-full animate-pulse" style={{ background: 'var(--color-border)' }} />
+          <div className="w-16 h-3 rounded-full animate-pulse" style={{ background: 'var(--color-border)' }} />
         </div>
-        
-        <div className="w-full h-[120px] bg-cream-border/30 rounded-md animate-pulse mb-6 mt-4" />
-        
-        <div className="divide-y divide-cream-border">
+        <div className="w-full h-[120px] rounded-md animate-pulse mb-6 mt-4" style={{ background: 'var(--color-surface-2)' }} />
+        <div className="divide-y" style={{ borderColor: 'var(--color-border-muted)' }}>
           {[1, 2, 3, 4, 5].map((i) => (
             <div key={i} className="py-3 flex flex-col gap-2.5">
               <div className="flex justify-between items-center px-1">
-                <div className="w-6 h-3 bg-cream-border rounded animate-pulse" />
-                <div className="w-16 h-2 bg-cream-border/70 rounded animate-pulse" />
-                <div className="w-6 h-3 bg-cream-border rounded animate-pulse" />
+                <div className="w-6 h-3 rounded animate-pulse" style={{ background: 'var(--color-border)' }} />
+                <div className="w-16 h-2 rounded animate-pulse" style={{ background: 'var(--color-border)' }} />
+                <div className="w-6 h-3 rounded animate-pulse" style={{ background: 'var(--color-border)' }} />
               </div>
               <div className="flex gap-1 h-1.5">
-                <div className="flex-1 bg-cream-border/50 rounded-full animate-pulse" />
-                <div className="flex-1 bg-cream-border/50 rounded-full animate-pulse" />
+                <div className="flex-1 rounded-full animate-pulse" style={{ background: 'var(--color-surface-2)' }} />
+                <div className="flex-1 rounded-full animate-pulse" style={{ background: 'var(--color-surface-2)' }} />
               </div>
             </div>
           ))}
@@ -315,10 +322,10 @@ export function MatchStats({ matchId, status, home, away, currentMinute }: Props
 
   if (!stats) {
     return (
-      <div className="bg-cream-surface rounded-2xl border border-cream-border py-14 px-6 text-center">
+      <div className="rounded-2xl py-14 px-6 text-center" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)' }}>
         <div className="text-3xl mb-3 opacity-40">📊</div>
-        <p className="text-[13px] font-medium text-ink-secondary">No stats yet</p>
-        <p className="text-[12px] text-ink-ghost mt-1">
+        <p className="text-[13px] font-semibold" style={{ color: 'var(--color-fore-2)' }}>No stats yet</p>
+        <p className="text-[12px] mt-1" style={{ color: 'var(--color-fore-3)' }}>
           {status === 'scheduled' ? 'Stats build up once the match kicks off.' : 'No stats available for this match.'}
         </p>
       </div>
@@ -326,21 +333,21 @@ export function MatchStats({ matchId, status, home, away, currentMinute }: Props
   }
 
   return (
-    <div className="bg-cream-surface rounded-2xl border border-cream-border p-5">
+    <div className="rounded-2xl p-5" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)' }}>
       {/* Team key */}
-      <div className="flex items-center justify-between mb-4 text-[11px] font-medium">
-        <span className="flex items-center gap-1.5 text-ink">
-          <span className="w-2 h-2 rounded-full bg-ink" /> {home}
+      <div className="flex items-center justify-between mb-4 text-[11px] font-semibold">
+        <span className="flex items-center gap-1.5" style={{ color: 'var(--color-fore)' }}>
+          <span className="w-2 h-2 rounded-full" style={{ background: 'var(--color-blue)' }} /> {home}
         </span>
-        <span className="text-ink-ghost uppercase tracking-[0.12em] text-[10px]">Match stats</span>
-        <span className="flex items-center gap-1.5 text-ink">
-          {away} <span className="w-2 h-2 rounded-full bg-live" />
+        <span className="uppercase tracking-[0.12em] text-[10px]" style={{ color: 'var(--color-fore-3)' }}>Match stats</span>
+        <span className="flex items-center gap-1.5" style={{ color: 'var(--color-fore)' }}>
+          {away} <span className="w-2 h-2 rounded-full" style={{ background: 'var(--color-live)' }} />
         </span>
       </div>
 
       <MomentumChart data={stats.momentum} currentMinute={status === 'live' ? currentMinute : undefined} />
 
-      <div className="divide-y divide-cream-border">
+      <div className="divide-y" style={{ borderColor: 'var(--color-border-muted)' }}>
         {ROWS.map((r) => (
           <StatRow
             key={r.key}

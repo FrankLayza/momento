@@ -24,10 +24,10 @@ interface Props {
 }
 
 const TIER_BG_CLASS: Record<string, string> = {
-  Common:  "bg-[#EDE8DC] border-cream-border",
-  Notable: "bg-[#E4F6F7] border-cream-border",
-  Shock:   "bg-[#FBF4E4] border-cream-border",
-  Seismic: "bg-[#FDE8E8] border-cream-border",
+  Common:  "bg-[#EDE8DC]",
+  Notable: "bg-[#E4F6F7]",
+  Shock:   "bg-[#FBF4E4]",
+  Seismic: "bg-[#FDE8E8]",
 };
 
 const SCORE_COLOR: Record<string, string> = {
@@ -55,6 +55,7 @@ export function MomentCard({ moment, matchDetails, featured = false }: Props) {
       className={`
         group relative flex flex-col rounded-2xl overflow-hidden border-2
         transition-all duration-300 hover:-translate-y-1 shadow-lg hover:shadow-2xl
+        tier-${moment.tier.toLowerCase()}
         ${bgClass}
         ${hasFoil ? "foil-sheen" : ""}
         ${featured ? "w-full" : "aspect-card"}

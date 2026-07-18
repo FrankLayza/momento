@@ -15,6 +15,10 @@ export const TEAM_TO_ISO: Record<string, string> = {
   Japan: 'jp',
   Morocco: 'ma',
   Senegal: 'sn',
+  Vietnam: 'vn',
+  Myanmar: 'mm',
+  Australia: 'au',
+  India: 'in',
   // Expand as TxLINE team names are confirmed
 }
 

@@ -24,10 +24,9 @@ export function LiveTicketCard({
   initialCheckedIn,
   competition = 'FIFA World Cup 2026',
 }: LiveTicketCardProps) {
-  // Normalize probabilities to percentages
   const pHomePct = Math.round(odds.pHome * 100)
   const pAwayPct = Math.round(odds.pAway * 100)
-  const pDrawPct = 100 - pHomePct - pAwayPct // ensure sum to exactly 100%
+  const pDrawPct = 100 - pHomePct - pAwayPct
   const router = useRouter()
 
   return (
@@ -36,107 +35,155 @@ export function LiveTicketCard({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] as const }}
       onClick={() => router.push(`/match/${match.id}`)}
-      className="rounded-2xl overflow-hidden border border-cream-border shadow-sm flex bg-cream-surface cursor-pointer hover:border-ink/20 transition-colors"
+      className="rounded-2xl overflow-hidden shadow-lg cursor-pointer hover:shadow-xl transition-shadow flex flex-col sm:flex-row"
+      style={{ border: '1px solid var(--color-border)' }}
     >
-      {/* Left Panel */}
-      <div className="flex-1 p-7 flex flex-col justify-between">
-        <div>
-          {/* Eyebrow */}
-          <div className="text-[10px] font-medium tracking-[0.14em] text-ink-ghost uppercase mb-5">
+      {/* ── LEFT PANEL: coloured ticket body ─────────────────────────── */}
+      <div
+        className="flex-1 relative overflow-hidden flex flex-col justify-between p-5 sm:p-7"
+        style={{ background: '#0F3D2E', minHeight: 220 }}
+      >
+        {/* Large watermark team names behind content */}
+        <div
+          className="absolute inset-0 flex items-center justify-between px-4 select-none pointer-events-none overflow-hidden"
+          aria-hidden="true"
+        >
+          <span
+            className="font-display text-[clamp(48px,12vw,96px)] leading-none uppercase tracking-tight opacity-10 text-white"
+            style={{ letterSpacing: '0.02em' }}
+          >
+            {match.home}
+          </span>
+          <span
+            className="font-display text-[clamp(48px,12vw,96px)] leading-none uppercase tracking-tight opacity-10 text-white text-right"
+            style={{ letterSpacing: '0.02em' }}
+          >
+            {match.away}
+          </span>
+        </div>
+
+        {/* Top row: competition + live badge */}
+        <div className="relative z-10 flex items-center justify-between">
+          <span className="text-[10px] font-semibold tracking-[0.18em] text-white/60 uppercase">
             {competition}
+          </span>
+          <span className="flex items-center gap-1.5 bg-[var(--color-accent)] text-[var(--color-fore)] text-[10px] font-bold tracking-[0.1em] uppercase px-2.5 py-1 rounded-full">
+            <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse" />
+            Live
+          </span>
+        </div>
+
+        {/* Teams */}
+        <div className="relative z-10 flex items-center justify-between mt-4">
+          {/* Home */}
+          <div className="flex items-center gap-2.5">
+            <img
+              src={flagUrl(match.home, 80)}
+              alt={match.home}
+              className="w-8 h-6 sm:w-10 sm:h-7 rounded object-cover shadow-md"
+            />
+            <div>
+              <p className="font-display text-lg sm:text-2xl leading-none text-white uppercase tracking-wide">
+                {match.home}
+              </p>
+            </div>
           </div>
 
-          {/* Teams row */}
-          <div className="flex items-center gap-3 mb-4">
-            <div className="flex items-center gap-2">
-              <img
-                src={flagUrl(match.home, 40)}
-                alt={match.home}
-                className="w-7 h-5 rounded-sm object-cover border border-cream-border/30"
-              />
-              <span className="font-display text-xl font-bold text-ink">{match.home}</span>
-            </div>
-            <span className="text-sm text-ink-ghost">vs</span>
-            <div className="flex items-center gap-2">
-              <img
-                src={flagUrl(match.away, 40)}
-                alt={match.away}
-                className="w-7 h-5 rounded-sm object-cover border border-cream-border/30"
-              />
-              <span className="font-display text-xl font-bold text-ink">{match.away}</span>
-            </div>
-          </div>
-
-          {/* Score display */}
-          <div className="flex items-baseline gap-2 mb-2">
-            <span className="font-display text-[64px] font-bold leading-none tracking-tight text-cyan">
+          {/* Score */}
+          <div className="flex items-baseline gap-1 sm:gap-2">
+            <span className="font-display text-[48px] sm:text-[64px] leading-none text-[#4DD98A]">
               {match.score.home}
             </span>
-            <span className="font-display text-[48px] font-bold text-ink-ghost leading-none select-none">
-              –
-            </span>
-            <span className="font-display text-[64px] font-bold leading-none tracking-tight text-live">
+            <span className="font-display text-[32px] sm:text-[48px] leading-none text-white/30">–</span>
+            <span className="font-display text-[48px] sm:text-[64px] leading-none text-[#FF6B5B]">
               {match.score.away}
             </span>
           </div>
 
-          {/* Minute + status */}
-          <div className="text-xs text-ink-secondary font-medium">
-            {match.minute != null && <>{formatMatchMinute(match.minute, match.phase)}&apos; · </>}
-            {copy.fixtures.liveNow}
+          {/* Away */}
+          <div className="flex items-center gap-2.5 flex-row-reverse sm:flex-row">
+            <img
+              src={flagUrl(match.away, 80)}
+              alt={match.away}
+              className="w-8 h-6 sm:w-10 sm:h-7 rounded object-cover shadow-md"
+            />
+            <div className="text-right sm:text-left">
+              <p className="font-display text-lg sm:text-2xl leading-none text-white uppercase tracking-wide">
+                {match.away}
+              </p>
+            </div>
           </div>
         </div>
 
+        {/* Minute */}
+        <p className="relative z-10 text-xs text-white/50 font-semibold mt-2">
+          {match.minute != null && <>{formatMatchMinute(match.minute, match.phase)}' · </>}
+          {copy.fixtures.liveNow}
+        </p>
+
         {/* Probability bar */}
-        <div className="mt-6">
-          <div className="flex justify-between text-[11px] font-semibold text-ink-ghost mb-1.5 uppercase tracking-wider">
+        <div className="relative z-10 mt-4">
+          <div className="flex justify-between text-[10px] font-semibold text-white/50 mb-1.5 uppercase tracking-wider">
             <span>{match.home} {pHomePct}%</span>
             <span>Draw {pDrawPct}%</span>
             <span>{match.away} {pAwayPct}%</span>
           </div>
-          <div className="h-[5px] rounded-full overflow-hidden flex bg-cream-muted/30">
-            <div className="bg-cyan h-full transition-all duration-500" style={{ width: `${pHomePct}%` }} />
-            <div className="bg-cream-muted h-full transition-all duration-500" style={{ width: `${pDrawPct}%` }} />
-            <div className="bg-live h-full transition-all duration-500" style={{ width: `${pAwayPct}%` }} />
+          <div className="h-[4px] rounded-full overflow-hidden flex" style={{ background: 'rgba(255,255,255,0.12)' }}>
+            <div className="h-full transition-all duration-500" style={{ width: `${pHomePct}%`, background: '#4DD98A' }} />
+            <div className="h-full transition-all duration-500" style={{ width: `${pDrawPct}%`, background: 'rgba(255,255,255,0.2)' }} />
+            <div className="h-full transition-all duration-500" style={{ width: `${pAwayPct}%`, background: '#FF6B5B' }} />
           </div>
         </div>
       </div>
 
-      {/* Right Stub Divider */}
-      <div className="w-36 shrink-0 bg-cream border-l-2 border-dashed border-cream-muted p-5 flex flex-col justify-between">
-        {/* Match number info */}
-        <div>
-          <div className="text-[10px] font-medium tracking-[0.14em] text-ink-ghost uppercase">
-            {copy.checkin.matchNo}
-          </div>
-          <div className="flex items-baseline font-display text-3xl font-bold text-ink leading-none mt-1">
-            <span>{match.minute != null ? formatMatchMinute(match.minute, match.phase) : "–"}</span>
-            {match.minute != null && (
-              <span className="text-base text-ink-ghost font-normal">&apos;</span>
-            )}
-          </div>
-          <div className="text-[10px] text-ink-ghost mt-0.5">
-            {copy.checkin.minuteCaption}
-          </div>
+      {/* ── RIGHT STUB: white tear-off ────────────────────────────────── */}
+      <div
+        className="w-full sm:w-[120px] shrink-0 flex sm:flex-col flex-row items-center sm:justify-between justify-between p-4 sm:p-5 gap-4 sm:gap-0 relative"
+        style={{ background: 'var(--color-surface)' }}
+      >
+        {/* Perforated left edge (desktop only) */}
+        <div className="hidden sm:block absolute top-3 bottom-3 left-0">
+          <div className="h-full w-px" style={{
+            backgroundImage: 'repeating-linear-gradient(to bottom, var(--color-border) 0, var(--color-border) 6px, transparent 6px, transparent 12px)'
+          }} />
+        </div>
+        {/* Perforated top edge (mobile only) */}
+        <div className="sm:hidden absolute top-0 left-3 right-3">
+          <div className="w-full h-px" style={{
+            backgroundImage: 'repeating-linear-gradient(to right, var(--color-border) 0, var(--color-border) 6px, transparent 6px, transparent 12px)'
+          }} />
         </div>
 
-        {/* Decorative barcode + CTA */}
-        <div>
-          <div className="text-[11px] text-ink-ghost font-medium mb-2 uppercase tracking-wider">
+        {/* Match minute info */}
+        <div className="sm:pl-3">
+          <p className="text-[9px] font-bold tracking-[0.14em] text-[var(--color-fore-3)] uppercase mb-0.5">
+            {copy.checkin.matchNo}
+          </p>
+          <p className="font-display text-2xl sm:text-3xl text-[var(--color-fore)] leading-none">
+            {match.minute != null ? formatMatchMinute(match.minute, match.phase) : '–'}
+            {match.minute != null && <span className="text-base text-[var(--color-fore-3)] font-sans font-normal">'</span>}
+          </p>
+          <p className="text-[9px] text-[var(--color-fore-3)] mt-0.5">{copy.checkin.minuteCaption}</p>
+        </div>
+
+        {/* Barcode + CTA */}
+        <div className="sm:pl-3">
+          <p className="text-[9px] font-bold tracking-[0.1em] text-[var(--color-fore-3)] uppercase mb-2">
             {copy.fixtures.live}
-          </div>
-          {/* Barcode line */}
+          </p>
+          {/* Decorative barcode */}
           <div className="flex gap-[1.5px] items-end mb-3">
             {BARCODE_PATTERN.map((w, idx) => (
               <span
                 key={idx}
-                className="bg-ink opacity-20 h-6 rounded-[1px]"
-                style={{ width: `${w}px` }}
+                className="h-5 rounded-[1px]"
+                style={{ width: `${w}px`, background: 'var(--color-fore)', opacity: 0.25 }}
               />
             ))}
           </div>
-          {/* Check-in Button */}
-          <CheckinButton matchId={match.id} initialCheckedIn={initialCheckedIn} />
+          <div onClick={e => e.stopPropagation()}>
+            <CheckinButton matchId={match.id} initialCheckedIn={initialCheckedIn} />
+          </div>
         </div>
       </div>
     </motion.div>

@@ -173,6 +173,7 @@ async function main(): Promise<void> {
 
   // Initial sync
   await syncFixtures();
+  void retryPendingMints();
 
   // Recurring fixture sync
   setInterval(() => { void syncFixtures(); }, FIXTURE_POLL_INTERVAL_MS);

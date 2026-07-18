@@ -45,51 +45,43 @@ export function FixturesPageClient({
 }: FixturesPageClientProps) {
   const router = useRouter()
 
-  // When nothing is live, the ticket slot falls back to the soonest upcoming
-  // fixture — that match is then dropped from the list below it.
   const fallbackMatch = !initialLiveMatch ? upcomingMatches[0] ?? null : null
   const listedMatches = fallbackMatch
     ? upcomingMatches.filter(m => m.id !== fallbackMatch.id)
     : upcomingMatches
 
-  // Keep the live card (score, minute, probability bar) current while a match
-  // is in progress — the server component only re-fetches on navigation or
-  // router.refresh(), so without this the card freezes at page-load values.
   useEffect(() => {
     if (!initialLiveMatch) return
-
-    const interval = setInterval(() => {
-      router.refresh()
-    }, 12_000)
-
+    const interval = setInterval(() => { router.refresh() }, 12_000)
     return () => clearInterval(interval)
   }, [initialLiveMatch, router])
 
   return (
-    <div className="bg-cream min-h-screen font-body text-ink">
+    <div className="min-h-screen font-body pb-16 sm:pb-0" style={{ background: 'var(--color-base)' }}>
       <Navbar displayName={displayName} userId={userId} />
-      <main className="max-w-3xl mx-auto px-8 py-10">
+
+      <main className="max-w-2xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
         {/* Page header */}
-        <p className="text-[11px] font-medium tracking-[0.12em] text-ink-ghost uppercase mb-2">
+        <p className="text-[11px] font-bold tracking-[0.16em] uppercase mb-1" style={{ color: 'var(--color-fore-3)' }}>
           {copy.fixtures.fifaWorldCup2026}
         </p>
-        <h1 className="font-display text-[48px] font-bold text-ink leading-[1.05] mb-2">
+        <h1 className="font-display text-[40px] sm:text-[56px] leading-none mb-1" style={{ color: 'var(--color-fore)' }}>
           {copy.fixtures.fixturesTitle}
         </h1>
-        <p className="text-sm text-ink-secondary mb-10">
+        <p className="text-sm mb-8 font-medium" style={{ color: 'var(--color-fore-2)' }}>
           {copy.fixtures.fixturesSubtitle}
         </p>
 
         {/* Live section */}
         {initialLiveMatch && initialLiveOdds && (
           <>
-            <div className="flex items-center gap-2 mb-4">
-              <span className="w-[7px] h-[7px] rounded-full bg-live animate-pulse" />
-              <span className="text-[11px] font-medium tracking-[0.12em] text-ink-secondary uppercase">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="live-dot" />
+              <span className="text-[11px] font-bold tracking-[0.12em] uppercase" style={{ color: 'var(--color-accent)' }}>
                 {copy.fixtures.liveNow}
               </span>
               {isReplay && (
-                <span className="text-[10px] font-bold tracking-wider uppercase bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">
+                <span className="text-[10px] font-bold tracking-wider uppercase px-2 py-0.5 rounded-full" style={{ background: 'var(--color-amber)', color: '#fff' }}>
                   {copy.fixtures.replayBadge}
                 </span>
               )}
@@ -100,15 +92,15 @@ export function FixturesPageClient({
               initialCheckedIn={initialCheckedIn}
               competition={initialLiveMatch.competition ?? 'FIFA World Cup 2026'}
             />
-            {/* Divider */}
-            <div className="h-px bg-cream-border my-8" />
+            <div className="h-px my-8" style={{ background: 'var(--color-border)' }} />
           </>
         )}
 
+        {/* Up next fallback */}
         {fallbackMatch && (
           <>
-            <div className="flex items-center gap-2 mb-4">
-              <span className="text-[11px] font-medium tracking-[0.12em] text-ink-secondary uppercase">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-[11px] font-bold tracking-[0.12em] uppercase" style={{ color: 'var(--color-fore-3)' }}>
                 {copy.fixtures.upNext}
               </span>
             </div>
@@ -116,19 +108,22 @@ export function FixturesPageClient({
               match={fallbackMatch}
               initialCheckedIn={checkedInMatchIds.includes(fallbackMatch.id)}
             />
-            {/* Divider */}
-            <div className="h-px bg-cream-border my-8" />
+            <div className="h-px my-8" style={{ background: 'var(--color-border)' }} />
           </>
         )}
 
         {/* Upcoming section */}
-        <div className="flex items-center gap-2 mb-4">
-          <span className="text-[11px] font-medium tracking-[0.12em] text-ink-secondary uppercase">
+        <div className="flex items-center justify-between mb-3">
+          <span className="text-[11px] font-bold tracking-[0.12em] uppercase" style={{ color: 'var(--color-fore-3)' }}>
             {copy.fixtures.upcoming}
           </span>
         </div>
+
         {listedMatches.length > 0 ? (
-          <div className="bg-cream-surface rounded-2xl border border-cream-border overflow-hidden">
+          <div
+            className="rounded-2xl overflow-hidden shadow-sm"
+            style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)' }}
+          >
             <motion.div variants={container} initial="hidden" animate="show">
               {listedMatches.map((match, i) => (
                 <motion.div key={match.id} variants={rowVariant}>

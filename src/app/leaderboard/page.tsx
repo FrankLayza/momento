@@ -40,12 +40,12 @@ export default async function LeaderboardPage() {
   }
 
   return (
-    <div className="bg-cream min-h-screen font-body">
+    <div className="min-h-screen font-body pb-16 sm:pb-0" style={{ background: 'var(--color-base)' }}>
       <Navbar displayName={displayName} userId={user?.id ?? null} />
-      <div className="max-w-3xl mx-auto px-4 sm:px-8 py-6 sm:py-10">
-        <p className="text-[11px] font-medium tracking-[0.12em] text-ink-ghost uppercase mb-2">FIFA World Cup 2026</p>
-        <h1 className="font-display text-3xl sm:text-[40px] font-bold text-ink leading-[1.05] mb-2">Leaderboard</h1>
-        <p className="text-sm text-ink-secondary mb-8">The top Witnesses across all matches.</p>
+      <div className="max-w-2xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
+        <p className="text-[11px] font-bold tracking-[0.16em] uppercase mb-1" style={{ color: 'var(--color-fore-3)' }}>FIFA World Cup 2026</p>
+        <h1 className="font-display text-[40px] sm:text-[56px] leading-none mb-1" style={{ color: 'var(--color-fore)' }}>LEADERBOARD</h1>
+        <p className="text-sm mb-8 font-medium" style={{ color: 'var(--color-fore-2)' }}>The top Witnesses across all matches.</p>
         <LeaderboardClient
           byMoments={byMoments}
           byTier={byTier}

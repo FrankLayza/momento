@@ -1,55 +1,95 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Sora:wght@400;600;700;800&family=Space+Grotesk:wght@400;500;700&family=Unbounded:wght@700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
 @config "../../tailwind.config.ts";
 @import "tailwindcss";
 
 @theme {
-  /* Palette */
-  --color-cream: #F5F0E8;
+  /* ── App palette ──────────────────────────────────────────────────────── */
+
+  /* Page & surface */
+  --color-base:         #F0F2F6;   /* cool light grey page background */
+  --color-surface:      #FFFFFF;   /* card / elevated surface */
+  --color-surface-2:    #F7F8FA;   /* double-elevated / inner surface */
+  --color-border:       #E2E5EB;   /* structural divider */
+  --color-border-muted: #EEF0F4;   /* subtle separator */
+
+  /* Text */
+  --color-fore:         #0F1117;   /* primary text — near-black */
+  --color-fore-2:       #4B5260;   /* secondary text */
+  --color-fore-3:       #8B93A4;   /* ghost / metadata */
+
+  /* Accents */
+  --color-accent:       #00C853;   /* electric green — live, CTA, active */
+  --color-accent-dim:   #E6F9EE;   /* green tint for backgrounds */
+  --color-blue:         #1A56DB;   /* stadium blue — home team, links */
+  --color-blue-dim:     #EBF1FF;   /* blue tint */
+  --color-live:         #E03C28;   /* live red — away team, urgency (unchanged) */
+  --color-live-dim:     #FEE9E7;   /* red tint */
+  --color-amber:        #F59E0B;   /* shock tier */
+  --color-cyan:         #00A8B5;   /* notable tier (unchanged) */
+
+  /* Ticket card accent colours (live card left panel) */
+  --color-ticket-live:  #0F3D2E;   /* deep forest green — live match panel */
+  --color-ticket-soon:  #1A1F6E;   /* deep navy — upcoming panel */
+
+  /* Legacy cream tokens — kept for landing page compatibility */
+  --color-cream:         #F5F0E8;
   --color-cream-surface: #EDE8DC;
-  --color-cream-border: #D8D1C4;
-  --color-cream-muted: #C8C0B4;
-
-  --color-ink: #1A1714;
+  --color-cream-border:  #D8D1C4;
+  --color-cream-muted:   #C8C0B4;
+  --color-ink:           #1A1714;
   --color-ink-secondary: #6B6459;
-  --color-ink-ghost: #9B9187;
-
-  --color-live: #E03C28;
-  --color-cyan: #00A8B5;
+  --color-ink-ghost:     #9B9187;
 
   /* Typography */
-  --font-display: 'Space Grotesk', sans-serif;
-  --font-body: 'Inter', sans-serif;
+  --font-display: 'Bebas Neue', sans-serif;
+  --font-body:    'Plus Jakarta Sans', sans-serif;
 }
 
-/* ── Base reset ────────────────────────────────────────────────────────────── */
+/* ── Base reset ─────────────────────────────────────────────────────────── */
 @layer base {
   :root {
-    --font-inter: 'Inter', system-ui, -apple-system, sans-serif;
-    --font-sora: 'Sora', system-ui, -apple-system, sans-serif;
-    --font-unbounded: 'Unbounded', system-ui, -apple-system, sans-serif;
-    --font-landing-body: 'Space Grotesk', system-ui, -apple-system, sans-serif;
-    color-scheme: dark;
+    --font-inter:          'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    --font-sora:           'Bebas Neue', system-ui, -apple-system, sans-serif;
+    --font-unbounded:      'Unbounded', system-ui, -apple-system, sans-serif;
+    --font-landing-body:   'Space Grotesk', system-ui, -apple-system, sans-serif;
+    color-scheme: light;
   }
 
   html, body {
-    @apply bg-cream text-ink font-body antialiased;
+    @apply antialiased;
+    background-color: var(--color-base);
+    color: var(--color-fore);
+    font-family: var(--font-body);
     min-height: 100dvh;
   }
 
-  /* Numeric/score text always uses tabular figures for stable alignment */
+  /* Display face — Bebas Neue is all-caps so tracking adjustment is crucial */
   .font-display {
+    font-family: var(--font-display);
     font-variant-numeric: tabular-nums;
+    letter-spacing: 0.02em;
   }
 }
 
-/* ── Component utilities ───────────────────────────────────────────────────── */
+/* ── Component utilities ─────────────────────────────────────────────────── */
 @layer components {
-  /* Card container with trading-card proportions */
+
+  /* Card base: white surface, soft shadow, clean border */
+  .card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 16px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04);
+  }
+
+  /* Ticket card proportions */
   .momento-card {
     @apply aspect-card relative rounded-2xl overflow-hidden;
-    @apply bg-cream-surface border border-cream-border;
-    @apply flex flex-col;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    display: flex;
+    flex-direction: column;
   }
 
   /* Tier-specific accent rings */
@@ -58,7 +98,7 @@
   .tier-shock   { @apply border-tier-shock/50   shadow-[0_0_32px_-4px_theme(colors.tier.shock.DEFAULT/30)]; }
   .tier-seismic { @apply border-tier-seismic/60 shadow-[0_0_48px_-8px_theme(colors.tier.seismic.DEFAULT/40)]; }
 
-  /* Foil sheen on Shock+ (animation in tailwind.config.ts) */
+  /* Foil sheen on Shock+ */
   .foil-sheen::after {
     content: '';
     position: absolute;
@@ -76,7 +116,8 @@
 
   /* Probability bar track */
   .prob-bar {
-    @apply relative h-1.5 rounded-full overflow-hidden bg-cream-border;
+    @apply relative h-1.5 rounded-full overflow-hidden;
+    background: var(--color-border);
   }
 
   .prob-bar-fill {
@@ -86,8 +127,71 @@
   /* Toast */
   .claim-toast {
     @apply fixed bottom-6 inset-x-4 mx-auto max-w-sm md:left-auto md:right-6 md:mx-0 md:w-96 z-50;
-    @apply rounded-2xl border border-cream-border bg-cream-surface/95;
-    @apply backdrop-blur-md p-4 shadow-xl;
+    @apply rounded-2xl p-4 shadow-xl;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
     animation: toast-in 0.25s ease-out;
   }
+
+  /* Live pulse dot */
+  .live-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--color-accent);
+    animation: live-pulse 1.5s ease-in-out infinite;
+  }
+
+  /* Perforated ticket stub edge */
+  .ticket-perf {
+    background-image: radial-gradient(circle, var(--color-border) 2px, transparent 2px);
+    background-size: 1px 12px;
+    background-repeat: repeat-y;
+    width: 1px;
+  }
+}
+
+/* ── Keyframes ───────────────────────────────────────────────────────────── */
+@keyframes foil-sweep {
+  0%   { background-position: -200% center; }
+  100% { background-position:  200% center; }
+}
+
+@keyframes toast-in {
+  0%   { opacity: 0; transform: translateY(1rem); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes live-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.5; transform: scale(0.8); }
+}
+
+@keyframes kick-leg {
+  0%   { transform: rotate(-5deg); }
+  20%  { transform: rotate(-28deg); }
+  40%  { transform: rotate(32deg); }
+  65%  { transform: rotate(12deg); }
+  100% { transform: rotate(-5deg); }
+}
+
+@keyframes kick-ball {
+  0%   { transform: translate(0, 0); }
+  20%  { transform: translate(0, 0); }
+  40%  { transform: translate(5px, -6px); }
+  65%  { transform: translate(13px, -21px); }
+  100% { transform: translate(0, 0); }
+}
+
+@keyframes kick-shadow {
+  0%   { transform: scaleX(1); opacity: 0.16; }
+  20%  { transform: scaleX(1); opacity: 0.16; }
+  40%  { transform: scaleX(0.8); opacity: 0.12; }
+  65%  { transform: scaleX(0.55); opacity: 0.07; }
+  100% { transform: scaleX(1); opacity: 0.16; }
+}
+
+@keyframes probability-slide {
+  0%   { width: 0%; }
+  100% { width: var(--target-width); }
 }
