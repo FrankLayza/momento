@@ -1,52 +1,55 @@
-'use client'
+"use client";
 // Implements FR-2.3
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
 
 export function SignInForm({ next }: { next?: string }) {
-  const router = useRouter()
-  const [email, setEmail] = useState('')
-  const [sent, setSent] = useState(false)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const supabase = createClient()
+  const router = useRouter();
+  const [email, setEmail] = useState("");
+  const [sent, setSent] = useState(false);
+  const [emailLoading, setEmailLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const [mockLoading, setMockLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const supabase = createClient();
 
-  const callbackUrl =
-    `${window.location.origin}/auth/callback?next=${encodeURIComponent(next ?? '/')}`
+  const callbackUrl = `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback?next=${encodeURIComponent(next ?? "/")}`;
 
   async function handleEmail() {
-    if (!email.trim() || loading) return
-    setLoading(true)
-    setError(null)
+    if (!email.trim() || emailLoading) return;
+    setEmailLoading(true);
+    setError(null);
     try {
       const { error: otpError } = await supabase.auth.signInWithOtp({
         email,
         options: { emailRedirectTo: callbackUrl },
-      })
-      if (otpError) throw otpError
-      setSent(true)
+      });
+      if (otpError) throw otpError;
+      setSent(true);
     } catch (err) {
-      console.error('[SignInForm] Passwordless OTP sign-in failed:', err)
-      setError('Failed to send sign-in link. Please check your email and try again.')
+      console.error("[SignInForm] Passwordless OTP sign-in failed:", err);
+      setError(
+        "Failed to send sign-in link. Please check your email and try again.",
+      );
     } finally {
-      setLoading(false)
+      setEmailLoading(false);
     }
   }
 
   async function handleGoogle() {
-    setLoading(true)
-    setError(null)
+    setGoogleLoading(true);
+    setError(null);
     try {
       const { error: oauthError } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
+        provider: "google",
         options: { redirectTo: callbackUrl },
-      })
-      if (oauthError) throw oauthError
+      });
+      if (oauthError) throw oauthError;
     } catch (err) {
-      console.error('[SignInForm] Google OAuth sign-in failed:', err)
-      setError('Failed to connect to Google.')
-      setLoading(false)
+      console.error("[SignInForm] Google OAuth sign-in failed:", err);
+      setError("Failed to connect to Google.");
+      setGoogleLoading(false);
     }
   }
 
@@ -55,40 +58,42 @@ export function SignInForm({ next }: { next?: string }) {
    * without external SMTP. Never rendered outside local development.
    */
   async function handleMockSignIn() {
-    setLoading(true)
-    setError(null)
+    setMockLoading(true);
+    setError(null);
 
-    const mockEmail = 'evaluator@momento.app'
-    const mockPassword = 'EvaluatorPassword123!'
+    const mockEmail = "evaluator@momento.app";
+    const mockPassword = "EvaluatorPassword123!";
 
     try {
       const { error: signInError } = await supabase.auth.signInWithPassword({
         email: mockEmail,
         password: mockPassword,
-      })
+      });
 
       if (signInError) {
         const { error: signUpError } = await supabase.auth.signUp({
           email: mockEmail,
           password: mockPassword,
-          options: { data: { display_name: 'Evaluator' } },
-        })
+          options: { data: { display_name: "Evaluator" } },
+        });
         if (signUpError) {
-          setError(signUpError.message)
-          return
+          setError(signUpError.message);
+          return;
         }
       }
 
       // Ensure the embedded wallet exists — this path skips /auth/callback.
-      await fetch('/api/auth/session-init', { method: 'POST' }).catch(() => undefined)
+      await fetch("/api/auth/session-init", { method: "POST" }).catch(
+        () => undefined,
+      );
 
-      router.push(next ?? '/')
-      router.refresh()
+      router.push(next ?? "/");
+      router.refresh();
     } catch (err) {
-      console.error('[SignInForm] Evaluator sign-in failed:', err)
-      setError('Failed to sign in with evaluator account.')
+      console.error("[SignInForm] Evaluator sign-in failed:", err);
+      setError("Failed to sign in with evaluator account.");
     } finally {
-      setLoading(false)
+      setMockLoading(false);
     }
   }
 
@@ -99,10 +104,11 @@ export function SignInForm({ next }: { next?: string }) {
           Check your email.
         </p>
         <p className="text-[14px] text-ink-secondary">
-          We sent a sign-in link to <span className="font-semibold text-ink">{email}</span>
+          We sent a sign-in link to{" "}
+          <span className="font-semibold text-ink">{email}</span>
         </p>
       </div>
-    )
+    );
   }
 
   return (
@@ -112,17 +118,17 @@ export function SignInForm({ next }: { next?: string }) {
         placeholder="your@email.com"
         value={email}
         onChange={(e) => setEmail(e.target.value)}
-        onKeyDown={(e) => e.key === 'Enter' && handleEmail()}
-        disabled={loading}
+        onKeyDown={(e) => e.key === "Enter" && handleEmail()}
+        disabled={emailLoading}
         className="w-full bg-cream-surface border border-cream-border rounded-xl px-4 py-3.5 text-[14px] text-ink placeholder:text-ink-ghost outline-none focus:border-ink transition-colors font-body"
       />
       {error && <p className="text-[13px] text-live -mt-1.5">{error}</p>}
       <button
         onClick={handleEmail}
-        disabled={loading || !email.trim()}
+        disabled={emailLoading || !email.trim()}
         className="w-full bg-ink text-cream font-display font-bold text-[14px] rounded-xl py-3.5 tracking-wide hover:bg-ink/90 transition-colors disabled:opacity-50 cursor-pointer"
       >
-        {loading ? 'Sending...' : 'Continue with email'}
+        {emailLoading ? "Sending..." : "Continue with email"}
       </button>
 
       <div className="flex items-center gap-3 my-1">
@@ -133,21 +139,23 @@ export function SignInForm({ next }: { next?: string }) {
 
       <button
         onClick={handleGoogle}
-        disabled={loading}
+        disabled={googleLoading}
         className="w-full border border-cream-border text-ink font-display font-bold text-[14px] rounded-xl py-3.5 tracking-wide hover:bg-cream-surface transition-colors disabled:opacity-50 cursor-pointer"
       >
-        {loading ? 'Connecting...' : 'Continue with Google'}
+        {googleLoading ? "Connecting..." : "Continue with Google"}
       </button>
 
-      {process.env.NODE_ENV === 'development' && (
+      {process.env.NODE_ENV === "development" && (
         <button
-          onClick={() => { void handleMockSignIn() }}
-          disabled={loading}
+          onClick={() => {
+            void handleMockSignIn();
+          }}
+          disabled={mockLoading}
           className="mt-3 w-full text-center text-[11px] text-ink-ghost hover:text-ink-secondary transition-colors"
         >
           Quick evaluator sign-in (dev only)
         </button>
       )}
     </div>
-  )
+  );
 }

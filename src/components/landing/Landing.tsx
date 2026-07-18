@@ -12,9 +12,10 @@ import { Hero } from "./Hero";
 import { HowItWorks } from "./HowItWorks";
 import { SiteFooter } from "./SiteFooter";
 
-// Mock local fonts since Google Fonts fetch fails in offline build environments
-const unbounded = { variable: "font-sans" };
-const spaceGrotesk = { variable: "font-sans" };
+import { Unbounded, Space_Grotesk } from "next/font/google";
+
+const unbounded = Unbounded({ subsets: ["latin"], variable: "--font-unbounded" });
+const spaceGrotesk = Space_Grotesk({ subsets: ["latin"], variable: "--font-landing-body" });
 
 export function Landing() {
   return (
