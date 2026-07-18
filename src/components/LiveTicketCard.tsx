@@ -138,7 +138,7 @@ export function LiveTicketCard({
 
       {/* ── RIGHT STUB: white tear-off ────────────────────────────────── */}
       <div
-        className="w-full sm:w-[120px] shrink-0 flex sm:flex-col flex-row items-center sm:justify-between justify-between p-4 sm:p-5 gap-4 sm:gap-0 relative"
+        className="w-full sm:w-[135px] shrink-0 flex sm:flex-col flex-row items-center sm:justify-between justify-between p-4 sm:p-5 gap-4 sm:gap-0 relative"
         style={{ background: 'var(--color-surface)' }}
       >
         {/* Perforated left edge (desktop only) */}

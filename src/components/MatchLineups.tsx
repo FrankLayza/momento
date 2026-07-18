@@ -102,21 +102,21 @@ export function MatchLineups({ matchId, home, away }: Props) {
   const awayFormation = lineups?.away.formation ?? (isLoading ? '···' : '4-3-3')
 
   return (
-    <div className="bg-cream-surface rounded-2xl border border-cream-border p-5">
+    <div className="rounded-2xl p-5" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)' }}>
       {/* Header: teams + formations + status */}
       <div className="flex items-center justify-between mb-4 h-6">
-        <div className="flex gap-3 text-[11px] text-ink-ghost font-medium">
+        <div className="flex gap-3 text-[11px] font-medium" style={{ color: 'var(--color-fore-3)' }}>
           <span className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-ink" />
-            {home} <strong className="text-ink font-display">{homeFormation}</strong>
+            <span className="w-2 h-2 rounded-full" style={{ background: 'var(--color-fore)' }} />
+            {home} <strong className="font-display" style={{ color: 'var(--color-fore)' }}>{homeFormation}</strong>
           </span>
           <span className="flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-live" />
-            {away} <strong className="text-ink font-display">{awayFormation}</strong>
+            {away} <strong className="font-display" style={{ color: 'var(--color-fore)' }}>{awayFormation}</strong>
           </span>
         </div>
         {isPreview && (
-          <span className="text-[9px] font-display font-bold tracking-[0.1em] uppercase text-ink-ghost bg-cream-muted rounded-full px-2.5 py-1">
+          <span className="text-[9px] font-display font-bold tracking-[0.1em] uppercase rounded-full px-2.5 py-1" style={{ color: 'var(--color-fore-3)', background: 'var(--color-border)' }}>
             Preview
           </span>
         )}

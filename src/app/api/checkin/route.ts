@@ -71,6 +71,14 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Match finished — check-in closed." }, { status: 403 });
   }
 
+  // Ensure user profile + embedded wallet exists in the DB before recording check-in
+  try {
+    const { ensureWalletForUser } = await import("@/server/chain/wallets");
+    await ensureWalletForUser(user);
+  } catch (err) {
+    console.error("[api/checkin] Failed to auto-provision user wallet:", err);
+  }
+
   // Record the check-in (upsert — safe to call multiple times)
   const witness = await recordCheckin(userId, matchId);
 
