@@ -1,16 +1,13 @@
 "use client";
 // Implements FR-2.3
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
 export function SignInForm({ next }: { next?: string }) {
-  const router = useRouter();
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
   const [emailLoading, setEmailLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
-  const [mockLoading, setMockLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const supabase = createClient();
 
@@ -50,50 +47,6 @@ export function SignInForm({ next }: { next?: string }) {
       console.error("[SignInForm] Google OAuth sign-in failed:", err);
       setError("Failed to connect to Google.");
       setGoogleLoading(false);
-    }
-  }
-
-  /**
-   * Evaluator-only bypass — signs in (or registers) a fixed demo account
-   * without external SMTP. Never rendered outside local development.
-   */
-  async function handleMockSignIn() {
-    setMockLoading(true);
-    setError(null);
-
-    const mockEmail = "evaluator@momento.app";
-    const mockPassword = "EvaluatorPassword123!";
-
-    try {
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email: mockEmail,
-        password: mockPassword,
-      });
-
-      if (signInError) {
-        const { error: signUpError } = await supabase.auth.signUp({
-          email: mockEmail,
-          password: mockPassword,
-          options: { data: { display_name: "Evaluator" } },
-        });
-        if (signUpError) {
-          setError(signUpError.message);
-          return;
-        }
-      }
-
-      // Ensure the embedded wallet exists — this path skips /auth/callback.
-      await fetch("/api/auth/session-init", { method: "POST" }).catch(
-        () => undefined,
-      );
-
-      router.push(next ?? "/");
-      router.refresh();
-    } catch (err) {
-      console.error("[SignInForm] Evaluator sign-in failed:", err);
-      setError("Failed to sign in with evaluator account.");
-    } finally {
-      setMockLoading(false);
     }
   }
 
@@ -144,18 +97,6 @@ export function SignInForm({ next }: { next?: string }) {
       >
         {googleLoading ? "Connecting..." : "Continue with Google"}
       </button>
-
-      {process.env.NODE_ENV === "development" && (
-        <button
-          onClick={() => {
-            void handleMockSignIn();
-          }}
-          disabled={mockLoading}
-          className="mt-3 w-full text-center text-[11px] text-ink-ghost hover:text-ink-secondary transition-colors"
-        >
-          Quick evaluator sign-in (dev only)
-        </button>
-      )}
     </div>
   );
 }

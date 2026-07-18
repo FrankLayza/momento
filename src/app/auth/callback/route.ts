@@ -1,7 +1,9 @@
 // Implements FR-2.3
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
-import { ensureWalletForUser } from '@/server/chain/wallets'
+
+// Force Node.js runtime — this route lazy-imports Solana/crypto which need full Node
+export const runtime = 'nodejs'
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url)
@@ -19,8 +21,9 @@ export async function GET(request: Request) {
       if (error) {
         console.error('[auth/callback] exchangeCodeForSession error:', error)
       } else if (session) {
-        // Provision wallet separately — failure must not block sign-in
+        // Lazy-import wallet logic so Solana/crypto deps don't crash the route at load time
         try {
+          const { ensureWalletForUser } = await import('@/server/chain/wallets')
           await ensureWalletForUser(session.user)
         } catch (walletErr) {
           console.error('[auth/callback] wallet provisioning failed (non-fatal):', walletErr)
