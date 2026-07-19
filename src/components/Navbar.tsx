@@ -10,7 +10,7 @@ const links = [
     href: '/',
     label: 'Matches',
     icon: (active: boolean) => (
-      <svg className={`w-5 h-5 transition-all duration-200 ${active ? 'stroke-[var(--color-accent)]' : 'stroke-current'}`} fill="none" strokeWidth="2" viewBox="0 0 24 24">
+      <svg className={`w-5 h-5 transition-all duration-200 ${active ? 'stroke-accent' : 'stroke-current'}`} fill="none" strokeWidth="2" viewBox="0 0 24 24">
         <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
         <line x1="16" y1="2" x2="16" y2="6" />
         <line x1="8" y1="2" x2="8" y2="6" />
@@ -22,7 +22,7 @@ const links = [
     href: '/vault',
     label: 'Vault',
     icon: (active: boolean) => (
-      <svg className={`w-5 h-5 transition-all duration-200 ${active ? 'stroke-[var(--color-accent)]' : 'stroke-current'}`} fill="none" strokeWidth="2" viewBox="0 0 24 24">
+      <svg className={`w-5 h-5 transition-all duration-200 ${active ? 'stroke-accent' : 'stroke-current'}`} fill="none" strokeWidth="2" viewBox="0 0 24 24">
         <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
         <path d="M7 11V7a5 5 0 0 1 10 0v4" />
       </svg>
@@ -32,7 +32,7 @@ const links = [
     href: '/leaderboard',
     label: 'Leaderboard',
     icon: (active: boolean) => (
-      <svg className={`w-5 h-5 transition-all duration-200 ${active ? 'stroke-[var(--color-accent)]' : 'stroke-current'}`} fill="none" strokeWidth="2" viewBox="0 0 24 24">
+      <svg className={`w-5 h-5 transition-all duration-200 ${active ? 'stroke-accent' : 'stroke-current'}`} fill="none" strokeWidth="2" viewBox="0 0 24 24">
         <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6" />
         <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18" />
         <path d="M4 22h16" />
@@ -45,7 +45,7 @@ const links = [
     href: '/advanced',
     label: 'Advanced',
     icon: (active: boolean) => (
-      <svg className={`w-5 h-5 transition-all duration-200 ${active ? 'stroke-[var(--color-accent)]' : 'stroke-current'}`} fill="none" strokeWidth="2" viewBox="0 0 24 24">
+      <svg className={`w-5 h-5 transition-all duration-200 ${active ? 'stroke-accent' : 'stroke-current'}`} fill="none" strokeWidth="2" viewBox="0 0 24 24">
         <line x1="4" y1="21" x2="4" y2="14" />
         <line x1="4" y1="10" x2="4" y2="3" />
         <line x1="12" y1="21" x2="12" y2="12" />
@@ -90,10 +90,10 @@ export function Navbar({
 
   return (
     <>
-      <nav className="sticky top-0 z-50 bg-[var(--color-surface)]/85 backdrop-blur-md border-b border-[var(--color-border)]/60 px-4 sm:px-8 py-3 flex items-center justify-between shadow-sm transition-all duration-300">
+      <nav className="sticky top-0 z-50 bg-surface/85 backdrop-blur-md border-b border-border/60 px-4 sm:px-8 py-3 flex items-center justify-between shadow-sm transition-all duration-300">
         {/* Logo */}
         <div className="flex items-center">
-          <span className="font-landing-display text-lg font-bold text-[var(--color-fore)]">Momento</span>
+          <span className="font-display text-lg font-bold text-fore">Momento</span>
         </div>
 
         {/* Nav links — hidden on smallest screens, visible sm+ */}
@@ -102,10 +102,10 @@ export function Navbar({
             <Link
               key={l.href}
               href={l.href}
-              className={`font-landing-body text-[14px] font-medium transition-colors ${
+              className={`font-body text-[14px] font-medium transition-colors ${
                 pathname === l.href
-                  ? 'text-[var(--color-fore)]'
-                  : 'text-[var(--color-fore-3)] hover:text-[var(--color-fore-2)]'
+                  ? 'text-fore'
+                  : 'text-fore-3 hover:text-fore-2'
               }`}
             >
               {l.label}
@@ -118,16 +118,16 @@ export function Navbar({
           <div className="relative" ref={dropdownRef}>
             <button
               onClick={() => setDropdownOpen(!dropdownOpen)}
-              className="w-8 h-8 rounded-full bg-[var(--color-fore)] text-[var(--color-surface)] text-xs font-display tracking-wide flex items-center justify-center hover:opacity-90 transition-all cursor-pointer border border-[var(--color-border)] shadow-sm"
+              className="w-8 h-8 rounded-full bg-fore text-surface text-xs font-display tracking-wide flex items-center justify-center hover:opacity-90 transition-all cursor-pointer border border-border shadow-sm"
             >
               {displayName.slice(0, 2).toUpperCase()}
             </button>
             
             {dropdownOpen && (
-              <div className="absolute right-0 mt-2 w-40 rounded-xl border border-[var(--color-border)] shadow-lg bg-[var(--color-surface)] py-1.5 z-50">
-                <div className="px-3 py-1.5 border-b border-[var(--color-border-muted)]">
-                  <p className="text-[9px] text-[var(--color-fore-3)] font-bold uppercase tracking-wider">Account</p>
-                  <p className="text-xs font-bold text-[var(--color-fore)] truncate">{displayName}</p>
+              <div className="absolute right-0 mt-2 w-40 rounded-xl border border-border shadow-lg bg-surface py-1.5 z-50">
+                <div className="px-3 py-1.5 border-b border-border-muted">
+                  <p className="text-[9px] text-fore-3 font-bold uppercase tracking-wider">Account</p>
+                  <p className="text-xs font-bold text-fore truncate">{displayName}</p>
                 </div>
                 <button
                   onClick={() => {
@@ -144,7 +144,7 @@ export function Navbar({
         ) : (
           <Link
             href={`/sign-in?next=${encodeURIComponent(pathname)}`}
-            className="text-[13px] font-semibold text-[var(--color-fore)] hover:text-[var(--color-fore-2)] transition-colors"
+            className="text-[13px] font-semibold text-fore hover:text-fore-2 transition-colors"
           >
             Sign in
           </Link>
@@ -152,17 +152,17 @@ export function Navbar({
       </nav>
 
       {/* Mobile bottom tab bar — Floating dock style (placed outside <nav> to fix Safari containing block) */}
-      <div className="fixed bottom-4 inset-x-4 sm:hidden bg-[var(--color-surface)]/90 backdrop-blur-md border border-[var(--color-border)] rounded-2xl flex z-50 shadow-lg px-2 py-1.5">
+      <div className="fixed bottom-4 inset-x-4 sm:hidden bg-surface/90 backdrop-blur-md border border-border rounded-2xl flex z-50 shadow-lg px-2 py-1.5">
         {links.map(l => {
           const isActive = pathname === l.href;
           return (
             <Link
               key={l.href}
               href={l.href}
-              className={`flex-1 flex flex-col items-center justify-center py-1 font-landing-body text-[10px] font-medium transition-all duration-200 ${
+              className={`flex-1 flex flex-col items-center justify-center py-1 font-body text-[10px] font-medium transition-all duration-200 ${
                 isActive
-                  ? 'text-[var(--color-accent)] scale-105'
-                  : 'text-[var(--color-fore-3)] hover:text-[var(--color-fore-2)]'
+                  ? 'text-accent scale-105'
+                  : 'text-fore-3 hover:text-fore-2'
               }`}
             >
               <div className={`mb-1 transition-all duration-200 ${isActive ? 'scale-110' : 'opacity-70'}`}>

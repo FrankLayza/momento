@@ -72,7 +72,7 @@ export function LiveTicketCard({
           <span className="text-[10px] font-semibold tracking-[0.18em] text-white/60 uppercase">
             {competition}
           </span>
-          <span className="flex items-center gap-1.5 bg-[var(--color-accent)] text-[var(--color-fore)] text-[10px] font-bold tracking-[0.1em] uppercase px-2.5 py-1 rounded-full">
+          <span className="flex items-center gap-1.5 bg-accent text-fore text-[10px] font-bold tracking-widest uppercase px-2.5 py-1 rounded-full">
             <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse" />
             Live
           </span>
@@ -192,27 +192,27 @@ export function LiveTicketCard({
 
         {/* Match minute info */}
         <div className="sm:pl-3">
-          <p className="text-[9px] font-bold tracking-[0.14em] text-[var(--color-fore-3)] uppercase mb-0.5">
+          <p className="text-[9px] font-bold tracking-[0.14em] text-fore-3 uppercase mb-0.5">
             {copy.checkin.matchNo}
           </p>
-          <p className="font-display text-2xl sm:text-3xl text-[var(--color-fore)] leading-none">
+          <p className="font-display text-2xl sm:text-3xl text-fore leading-none">
             {match.minute != null
               ? formatMatchMinute(match.minute, match.phase)
               : "–"}
             {match.minute != null && (
-              <span className="text-base text-[var(--color-fore-3)] font-sans font-normal">
+              <span className=" text-fore-3 font-sans font-normal">
                 '
               </span>
             )}
           </p>
-          <p className="text-[9px] text-[var(--color-fore-3)] mt-0.5">
+          <p className="text-[9px] text-fore-3 mt-0.5">
             {copy.checkin.minuteCaption}
           </p>
         </div>
 
         {/* Barcode + CTA */}
         <div className="sm:pl-3">
-          <p className="text-[9px] font-bold tracking-[0.1em] text-[var(--color-fore-3)] uppercase mb-2">
+          <p className="text-[9px] font-bold tracking-widest text-fore-3 uppercase mb-2">
             {copy.fixtures.live}
           </p>
           {/* Decorative barcode */}

@@ -13,9 +13,9 @@ export function KickLoader({ label, className = '' }: Props) {
     <div className={`flex flex-col items-center justify-center gap-6 py-16 ${className}`}>
       <div className="relative flex items-center justify-center w-14 h-14">
         {/* Outer fast ring */}
-        <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-[var(--color-accent)] animate-spin" />
+        <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-accent animate-spin" />
         {/* Inner slow ring */}
-        <div className="absolute inset-2 rounded-full border-2 border-transparent border-b-[var(--color-blue)] animate-spin" style={{ animationDuration: '2s' }} />
+        <div className="absolute inset-2 rounded-full border-2 border-transparent border-b-blue animate-spin" style={{ animationDuration: '2s' }} />
         {/* Center dot */}
         <div className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--color-fore-3)' }} />
       </div>

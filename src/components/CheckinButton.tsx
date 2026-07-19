@@ -125,10 +125,10 @@ export function CheckinButton({ matchId, initialCheckedIn = false }: Props) {
       >
         {/* GREEN GRASS BOTTOM */}
         <div
-          className={`absolute bottom-0 left-0 right-0 h-[60%] bg-gradient-to-t from-[#1b4332] to-[#2d6a4f] pointer-events-none transition-transform duration-300 origin-bottom ${isHovering || isKicked ? "scale-y-100" : "scale-y-0"}`}
+          className={`absolute bottom-0 left-0 right-0 h-[60%] bg-linear-to-t from-[#1b4332] to-[#2d6a4f] pointer-events-none transition-transform duration-300 origin-bottom ${isHovering || isKicked ? "scale-y-100" : "scale-y-0"}`}
         />
         <div
-          className={`absolute bottom-0 left-0 right-0 h-[60%] bg-[linear-gradient(90deg,rgba(255,255,255,0.07)_50%,transparent_50%)] bg-[length:16px_100%] pointer-events-none transition-transform duration-300 origin-bottom ${isHovering || isKicked ? "scale-y-100" : "scale-y-0"}`}
+          className={`absolute bottom-0 left-0 right-0 h-[60%] bg-[linear-gradient(90deg,rgba(255,255,255,0.07)_50%,transparent_50%)] bg-size-[16px_100%] pointer-events-none transition-transform duration-300 origin-bottom ${isHovering || isKicked ? "scale-y-100" : "scale-y-0"}`}
         />
 
         {/* LAYER 1: THE FOOTBALL BOOT */}

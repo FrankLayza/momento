@@ -110,18 +110,18 @@ export function UpcomingFallbackCard({
 
         {/* Kickoff time */}
         <div className="sm:pl-3">
-          <p className="text-[9px] font-bold tracking-[0.14em] text-[var(--color-fore-3)] uppercase mb-0.5">
+          <p className="text-[9px] font-bold tracking-[0.14em] text-fore-3 uppercase mb-0.5">
             {copy.fixtures.kickoff}
           </p>
-          <p className="font-display text-2xl text-[var(--color-fore)] leading-none">
+          <p className="font-display text-2xl text-fore leading-none">
             {time}
           </p>
-          <p className="text-[9px] text-[var(--color-fore-3)] mt-0.5">{date}</p>
+          <p className="text-[9px] text-fore-3 mt-0.5">{date}</p>
         </div>
 
         {/* CTA */}
         <div className="sm:pl-3">
-          <p className="text-[9px] font-bold tracking-[0.1em] text-[var(--color-fore-3)] uppercase mb-2">
+          <p className="text-[9px] font-bold tracking-widest text-fore-3 uppercase mb-2">
             {copy.fixtures.notYetLive}
           </p>
           <div onClick={(e) => e.stopPropagation()} className="w-[calc(100%+20px)] -ml-2.5 sm:w-[calc(100%+36px)] sm:-ml-4 mt-2">

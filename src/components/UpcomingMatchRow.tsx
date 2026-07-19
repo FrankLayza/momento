@@ -44,24 +44,24 @@ export function UpcomingMatchRow({ match, isLast = false }: UpcomingMatchRowProp
           className="w-5 h-3.5 rounded-sm object-cover shrink-0"
           style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.12)' }}
         />
-        <span className="font-display text-[15px] text-[var(--color-fore)] truncate tracking-wide">
+        <span className="font-display text-[15px] text-fore truncate tracking-wide">
           {match.home}
         </span>
       </div>
 
       {/* Time block */}
       <div className="text-center w-20 sm:w-24 shrink-0">
-        <div className="font-display text-lg sm:text-xl text-[var(--color-fore)] leading-none">
+        <div className="font-display text-lg sm:text-xl text-fore leading-none">
           {timeStr}
         </div>
-        <div className="text-[10px] text-[var(--color-fore-3)] mt-0.5 font-medium">
+        <div className="text-[10px] text-fore-3 mt-0.5 font-medium">
           {dateStr}
         </div>
       </div>
 
       {/* Away */}
       <div className="flex items-center gap-2 flex-1 justify-end min-w-0">
-        <span className="font-display text-[15px] text-[var(--color-fore)] truncate tracking-wide text-right">
+        <span className="font-display text-[15px] text-fore truncate tracking-wide text-right">
           {match.away}
         </span>
         <img
@@ -74,7 +74,7 @@ export function UpcomingMatchRow({ match, isLast = false }: UpcomingMatchRowProp
 
       {/* Status pill */}
       <div className="ml-3 pl-3 shrink-0 hidden sm:block" style={{ borderLeft: '1px solid var(--color-border-muted)' }}>
-        <span className="text-[10px] font-semibold tracking-[0.08em] text-[var(--color-fore-3)] uppercase">
+        <span className="text-[10px] font-semibold tracking-[0.08em] text-fore-3 uppercase">
           {copy.fixtures.upcoming}
         </span>
       </div>

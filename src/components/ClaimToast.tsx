@@ -72,7 +72,7 @@ export function ClaimToast({ moment, onClaim, onDismiss }: Props) {
 
         <div className="flex gap-4 items-center">
           {/* Miniature Moment Card Preview */}
-          <div className="w-[84px] shrink-0 transform rotate-[-3deg] hover:rotate-0 transition-transform duration-300">
+          <div className="w-[84px] shrink-0 transform -rotate-3 hover:rotate-0 transition-transform duration-300">
             <MomentCard moment={moment} />
           </div>
 
