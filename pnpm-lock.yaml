@@ -29,6 +29,9 @@ importers:
       '@vercel/og':
         specifier: 0.6.3
         version: 0.6.3
+      bs58:
+        specifier: ^6.0.0
+        version: 6.0.0
       framer-motion:
         specifier: ^12.42.2
         version: 12.42.2(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
@@ -78,9 +81,6 @@ importers:
       axios:
         specifier: ^1.18.1
         version: 1.18.1
-      bs58:
-        specifier: ^6.0.0
-        version: 6.0.0
       dotenv:
         specifier: ^17.4.2
         version: 17.4.2
