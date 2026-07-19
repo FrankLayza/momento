@@ -118,8 +118,10 @@ export async function getKeypair(userId: string): Promise<Keypair> {
 export async function getBase58Secret(userId: string): Promise<string> {
   const keypair = await getKeypair(userId);
   // Convert Uint8Array secret key to base58
-  const bs58 = await import("bs58");
-  return bs58.default.encode(keypair.secretKey);
+  const bs58 = (await import("bs58")) as any;
+  const encode = bs58.encode || bs58.default?.encode;
+  if (!encode) throw new Error("Could not load bs58.encode");
+  return encode(keypair.secretKey);
 }
 
 /**

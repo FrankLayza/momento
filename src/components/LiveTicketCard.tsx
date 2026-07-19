@@ -1,33 +1,38 @@
 // Implements FR-1.1, FR-1.2
-'use client'
+"use client";
 
-import { motion } from 'framer-motion'
-import { useRouter } from 'next/navigation'
-import { flagUrl } from '@/lib/teamFlags'
-import { copy } from '@/lib/copy'
-import { CheckinButton } from '@/components/CheckinButton'
-import type { NormalisedMatch, NormalisedOddsTick } from '@/server/txline/types'
-import { formatMatchMinute } from '@/lib/matchUtils'
+import { motion } from "framer-motion";
+import { useRouter } from "next/navigation";
+import { flagUrl } from "@/lib/teamFlags";
+import { copy } from "@/lib/copy";
+import { CheckinButton } from "@/components/CheckinButton";
+import type {
+  NormalisedMatch,
+  NormalisedOddsTick,
+} from "@/server/txline/types";
+import { formatMatchMinute } from "@/lib/matchUtils";
 
 interface LiveTicketCardProps {
-  match: NormalisedMatch
-  odds: NormalisedOddsTick
-  initialCheckedIn: boolean
-  competition?: string
+  match: NormalisedMatch;
+  odds: NormalisedOddsTick;
+  initialCheckedIn: boolean;
+  competition?: string;
 }
 
-const BARCODE_PATTERN = [1.5, 2, 2.5, 3, 1.5, 2.5, 2, 3, 1.5, 3, 2, 2.5, 1.5, 3]
+const BARCODE_PATTERN = [
+  1.5, 2, 2.5, 3, 1.5, 2.5, 2, 3, 1.5, 3, 2, 2.5, 1.5, 3,
+];
 
 export function LiveTicketCard({
   match,
   odds,
   initialCheckedIn,
-  competition = 'FIFA World Cup 2026',
+  competition = "FIFA World Cup 2026",
 }: LiveTicketCardProps) {
-  const pHomePct = Math.round(odds.pHome * 100)
-  const pAwayPct = Math.round(odds.pAway * 100)
-  const pDrawPct = 100 - pHomePct - pAwayPct
-  const router = useRouter()
+  const pHomePct = Math.round(odds.pHome * 100);
+  const pAwayPct = Math.round(odds.pAway * 100);
+  const pDrawPct = 100 - pHomePct - pAwayPct;
+  const router = useRouter();
 
   return (
     <motion.div
@@ -36,12 +41,12 @@ export function LiveTicketCard({
       transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] as const }}
       onClick={() => router.push(`/match/${match.id}`)}
       className="rounded-2xl overflow-hidden shadow-lg cursor-pointer hover:shadow-xl transition-shadow flex flex-col sm:flex-row"
-      style={{ border: '1px solid var(--color-border)' }}
+      style={{ border: "1px solid var(--color-border)" }}
     >
       {/* ── LEFT PANEL: coloured ticket body ─────────────────────────── */}
       <div
         className="flex-1 relative overflow-hidden flex flex-col justify-between p-5 sm:p-7"
-        style={{ background: '#0F3D2E', minHeight: 220 }}
+        style={{ background: "#0F3D2E", minHeight: 220 }}
       >
         {/* Large watermark team names behind content */}
         <div
@@ -50,13 +55,13 @@ export function LiveTicketCard({
         >
           <span
             className="font-display text-[clamp(48px,12vw,96px)] leading-none uppercase tracking-tight opacity-10 text-white"
-            style={{ letterSpacing: '0.02em' }}
+            style={{ letterSpacing: "0.02em" }}
           >
             {match.home}
           </span>
           <span
             className="font-display text-[clamp(48px,12vw,96px)] leading-none uppercase tracking-tight opacity-10 text-white text-right"
-            style={{ letterSpacing: '0.02em' }}
+            style={{ letterSpacing: "0.02em" }}
           >
             {match.away}
           </span>
@@ -94,7 +99,9 @@ export function LiveTicketCard({
             <span className="font-display text-[48px] sm:text-[64px] leading-none text-[#4DD98A]">
               {match.score.home}
             </span>
-            <span className="font-display text-[32px] sm:text-[48px] leading-none text-white/30">–</span>
+            <span className="font-display text-[32px] sm:text-[48px] leading-none text-white/30">
+              –
+            </span>
             <span className="font-display text-[48px] sm:text-[64px] leading-none text-[#FF6B5B]">
               {match.score.away}
             </span>
@@ -117,21 +124,42 @@ export function LiveTicketCard({
 
         {/* Minute */}
         <p className="relative z-10 text-xs text-white/50 font-semibold mt-2">
-          {match.minute != null && <>{formatMatchMinute(match.minute, match.phase)}' · </>}
+          {match.minute != null && (
+            <>{formatMatchMinute(match.minute, match.phase)}' · </>
+          )}
           {copy.fixtures.liveNow}
         </p>
 
         {/* Probability bar */}
         <div className="relative z-10 mt-4">
           <div className="flex justify-between text-[10px] font-semibold text-white/50 mb-1.5 uppercase tracking-wider">
-            <span>{match.home} {pHomePct}%</span>
+            <span>
+              {match.home} {pHomePct}%
+            </span>
             <span>Draw {pDrawPct}%</span>
-            <span>{match.away} {pAwayPct}%</span>
+            <span>
+              {match.away} {pAwayPct}%
+            </span>
           </div>
-          <div className="h-[4px] rounded-full overflow-hidden flex" style={{ background: 'rgba(255,255,255,0.12)' }}>
-            <div className="h-full transition-all duration-500" style={{ width: `${pHomePct}%`, background: '#4DD98A' }} />
-            <div className="h-full transition-all duration-500" style={{ width: `${pDrawPct}%`, background: 'rgba(255,255,255,0.2)' }} />
-            <div className="h-full transition-all duration-500" style={{ width: `${pAwayPct}%`, background: '#FF6B5B' }} />
+          <div
+            className="h-[4px] rounded-full overflow-hidden flex"
+            style={{ background: "rgba(255,255,255,0.12)" }}
+          >
+            <div
+              className="h-full transition-all duration-500"
+              style={{ width: `${pHomePct}%`, background: "#4DD98A" }}
+            />
+            <div
+              className="h-full transition-all duration-500"
+              style={{
+                width: `${pDrawPct}%`,
+                background: "rgba(255,255,255,0.2)",
+              }}
+            />
+            <div
+              className="h-full transition-all duration-500"
+              style={{ width: `${pAwayPct}%`, background: "#FF6B5B" }}
+            />
           </div>
         </div>
       </div>
@@ -139,19 +167,27 @@ export function LiveTicketCard({
       {/* ── RIGHT STUB: white tear-off ────────────────────────────────── */}
       <div
         className="w-full sm:w-[135px] shrink-0 flex sm:flex-col flex-row items-center sm:justify-between justify-between p-4 sm:p-5 gap-4 sm:gap-0 relative"
-        style={{ background: 'var(--color-surface)' }}
+        style={{ background: "var(--color-surface)" }}
       >
         {/* Perforated left edge (desktop only) */}
         <div className="hidden sm:block absolute top-3 bottom-3 left-0">
-          <div className="h-full w-px" style={{
-            backgroundImage: 'repeating-linear-gradient(to bottom, var(--color-border) 0, var(--color-border) 6px, transparent 6px, transparent 12px)'
-          }} />
+          <div
+            className="h-full w-px"
+            style={{
+              backgroundImage:
+                "repeating-linear-gradient(to bottom, var(--color-border) 0, var(--color-border) 6px, transparent 6px, transparent 12px)",
+            }}
+          />
         </div>
         {/* Perforated top edge (mobile only) */}
         <div className="sm:hidden absolute top-0 left-3 right-3">
-          <div className="w-full h-px" style={{
-            backgroundImage: 'repeating-linear-gradient(to right, var(--color-border) 0, var(--color-border) 6px, transparent 6px, transparent 12px)'
-          }} />
+          <div
+            className="w-full h-px"
+            style={{
+              backgroundImage:
+                "repeating-linear-gradient(to right, var(--color-border) 0, var(--color-border) 6px, transparent 6px, transparent 12px)",
+            }}
+          />
         </div>
 
         {/* Match minute info */}
@@ -160,10 +196,18 @@ export function LiveTicketCard({
             {copy.checkin.matchNo}
           </p>
           <p className="font-display text-2xl sm:text-3xl text-[var(--color-fore)] leading-none">
-            {match.minute != null ? formatMatchMinute(match.minute, match.phase) : '–'}
-            {match.minute != null && <span className="text-base text-[var(--color-fore-3)] font-sans font-normal">'</span>}
+            {match.minute != null
+              ? formatMatchMinute(match.minute, match.phase)
+              : "–"}
+            {match.minute != null && (
+              <span className="text-base text-[var(--color-fore-3)] font-sans font-normal">
+                '
+              </span>
+            )}
           </p>
-          <p className="text-[9px] text-[var(--color-fore-3)] mt-0.5">{copy.checkin.minuteCaption}</p>
+          <p className="text-[9px] text-[var(--color-fore-3)] mt-0.5">
+            {copy.checkin.minuteCaption}
+          </p>
         </div>
 
         {/* Barcode + CTA */}
@@ -177,15 +221,25 @@ export function LiveTicketCard({
               <span
                 key={idx}
                 className="h-5 rounded-[1px]"
-                style={{ width: `${w}px`, background: 'var(--color-fore)', opacity: 0.25 }}
+                style={{
+                  width: `${w}px`,
+                  background: "var(--color-fore)",
+                  opacity: 0.25,
+                }}
               />
             ))}
           </div>
-          <div onClick={e => e.stopPropagation()}>
-            <CheckinButton matchId={match.id} initialCheckedIn={initialCheckedIn} />
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="w-[calc(100%+20px)] -ml-2.5 sm:w-[calc(100%+36px)] sm:-ml-4 mt-2"
+          >
+            <CheckinButton
+              matchId={match.id}
+              initialCheckedIn={initialCheckedIn}
+            />
           </div>
         </div>
       </div>
     </motion.div>
-  )
+  );
 }

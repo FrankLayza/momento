@@ -8,6 +8,8 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getBase58Secret } from "@/server/chain/wallets";
 
+export const runtime = 'nodejs';
+
 export async function POST() {
   const supabase = await createClient();
 

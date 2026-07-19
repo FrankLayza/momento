@@ -1,33 +1,42 @@
 // Implements FR-1.1 — fallback for the live-ticket slot when no match is live
-'use client'
+"use client";
 
-import { useRouter } from 'next/navigation'
-import { flagUrl } from '@/lib/teamFlags'
-import { copy } from '@/lib/copy'
-import { CheckinButton } from '@/components/CheckinButton'
-import type { NormalisedMatch } from '@/server/txline/types'
+import { useRouter } from "next/navigation";
+import { flagUrl } from "@/lib/teamFlags";
+import { copy } from "@/lib/copy";
+import { CheckinButton } from "@/components/CheckinButton";
+import type { NormalisedMatch } from "@/server/txline/types";
 
 interface Props {
-  match: NormalisedMatch
-  initialCheckedIn?: boolean
+  match: NormalisedMatch;
+  initialCheckedIn?: boolean;
 }
 
-export function UpcomingFallbackCard({ match, initialCheckedIn = false }: Props) {
-  const router = useRouter()
-  const kickoff = new Date(match.kickoffUtc)
-  const time = kickoff.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
-  const date = kickoff.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
+export function UpcomingFallbackCard({
+  match,
+  initialCheckedIn = false,
+}: Props) {
+  const router = useRouter();
+  const kickoff = new Date(match.kickoffUtc);
+  const time = kickoff.toLocaleTimeString("en-GB", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  const date = kickoff.toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "short",
+  });
 
   return (
     <div
       onClick={() => router.push(`/match/${match.id}`)}
       className="rounded-2xl overflow-hidden shadow-sm cursor-pointer hover:shadow-md transition-shadow flex flex-col sm:flex-row"
-      style={{ border: '1px solid var(--color-border)' }}
+      style={{ border: "1px solid var(--color-border)" }}
     >
       {/* Left panel — deep navy for upcoming */}
       <div
         className="flex-1 relative overflow-hidden flex flex-col justify-between p-5 sm:p-7"
-        style={{ background: '#1A1F6E', minHeight: 200 }}
+        style={{ background: "#1A1F6E", minHeight: 200 }}
       >
         {/* Watermark team names */}
         <div
@@ -50,16 +59,30 @@ export function UpcomingFallbackCard({ match, initialCheckedIn = false }: Props)
         {/* Teams */}
         <div className="relative z-10 flex items-center justify-between mt-4">
           <div className="flex items-center gap-2.5">
-            <img src={flagUrl(match.home, 80)} alt={match.home} className="w-8 h-6 sm:w-10 sm:h-7 rounded object-cover shadow-md" />
-            <p className="font-display text-lg sm:text-2xl text-white uppercase tracking-wide">{match.home}</p>
+            <img
+              src={flagUrl(match.home, 80)}
+              alt={match.home}
+              className="w-8 h-6 sm:w-10 sm:h-7 rounded object-cover shadow-md"
+            />
+            <p className="font-display text-lg sm:text-2xl text-white uppercase tracking-wide">
+              {match.home}
+            </p>
           </div>
 
           {/* Pre-match dashes */}
-          <div className="font-display text-[40px] sm:text-[52px] leading-none text-white/20">– –</div>
+          <div className="font-display text-[40px] sm:text-[52px] leading-none text-white/20">
+            – –
+          </div>
 
           <div className="flex items-center gap-2.5 flex-row-reverse sm:flex-row">
-            <img src={flagUrl(match.away, 80)} alt={match.away} className="w-8 h-6 sm:w-10 sm:h-7 rounded object-cover shadow-md" />
-            <p className="font-display text-lg sm:text-2xl text-white uppercase tracking-wide text-right sm:text-left">{match.away}</p>
+            <img
+              src={flagUrl(match.away, 80)}
+              alt={match.away}
+              className="w-8 h-6 sm:w-10 sm:h-7 rounded object-cover shadow-md"
+            />
+            <p className="font-display text-lg sm:text-2xl text-white uppercase tracking-wide text-right sm:text-left">
+              {match.away}
+            </p>
           </div>
         </div>
 
@@ -90,7 +113,9 @@ export function UpcomingFallbackCard({ match, initialCheckedIn = false }: Props)
           <p className="text-[9px] font-bold tracking-[0.14em] text-[var(--color-fore-3)] uppercase mb-0.5">
             {copy.fixtures.kickoff}
           </p>
-          <p className="font-display text-2xl text-[var(--color-fore)] leading-none">{time}</p>
+          <p className="font-display text-2xl text-[var(--color-fore)] leading-none">
+            {time}
+          </p>
           <p className="text-[9px] text-[var(--color-fore-3)] mt-0.5">{date}</p>
         </div>
 
@@ -99,11 +124,14 @@ export function UpcomingFallbackCard({ match, initialCheckedIn = false }: Props)
           <p className="text-[9px] font-bold tracking-[0.1em] text-[var(--color-fore-3)] uppercase mb-2">
             {copy.fixtures.notYetLive}
           </p>
-          <div onClick={e => e.stopPropagation()}>
-            <CheckinButton matchId={match.id} initialCheckedIn={initialCheckedIn} />
+          <div onClick={(e) => e.stopPropagation()} className="w-[calc(100%+20px)] -ml-2.5 sm:w-[calc(100%+36px)] sm:-ml-4 mt-2">
+            <CheckinButton
+              matchId={match.id}
+              initialCheckedIn={initialCheckedIn}
+            />
           </div>
         </div>
       </div>
     </div>
-  )
+  );
 }

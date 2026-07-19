@@ -107,14 +107,14 @@ export function MatchPageClient({ match, odds, initialCheckedIn, userId, display
               disabled={isCheckedIn || loading}
               className={`mt-4 w-full rounded-xl py-3 font-display text-[13px] font-bold tracking-wide transition-colors flex items-center justify-center gap-1.5 ${
                 isCheckedIn
-                  ? 'bg-[var(--color-fore)]/20 text-[var(--color-fore-3)] cursor-default'
-                  : 'bg-[var(--color-fore)] text-[var(--color-surface)] hover:bg-[var(--color-fore)]/90'
+                  ? 'bg-fore/20 text-fore-3 cursor-default'
+                  : 'bg-fore text-surface hover:bg-fore/90'
               }`}
             >
               {isCheckedIn ? (
                 'Checked In ✓'
               ) : loading ? (
-                <svg className="animate-spin h-4 w-4 text-[var(--color-surface)]" fill="none" viewBox="0 0 24 24">
+                <svg className="animate-spin h-4 w-4 text-surface" fill="none" viewBox="0 0 24 24">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                 </svg>
@@ -132,7 +132,7 @@ export function MatchPageClient({ match, odds, initialCheckedIn, userId, display
                 onClick={() => setTab(t)}
                 className={`flex-1 py-2.5 text-[13px] font-semibold capitalize transition-colors border-b-2 -mb-px ${
                   tab === t
-                    ? 'border-[var(--color-fore)]'
+                    ? 'border-fore'
                     : 'border-transparent'
                 }`}
                 style={{

@@ -92,9 +92,8 @@ export function Navbar({
     <>
       <nav className="sticky top-0 z-50 bg-[var(--color-surface)]/85 backdrop-blur-md border-b border-[var(--color-border)]/60 px-4 sm:px-8 py-3 flex items-center justify-between shadow-sm transition-all duration-300">
         {/* Logo */}
-        <div className="flex items-center gap-2">
-          <span className="w-2.5 h-2.5 rounded-full bg-[var(--color-accent)]" />
-          <span className="font-display text-xl tracking-wide text-[var(--color-fore)]">MOMENTO</span>
+        <div className="flex items-center">
+          <span className="font-landing-display text-lg font-bold text-[var(--color-fore)]">Momento</span>
         </div>
 
         {/* Nav links — hidden on smallest screens, visible sm+ */}
@@ -103,7 +102,7 @@ export function Navbar({
             <Link
               key={l.href}
               href={l.href}
-              className={`text-[13px] font-semibold transition-colors ${
+              className={`font-landing-body text-[14px] font-medium transition-colors ${
                 pathname === l.href
                   ? 'text-[var(--color-fore)]'
                   : 'text-[var(--color-fore-3)] hover:text-[var(--color-fore-2)]'
@@ -160,7 +159,7 @@ export function Navbar({
             <Link
               key={l.href}
               href={l.href}
-              className={`flex-1 flex flex-col items-center justify-center py-1 text-[9px] font-bold transition-all duration-200 ${
+              className={`flex-1 flex flex-col items-center justify-center py-1 font-landing-body text-[10px] font-medium transition-all duration-200 ${
                 isActive
                   ? 'text-[var(--color-accent)] scale-105'
                   : 'text-[var(--color-fore-3)] hover:text-[var(--color-fore-2)]'
