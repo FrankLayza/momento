@@ -2,145 +2,198 @@
 
 **You were watching. Now you can prove it.**
 
-Momento turns the exact moment a World Cup match shocked the world into a digital keepsake — only claimable by the fans who were watching live, with rarity computed automatically from TxLINE's real-time win-probability data and ownership recorded on Solana.
+Momento turns the exact moment a World Cup match shocked the world into a digital keepsake — only claimable by the fans who were watching live, with rarity computed automatically from TxLINE's real-time win-probability data and ownership recorded as compressed NFTs (cNFTs) on Solana.
 
 ---
 
-## Problem
+## ⚽ Problem & Solution
 
-Fans experience extraordinary live moments (a 94th-minute winner, a red card that flips a match) and their only artefact is a screenshot anyone can fake. There is no way to prove "I was watching when that happened".
+### The Problem
+Fans experience extraordinary live moments — a 94th-minute winner, a red card that flips a match, or a 50-to-1 shock victory. Currently, their only artifact is a screenshot that anyone could capture retroactively. There is no cryptographic or verifiable way to prove: *"I was watching when that happened."*
 
-## How it works
+### The Solution
+Momento introduces **Proof-of-Witness**:
+1. **Check In**: Fans check in to a live World Cup fixture before or during kick-off to register as a **Witness**.
+2. **Detect**: The **Moment Engine** ingests real-time betting market data from **TxLINE**, calculating implied win probabilities and listening for qualifying triggers (Goals, Red Cards, Probability Quakes, and Full-Time Upsets).
+3. **Mint & Claim**: When a Moment fires, its **Shock Score** (0–100) and **Rarity Tier** (Common, Notable, Shock, Seismic) are calculated deterministically. Only checked-in Witnesses can claim a limited-edition cNFT directly to their embedded Solana wallet.
+4. **Vault & Share**: Claimed keepsakes live in the fan's Vault and can be shared externally. Non-witnesses visiting a shared link see a public FOMO page inviting them to check in to upcoming matches.
 
-1. Fan opens Momento and sees today's World Cup fixtures.
-2. Fan **Checks in** to a match — they become a Witness.
-3. The Moment Engine watches TxLINE for qualifying events (goals, red cards, probability shifts, full-time upsets).
-4. A Moment is created with a shock score computed from win-probability data.
-5. Every Witness receives a notification. They **Claim** the Moment with one tap.
-6. Fan **Shares** the Moment card to WhatsApp or X. Non-witnesses see FOMO copy and the next fixtures.
+---
 
-## Architecture
+## 🏗️ System Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│  Next.js 14 App (Vercel)                                │
-│  ┌─────────────────┐  ┌──────────────────────────────┐  │
-│  │ /app (UI pages) │  │ /api (claim, checkin, og)    │  │
-│  └────────┬────────┘  └──────────────┬───────────────┘  │
-└───────────┼──────────────────────────┼──────────────────┘
+│  Next.js 16 App Router (Vercel)                         │
+│  ├── /app (UI pages & Server Components)               │
+│  ├── /api (checkin, claim, wallet/export, og)          │
+│  └── proxy.ts (Supabase Session Refresh & Routing)     │
+└───────────┬──────────────────────────┬──────────────────┘
             │                          │
             ▼                          ▼
 ┌───────────────────────────────────────────────────────────┐
-│  Supabase (Postgres + Realtime + Auth)                    │
+│  Supabase (Postgres DB + SSR Auth)                        │
 │  users · matches · checkins · moments · editions          │
-└───────────────────────────────────────────────────────────┘
-            ▲                          ▲
+└───────────▲──────────────────────────▲──────────────────┘
             │                          │
-┌───────────┴───────────────────────────────────────────────┐
-│  Worker (Node 20 — Railway / Render)                      │
-│  Moment Engine → TxLINE adapter → Bubblegum mint          │
+            │                          │
+┌───────────┴──────────────────────────┴────────────────────┐
+│  Engine Worker (Node.js Process)                          │
+│  ├── TxLINE Real-time Odds & Score Streams                │
+│  ├── Moment Engine (Triggers T1–T4 & Shock Score Calc)    │
+│  └── Solana Mint Worker (Metaplex Bubblegum cNFTs)        │
 └───────────────────────────────────────────────────────────┘
 ```
 
-## TxLINE endpoints used
+---
 
-> [NEEDS-HUMAN-INPUT: list real endpoints after reading docs/TXLINE-NOTES.md]
+## ⚡ Moment Engine & Rarity Calculation
 
-All TxLINE calls are isolated in `src/server/txline/adapter.ts`.
+### Triggers (FR-3.1 – FR-3.4)
+The engine monitors live fixtures and fires Moments under 4 criteria:
+* **T1 — Goal**: Triggered on any goal event.
+* **T2 — Red Card**: Triggered on any red card event.
+* **T3 — Probability Quake**: Triggered when implied win probability shifts $\ge$15 percentage points within a 5-minute sliding window.
+* **T4 — Full-Time Upset**: Triggered at full time if the winning team started with $<30\%$ pre-match win probability.
 
-## Solscan devnet links
+### Shock Score Formula (FR-4.1)
+The Shock Score ($0 - 100$) is computed deterministically with zero human or AI bias:
 
-> [NEEDS-HUMAN-INPUT: add after minting during development]
+$$\text{Base Score} = 55 \times \text{Swing} + 30 \times \text{Surprise} + 15 \times \text{Lateness}$$
 
-Example format: `https://solscan.io/tx/{TX_SIG}?cluster=devnet`
+* **Swing**: Implied win probability shift $|P_{\text{after}} - P_{\text{before}}|$.
+* **Surprise**: Inverse pre-event likelihood $(1 - P_{\text{before}})$.
+* **Lateness**: Exponential scaling after the 60th minute $\text{clamp}(\frac{\text{minute} - 60}{30}, 0, 1)$.
 
-## Local development
+### Rarity Tiers (FR-4.2)
+| Tier | Score Range | Visual Accent | Description |
+| :--- | :--- | :--- | :--- |
+| **Common** | `0` – `39` | Neutral Silver | Standard goals and expected events |
+| **Notable** | `40` – `64` | Cyan | Significant mid-game turns |
+| **Shock** | `65` – `84` | Amber / Foil | Unlikely shifts and major upsets |
+| **Seismic** | `85` – `100` | Crimson-Gold Gradient | Ultra-rare, historic last-minute World Cup miracles |
+
+---
+
+## 📡 TxLINE API Integration & Feedback
+
+All TxLINE API communications are encapsulated inside `src/server/txline/adapter.ts`.
+
+### Endpoints Used
+1. **`POST /auth/guest/start`**: Obtains a guest JWT for authenticating downstream API calls.
+2. **`GET /api/matches/world-cup`**: Fetches current live and scheduled World Cup 2026 fixtures.
+3. **`GET /api/odds/prematch/{matchId}`**: Obtains pre-match baseline win/draw/loss probabilities.
+4. **`GET /api/scores/snapshot/{matchId}`**: Ingests real-time match events, minutes, and score deltas.
+5. **`GET /api/odds/history/{matchId}`**: Fetches historical tick history for sliding-window probability calculations.
+
+### Feedback & Observations
+* **High Reliability**: Snapshot endpoints provide fast, structured event streams.
+* **Format Consistency**: Prematch probability snapshots normalized cleanly to 0..1 floating point values.
+* **Suggestion**: Providing a dedicated WebSocket stream for odds ticks alongside scores snapshot polling would further decrease latency for sub-second probability quakes.
+
+---
+
+## 🛠️ Technology Stack
+
+* **Frontend**: Next.js 16 (App Router), React 19, Tailwind CSS v4, Framer Motion.
+* **Backend & Auth**: Next.js Server Actions & API Routes, `@supabase/ssr` (Cookie session refresh in `proxy.ts`).
+* **Database**: Supabase Postgres (`users`, `matches`, `checkins`, `moments`, `editions`).
+* **Blockchain & Solana**: Metaplex Bubblegum (Compressed NFTs), `@solana/web3.js`, `@metaplex-foundation/umi`, AES-256-GCM encrypted custodial key derivation for zero-friction user onboarding (with key export option on `/advanced`).
+
+---
+
+## 🚀 Local Development Setup
 
 ### Prerequisites
+* Node.js 20+
+* pnpm (`npm i -g pnpm`)
+* A Supabase Project
 
-- Node 20+
-- pnpm (`npm i -g pnpm`)
-- A Supabase project (free tier)
-
-### Setup
-
+### Installation & Environment
 ```bash
-# 1. Clone and install
-git clone https://github.com/FrankLayza/momento
+# 1. Clone repo
+git clone https://github.com/FrankLayza/momento.git
 cd momento
+
+# 2. Install dependencies
 pnpm install
 
-# 2. Generate a treasury keypair
-pnpm gen:treasury
-# Copy TREASURY_SECRET_KEY output to .env.local
-
-# 3. Copy .env.example → .env.local and fill in all values
+# 3. Environment configuration
 cp .env.example .env.local
+```
 
-# 4. Run the Supabase schema migration
-# Paste src/server/db/schema.sql into your Supabase SQL editor and run it.
+Fill in `.env.local` with your credentials:
+```env
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
+SUPABASE_SERVICE_ROLE_KEY=eyJ...
+TXLINE_BASE_URL=https://txline-dev.txodds.com
+TXLINE_API_KEY=your_txline_key
+SOLANA_RPC_URL=https://api.devnet.solana.com
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+```
 
-# 5. Create the Merkle tree on devnet (one-time)
-# Fund treasury first: solana airdrop 2 <TREASURY_PUBKEY> --url devnet
+### Database & Solana Setup
+```bash
+# 1. Apply Supabase Schema
+# Execute src/server/db/schema.sql in your Supabase SQL Editor.
+
+# 2. Generate Solana Treasury Keypair
+pnpm gen:treasury
+# Copy the printed TREASURY_SECRET_KEY to .env.local
+
+# 3. Fund Treasury on Devnet
+solana airdrop 2 <TREASURY_PUBKEY> --url devnet
+
+# 4. Create Bubblegum Merkle Tree on Devnet
 pnpm create:tree
-# Copy MERKLE_TREE_ADDRESS output to .env.local
+# Copy the printed MERKLE_TREE_ADDRESS to .env.local
+```
 
-# 6. Start the web app
+### Running the Application
+```bash
+# Start Web Server (Terminal 1)
 pnpm dev
 
-# 7. Start the worker (separate terminal)
+# Start Engine Worker (Terminal 2)
 pnpm worker
 ```
 
-### Running tests
+---
+
+## 🧪 Testing & Validation
 
 ```bash
-pnpm test           # vitest run
-pnpm scan-copy      # forbidden vocabulary CI check
-pnpm typecheck      # tsc --noEmit
+# Run unit tests (Score calculations & trigger formulas)
+pnpm test
+
+# Run TypeScript type check
+pnpm typecheck
+
+# Run Copy/Vocabulary Scanner (Ensures zero forbidden crypto jargon on public screens)
+pnpm scan-copy
 ```
 
-### Replay Mode
-
-To drive the full product loop from a recorded fixture (required for judging):
-
+### Replay Mode (For Demonstrations & Judging)
+To drive the full engine loop from pre-recorded match data:
 ```bash
 REPLAY_MODE=true pnpm worker
 ```
 
-Record a live match first:
-```bash
-pnpm record:match --matchId <TXLINE_MATCH_ID>
-```
+---
 
-## Monetisation path
+## 🔒 v1 Architecture Trade-offs & Production Path
 
-1. **Premium claims**: Seismic-tier Moments carry a small claim fee (paid in fiat; fan never sees crypto).
-2. **Secondary royalties**: 5% on-chain royalty when trading ships.
-3. **B2B issuance**: clubs and broadcasters issue branded Moments on Momento rails.
+| Feature | v1 Hackathon Implementation | Production Migration Path |
+| :--- | :--- | :--- |
+| **Key Custody** | AES-256-GCM encrypted server-side wallets (Derived from `SUPABASE_SERVICE_ROLE_KEY`) | Privy / Web3Auth MPC Non-Custodial Wallets |
+| **NFT Storage** | Self-hosted metadata endpoints on Next.js | Decentralized IPFS / Arweave storage via Bundlr |
+| **Network** | Solana Devnet | Solana Mainnet-Beta |
+| **Minting** | Metaplex Bubblegum (cNFTs for near-zero gas costs) | Metaplex Bubblegum with automatic compressed tree scaling |
 
-The moat: sealed Witness records accumulate from day one and cannot be recreated retroactively by a competitor.
+---
 
-## TxLINE API feedback
+## 🏆 Submission Details
 
-> [NEEDS-HUMAN-INPUT: complete this section after using the TxLINE API in production.
-> This section is required by the hackathon submission rules.]
-
-- Endpoints used:
-- Latency observed:
-- Data quality notes:
-- Suggested improvements:
-
-## v1 trade-offs and production path
-
-| Trade-off | v1 approach | Production path |
-|---|---|---|
-| Key custody | Server-side AES-256-GCM | Privy or Web3Auth |
-| NFT storage | Self-hosted JSON metadata | IPFS / Arweave |
-| Chain | Solana devnet | Solana mainnet |
-| Worker hosting | Railway free tier | Dedicated compute |
-
-## Submission
-
-**Track**: Consumer and Fan Experiences — TxODDS World Cup Hackathon (Superteam Earn)
-**Deadline**: 19 July 2026
+* **Track**: Consumer & Fan Experiences — TxODDS World Cup Hackathon (Superteam Earn)
+* **License**: MIT
