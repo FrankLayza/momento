@@ -90,7 +90,14 @@ export default async function Page() {
   // current live match is excluded (it owns the LIVE slot above).
   const upcomingById = new Map<string, NormalisedMatch>()
   for (const m of dbMatches) {
-    if (m.status !== "scheduled") continue
+    const feedMatch = liveTxMatches.find(f => f.id === m.id)
+    const currentStatus = feedMatch ? feedMatch.status : m.status
+
+    if (currentStatus !== "scheduled") continue
+
+    const kickoff = new Date(m.kickoffUtc).getTime()
+    if (Date.now() >= kickoff) continue
+
     upcomingById.set(m.id, {
       id: m.id,
       home: m.home,
@@ -104,6 +111,8 @@ export default async function Page() {
   }
   for (const m of liveTxMatches) {
     if (m.status !== "scheduled") continue
+    const kickoff = new Date(m.kickoffUtc).getTime()
+    if (Date.now() >= kickoff) continue
     upcomingById.set(m.id, m)
   }
   if (liveMatch) upcomingById.delete(liveMatch.id)

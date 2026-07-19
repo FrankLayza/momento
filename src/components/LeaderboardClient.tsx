@@ -128,7 +128,7 @@ export function LeaderboardClient({ byMoments, byTier, currentUserId }: Props) {
                     </span>
                   ) : (
                     <span
-                      className="text-[9px] font-bold tracking-[0.1em] uppercase px-2 py-0.5 rounded-full shrink-0"
+                      className="text-[9px] font-bold tracking-widest uppercase px-2 py-0.5 rounded-full shrink-0"
                       style={{ background: badge.bg, color: badge.color }}
                     >
                       {entry.top_tier}
@@ -161,7 +161,7 @@ export function LeaderboardClient({ byMoments, byTier, currentUserId }: Props) {
                 </span>
               ) : (
                 <span
-                  className="text-[9px] font-bold tracking-[0.1em] uppercase px-2 py-0.5 rounded-full shrink-0"
+                  className="text-[9px] font-bold tracking-widest uppercase px-2 py-0.5 rounded-full shrink-0"
                   style={{
                     background: (TIER_BADGE[currentUserEntry.top_tier] ?? TIER_BADGE.Common).bg,
                     color: (TIER_BADGE[currentUserEntry.top_tier] ?? TIER_BADGE.Common).color,

@@ -106,7 +106,7 @@ export function MomentCard({ moment, matchDetails, featured = false }: Props) {
       {/* Seismic: gradient overlay accent at bottom */}
       {moment.tier === "Seismic" && (
         <div
-          className="absolute inset-x-0 bottom-0 h-2 bg-gradient-to-r from-transparent via-[#fb7185] to-transparent opacity-50 blur-[2px]"
+          className="absolute inset-x-0 bottom-0 h-2 bg-linear-to-r from-transparent via-[#fb7185] to-transparent opacity-50 blur-[2px]"
           aria-hidden="true"
         />
       )}

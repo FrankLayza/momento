@@ -62,10 +62,10 @@ export function FixturesPageClient({
 
       <main className="max-w-2xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
         {/* Page header */}
-        <p className="text-[11px] font-bold tracking-[0.16em] uppercase mb-1" style={{ color: 'var(--color-fore-3)' }}>
+        <p className="text-[11px] font-landing-display tracking-[0.16em] uppercase mb-1" style={{ color: 'var(--color-fore-3)' }}>
           {copy.fixtures.fifaWorldCup2026}
         </p>
-        <h1 className="font-display text-[40px] sm:text-[56px] leading-none mb-1" style={{ color: 'var(--color-fore)' }}>
+        <h1 className="font-landing-display text-[40px] sm:text-[56px] leading-none mb-1" style={{ color: 'var(--color-fore)' }}>
           {copy.fixtures.fixturesTitle}
         </h1>
         <p className="text-sm mb-8 font-medium" style={{ color: 'var(--color-fore-2)' }}>

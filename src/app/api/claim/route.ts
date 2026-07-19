@@ -75,6 +75,12 @@ export async function POST(req: Request) {
     }
   }
 
+  // Enforce 60-second claim window from moment creation (70s grace period for network latency)
+  const elapsedMs = Date.now() - new Date(moment.eventUtc).getTime();
+  if (elapsedMs > 70_000) {
+    return NextResponse.json({ error: "The claim window for this Moment has expired." }, { status: 403 });
+  }
+
   // FR-2.2: Check user was checked in before the Moment's event
   const checkin = await getCheckin(userId, moment.matchId).catch(() => null);
   if (!checkin) {

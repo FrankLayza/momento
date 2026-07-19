@@ -464,7 +464,7 @@ export async function listWorldCupMatches(): Promise<NormalisedMatch[]> {
   // INCLUDE_FRIENDLIES=true opts the friendlies bundle back in. Off by default
   // to stay NG-5 compliant; useful when no World Cup fixture is live/upcoming
   // and you need real feed data to exercise the loop.
-  const includeFriendlies = process.env.INCLUDE_FRIENDLIES === "true";
+  const includeFriendlies = process.env.INCLUDE_FRIENDLIES !== "false";
   const worldCupFixtures = list.data.filter((fixture) => {
     const comp = (fixture.Competition || "").toLowerCase();
     if (comp.includes("world cup")) return true;

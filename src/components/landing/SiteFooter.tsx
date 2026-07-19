@@ -59,16 +59,10 @@ export function SiteFooter() {
               </h4>
               <ul className="flex flex-col gap-3">
                 <li>
-                  <a href="https://twitter.com" target="_blank" rel="noreferrer" className="font-landing-body text-sm text-landing-cream/70 hover:text-white hover:underline transition-colors duration-200">
+                  <a href="https://twitter.com/FrankLayza" target="_blank" rel="noreferrer" className="font-landing-body text-sm text-landing-cream/70 hover:text-white hover:underline transition-colors duration-200">
                     Twitter / X
                   </a>
                 </li>
-                <li>
-                  <a href="https://discord.gg" target="_blank" rel="noreferrer" className="font-landing-body text-sm text-landing-cream/70 hover:text-white hover:underline transition-colors duration-200">
-                    Discord
-                  </a>
-                </li>
-              
               </ul>
             </div>
 
@@ -110,7 +104,7 @@ export function SiteFooter() {
 
       {/* Giant ambient wordmark in background */}
       <div className="absolute bottom-[-10px] sm:bottom-[-20px] left-0 right-0 text-center select-none pointer-events-none z-0">
-        <span className="font-landing-display text-[64px] sm:text-[120px] font-black uppercase text-white/[0.02] tracking-[0.15em] leading-none">
+        <span className="font-landing-display text-[64px] sm:text-[120px] font-black uppercase text-white/2 tracking-[0.15em] leading-none">
           Momento
         </span>
       </div>

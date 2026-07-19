@@ -116,7 +116,7 @@ export function MatchLineups({ matchId, home, away }: Props) {
           </span>
         </div>
         {isPreview && (
-          <span className="text-[9px] font-display font-bold tracking-[0.1em] uppercase rounded-full px-2.5 py-1" style={{ color: 'var(--color-fore-3)', background: 'var(--color-border)' }}>
+          <span className="text-[9px] font-display font-bold tracking-widest uppercase rounded-full px-2.5 py-1" style={{ color: 'var(--color-fore-3)', background: 'var(--color-border)' }}>
             Preview
           </span>
         )}

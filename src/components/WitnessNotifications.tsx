@@ -50,6 +50,22 @@ export function WitnessNotifications({ matchId, isWitness }: Props) {
   useEffect(() => {
     if (!isWitness) return;
 
+    // Fetch any currently active claimable moments (e.g. on page reload / navigation)
+    fetch(`/api/matches/${matchId}/claimable`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.moments && Array.isArray(data.moments)) {
+          setQueue(prev => {
+            const existingIds = new Set(prev.map(m => m.id));
+            const newMoments = (data.moments as Moment[]).filter(m => !existingIds.has(m.id));
+            return [...prev, ...newMoments];
+          });
+        }
+      })
+      .catch(err => {
+        console.error("Failed to fetch initial claimable moments:", err);
+      });
+
     const supabase = createClient();
     const channel = supabase
       .channel(`moments:${matchId}`)
@@ -57,7 +73,11 @@ export function WitnessNotifications({ matchId, isWitness }: Props) {
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "moments", filter: `match_id=eq.${matchId}` },
         (payload) => {
-          setQueue(prev => [...prev, dbRowToMoment(payload.new as Record<string, unknown>)]);
+          const newMoment = dbRowToMoment(payload.new as Record<string, unknown>);
+          setQueue(prev => {
+            if (prev.some(m => m.id === newMoment.id)) return prev;
+            return [...prev, newMoment];
+          });
         }
       )
       .subscribe();
@@ -67,7 +87,7 @@ export function WitnessNotifications({ matchId, isWitness }: Props) {
     };
   }, [matchId, isWitness]);
 
-  if (!isWitness || queue.length === 0) return null;
+  if (!isWitness || (queue.length === 0 && !claimError)) return null;
 
   const dismiss = (id: string) => setQueue(prev => prev.filter(m => m.id !== id));
 

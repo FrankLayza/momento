@@ -93,7 +93,7 @@ export function Navbar({
       <nav className="sticky top-0 z-50 bg-surface/85 backdrop-blur-md border-b border-border/60 px-4 sm:px-8 py-3 flex items-center justify-between shadow-sm transition-all duration-300">
         {/* Logo */}
         <div className="flex items-center">
-          <span className="font-display text-lg font-bold text-fore">Momento</span>
+          <span className="font-landing-display text-lg font-bold text-fore">Momento</span>
         </div>
 
         {/* Nav links — hidden on smallest screens, visible sm+ */}
@@ -102,7 +102,7 @@ export function Navbar({
             <Link
               key={l.href}
               href={l.href}
-              className={`font-body text-[14px] font-medium transition-colors ${
+              className={`font-landing-body text-[14px] font-medium transition-colors ${
                 pathname === l.href
                   ? 'text-fore'
                   : 'text-fore-3 hover:text-fore-2'
@@ -118,7 +118,7 @@ export function Navbar({
           <div className="relative" ref={dropdownRef}>
             <button
               onClick={() => setDropdownOpen(!dropdownOpen)}
-              className="w-8 h-8 rounded-full bg-fore text-surface text-xs font-display tracking-wide flex items-center justify-center hover:opacity-90 transition-all cursor-pointer border border-border shadow-sm"
+              className="w-8 h-8 rounded-full bg-fore text-surface text-xs font-landing-body tracking-wide flex items-center justify-center hover:opacity-90 transition-all cursor-pointer border border-border shadow-sm"
             >
               {displayName.slice(0, 2).toUpperCase()}
             </button>
@@ -144,7 +144,7 @@ export function Navbar({
         ) : (
           <Link
             href={`/sign-in?next=${encodeURIComponent(pathname)}`}
-            className="text-[13px] font-semibold text-fore hover:text-fore-2 transition-colors"
+            className="font-landing-body text-[13px] font-semibold text-fore hover:text-fore-2 transition-colors"
           >
             Sign in
           </Link>
@@ -159,7 +159,7 @@ export function Navbar({
             <Link
               key={l.href}
               href={l.href}
-              className={`flex-1 flex flex-col items-center justify-center py-1 font-body text-[10px] font-medium transition-all duration-200 ${
+              className={`flex-1 flex flex-col items-center justify-center py-1 font-landing-body text-[10px] font-medium transition-all duration-200 ${
                 isActive
                   ? 'text-accent scale-105'
                   : 'text-fore-3 hover:text-fore-2'

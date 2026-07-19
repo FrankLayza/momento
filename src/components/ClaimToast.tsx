@@ -22,7 +22,10 @@ interface Props {
 
 export function ClaimToast({ moment, onClaim, onDismiss }: Props) {
   const [claiming, setClaiming] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(60);
+  const [timeLeft, setTimeLeft] = useState(() => {
+    const elapsed = Math.floor((Date.now() - new Date(moment.eventUtc).getTime()) / 1000);
+    return Math.max(0, 60 - elapsed);
+  });
 
   useEffect(() => {
     if (timeLeft <= 0) {
