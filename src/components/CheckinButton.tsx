@@ -28,7 +28,7 @@ export function CheckinButton({ matchId, initialCheckedIn = false }: Props) {
       <button
         disabled
         onClick={(e) => e.stopPropagation()}
-        className="w-full bg-ink/40 text-cream rounded-lg pt-[14px] pb-[10px] px-4 text-[13px] font-display font-bold tracking-[0.06em] uppercase cursor-default"
+        className="w-full bg-ink/10 text-ink/40 border border-ink/10 rounded-lg py-3 px-4 text-[13px] font-body font-bold tracking-[0.04em] uppercase cursor-default flex items-center justify-center gap-1.5 min-h-[48px]"
       >
         {copy.checkin.checkedInLabel}
       </button>
@@ -121,7 +121,13 @@ export function CheckinButton({ matchId, initialCheckedIn = false }: Props) {
           }
         }}
         disabled={loading}
-        className="group @container relative w-full bg-ink text-cream rounded-lg pt-[14px] pb-[10px] px-4 text-[13px] font-display font-bold tracking-[0.06em] uppercase transition-all duration-300 cursor-pointer overflow-hidden active:scale-[0.98] select-none disabled:opacity-50"
+        className={`group @container relative w-full rounded-lg py-3 px-4 text-[13px] font-body font-bold tracking-[0.04em] uppercase transition-all duration-300 cursor-pointer overflow-hidden active:scale-[0.98] select-none disabled:opacity-50 flex items-center justify-center min-h-[48px]
+          ${isKicked || loading
+            ? "bg-accent text-fore shadow-[0_0_20px_rgba(0,200,83,0.4)]"
+            : isHovering
+              ? "bg-blue text-white shadow-[0_0_20px_rgba(26,86,219,0.4)]"
+              : "bg-ink text-cream"
+          }`}
       >
         {/* GREEN GRASS BOTTOM */}
         <div

@@ -166,7 +166,7 @@ export function LiveTicketCard({
 
       {/* ── RIGHT STUB: white tear-off ────────────────────────────────── */}
       <div
-        className="w-full sm:w-[135px] shrink-0 flex sm:flex-col flex-row items-center sm:justify-between justify-between p-4 sm:p-5 gap-4 sm:gap-0 relative"
+        className="w-full sm:w-[145px] shrink-0 flex sm:flex-col flex-row items-center sm:justify-between justify-between p-4 sm:p-5 gap-4 sm:gap-0 relative"
         style={{ background: "var(--color-surface)" }}
       >
         {/* Perforated left edge (desktop only) */}
@@ -231,7 +231,7 @@ export function LiveTicketCard({
           </div>
           <div
             onClick={(e) => e.stopPropagation()}
-            className="w-[calc(100%+20px)] -ml-2.5 sm:w-[calc(100%+36px)] sm:-ml-4 mt-2"
+            className="w-[calc(100%+20px)] -ml-2.5 sm:w-[calc(100%+36px)] sm:-ml-6 mt-2"
           >
             <CheckinButton
               matchId={match.id}

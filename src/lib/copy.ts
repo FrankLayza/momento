@@ -48,7 +48,7 @@ export const copy = {
   checkin: {
     action:      "Check in",
     checkedIn:   "Watching",
-    checkedInLabel: "Checked In ✓",
+    checkedInLabel: "Checked In",
     matchNo:     "MATCH NO.",
     minuteCaption: "Minute",
     tooLate:     "Match finished — check-in closed.",

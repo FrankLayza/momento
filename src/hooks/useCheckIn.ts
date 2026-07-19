@@ -30,6 +30,7 @@ export function useCheckIn(matchId: string, initialCheckedIn: boolean) {
       })
       if (res.ok) {
         setIsCheckedIn(true)
+        router.push(`/match/${matchId}`)
       } else {
         const err = await res.json()
         alert(err.error || 'Failed to check in.')
