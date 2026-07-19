@@ -13,16 +13,23 @@ export const runtime = 'nodejs';
 export async function POST() {
   const supabase = await createClient();
 
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (authError) {
+    console.error("[ExportWallet] Auth error:", authError.message);
+  }
   if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    console.warn("[ExportWallet] No authenticated user — session may have expired.");
+    return NextResponse.json(
+      { error: "Unauthorized — please sign in again." },
+      { status: 401 }
+    );
   }
 
   try {
     const privateKey = await getBase58Secret(user.id);
     return NextResponse.json({ privateKey });
   } catch (err: any) {
-    console.error("[ExportWallet] Failed:", err);
+    console.error("[ExportWallet] Failed for user", user.id, ":", err?.message ?? err);
     return NextResponse.json(
       { error: "Failed to export wallet credentials." },
       { status: 500 }

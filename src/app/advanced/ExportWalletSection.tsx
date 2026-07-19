@@ -50,11 +50,16 @@ export function ExportWalletSection({ pubkey }: Props) {
         setPrivateKey(data.privateKey);
         setRevealed(true);
         setShowWarning(false);
+      } else if (res.status === 401) {
+        // Session expired — redirect to re-authenticate
+        window.location.href = "/sign-in?next=/advanced&reason=session_expired";
       } else {
-        alert("Failed to decrypt private key. Ensure you are signed in.");
+        const body = await res.json().catch(() => null);
+        alert(body?.error ?? "Failed to decrypt private key. Please try again.");
       }
     } catch (err) {
       console.error(err);
+      alert("Network error — please check your connection and try again.");
     } finally {
       setLoading(false);
     }
