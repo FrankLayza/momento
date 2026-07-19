@@ -100,7 +100,16 @@ export async function POST(req: Request) {
   }
 
   // Create the edition row (pending_chain) — fan sees "Claimed" instantly
-  const edition = await insertEdition(momentId, userId);
+  let edition;
+  try {
+    edition = await insertEdition(momentId, userId);
+  } catch (err) {
+    console.error("[api/claim] insertEdition failed:", err);
+    return NextResponse.json(
+      { error: "Could not record your claim. Please try again." },
+      { status: 500 }
+    );
+  }
 
   // Attempt mint immediately; worker will retry if this fails
   const appUser = await getUserById(userId).catch(() => null);
