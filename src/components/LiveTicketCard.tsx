@@ -123,12 +123,11 @@ export function LiveTicketCard({
         </div>
 
         {/* Minute */}
-        <p className="relative z-10 text-xs text-white/50 font-semibold mt-2">
-          {match.minute != null && (
-            <>{formatMatchMinute(match.minute, match.phase)}' · </>
-          )}
-          {copy.fixtures.liveNow}
-        </p>
+        {match.minute != null && (
+          <p className="relative z-10 text-xs text-white/50 font-semibold mt-2">
+            {formatMatchMinute(match.minute, match.phase)}'
+          </p>
+        )}
 
         {/* Probability bar */}
         <div className="relative z-10 mt-4">

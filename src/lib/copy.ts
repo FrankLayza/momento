@@ -182,7 +182,7 @@ export const SIGN_IN_HEADINGS: Record<string, { title: string; sub: string }> = 
     sub: 'Sign in to see your collection.',
   },
   default: {
-    title: 'Welcome to Momento.',
+    title: 'Welcome',
     sub: 'Sign in to start witnessing.',
   },
 }

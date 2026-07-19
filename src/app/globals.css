@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Unbounded:wght@400;600;800&display=swap');
 
 @config "../../tailwind.config.ts";
 @import "tailwindcss";
@@ -44,6 +44,8 @@
   /* Typography */
   --font-display: 'Bebas Neue', sans-serif;
   --font-body:    'Plus Jakarta Sans', sans-serif;
+  --font-unbounded: 'Unbounded', sans-serif;
+  --font-landing-display: 'Unbounded', sans-serif;
 }
 
 /* ── Base reset ─────────────────────────────────────────────────────────── */

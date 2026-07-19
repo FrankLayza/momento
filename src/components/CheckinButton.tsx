@@ -28,7 +28,7 @@ export function CheckinButton({ matchId, initialCheckedIn = false }: Props) {
       <button
         disabled
         onClick={(e) => e.stopPropagation()}
-        className="w-full bg-ink/10 text-ink/40 border border-ink/10 rounded-lg py-3 px-4 text-[13px] font-body font-bold tracking-[0.04em] uppercase cursor-default flex items-center justify-center gap-1.5 min-h-[48px]"
+        className="w-full bg-[#0F1117] text-white border border-[#0F1117] rounded-lg py-3 px-4 text-[13px] font-body font-bold tracking-[0.04em] uppercase cursor-default flex items-center justify-center gap-1.5 min-h-[48px] shadow-xs opacity-90"
       >
         {copy.checkin.checkedInLabel}
       </button>

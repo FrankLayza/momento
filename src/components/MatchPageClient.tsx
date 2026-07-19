@@ -152,9 +152,9 @@ export function MatchPageClient({ match, odds, initialCheckedIn, userId, display
             <button
               onClick={checkIn}
               disabled={isCheckedIn || loading}
-              className={`mt-4 w-full rounded-lg py-3 px-4 text-[13px] font-body font-bold tracking-[0.04em] uppercase transition-all duration-300 flex items-center justify-center gap-1.5 min-h-[48px] cursor-pointer ${
+              className={`mt-8 w-full rounded-lg py-3 px-4 text-[13px] font-body font-bold tracking-[0.04em] uppercase transition-all duration-300 flex items-center justify-center gap-1.5 min-h-[48px] cursor-pointer ${
                 isCheckedIn
-                  ? 'bg-white/10 text-white/50 border border-white/10 cursor-default'
+                  ? 'bg-[#00C853]/20 text-[#4DD98A] border border-[#4DD98A]/50 shadow-sm cursor-default'
                   : loading
                     ? 'bg-[#00C853] text-[#0F1117] shadow-[0_0_20px_rgba(0,200,83,0.4)]'
                     : 'bg-white text-[#0F1117] hover:bg-[#1A56DB] hover:text-white hover:shadow-[0_0_20px_rgba(26,86,219,0.4)] active:scale-[0.98]'
